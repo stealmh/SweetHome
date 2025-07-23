@@ -97,3 +97,4 @@ iOSInjectionProject/
 
 # Swift Package Manager
 Package.resolved
+*.xcschememanagement.plist
