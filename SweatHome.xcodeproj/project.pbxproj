@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		162B33A12E30F68800412FB9 /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33A02E30F68800412FB9 /* RxCocoa */; };
+		162B33A32E30F68800412FB9 /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33A22E30F68800412FB9 /* RxRelay */; };
+		162B33A62E30F6A200412FB9 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33A52E30F6A200412FB9 /* Kingfisher */; };
+		162B33A92E30F6B300412FB9 /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33A82E30F6B300412FB9 /* Alamofire */; };
+		162B33AC2E30F6C200412FB9 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33AB2E30F6C200412FB9 /* SnapKit */; };
+		162B33B02E30F79D00412FB9 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 162B33AF2E30F79D00412FB9 /* SocketIO */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		162B307F2E30D38B00412FB9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -65,6 +74,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				162B33A62E30F6A200412FB9 /* Kingfisher in Frameworks */,
+				162B33A92E30F6B300412FB9 /* Alamofire in Frameworks */,
+				162B33A32E30F68800412FB9 /* RxRelay in Frameworks */,
+				162B33A12E30F68800412FB9 /* RxCocoa in Frameworks */,
+				162B33AC2E30F6C200412FB9 /* SnapKit in Frameworks */,
+				162B33B02E30F79D00412FB9 /* SocketIO in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -125,6 +140,12 @@
 			);
 			name = SweatHome;
 			packageProductDependencies = (
+				162B33A02E30F68800412FB9 /* RxCocoa */,
+				162B33A22E30F68800412FB9 /* RxRelay */,
+				162B33A52E30F6A200412FB9 /* Kingfisher */,
+				162B33A82E30F6B300412FB9 /* Alamofire */,
+				162B33AB2E30F6C200412FB9 /* SnapKit */,
+				162B33AF2E30F79D00412FB9 /* SocketIO */,
 			);
 			productName = SweatHome;
 			productReference = 162B30652E30D38900412FB9 /* SweatHome.app */;
@@ -208,6 +229,13 @@
 			);
 			mainGroup = 162B305C2E30D38900412FB9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				162B339F2E30F68800412FB9 /* XCRemoteSwiftPackageReference "RxSwift" */,
+				162B33A42E30F6A200412FB9 /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				162B33A72E30F6B300412FB9 /* XCRemoteSwiftPackageReference "Alamofire" */,
+				162B33AA2E30F6C200412FB9 /* XCRemoteSwiftPackageReference "SnapKit" */,
+				162B33AE2E30F79D00412FB9 /* XCRemoteSwiftPackageReference "socket" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 162B30662E30D38900412FB9 /* Products */;
 			projectDirPath = "";
@@ -287,6 +315,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SweatHome/Resources/SweatHome.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
@@ -314,6 +343,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = SweatHome/Resources/SweatHome.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
@@ -567,6 +597,82 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		162B339F2E30F68800412FB9 /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.9.0;
+			};
+		};
+		162B33A42E30F6A200412FB9 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
+		162B33A72E30F6B300412FB9 /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.10.2;
+			};
+		};
+		162B33AA2E30F6C200412FB9 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
+		162B33AE2E30F79D00412FB9 /* XCRemoteSwiftPackageReference "socket" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/socketio/socket.io-client-swift";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 16.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		162B33A02E30F68800412FB9 /* RxCocoa */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B339F2E30F68800412FB9 /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxCocoa;
+		};
+		162B33A22E30F68800412FB9 /* RxRelay */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B339F2E30F68800412FB9 /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxRelay;
+		};
+		162B33A52E30F6A200412FB9 /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B33A42E30F6A200412FB9 /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		162B33A82E30F6B300412FB9 /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B33A72E30F6B300412FB9 /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+		162B33AB2E30F6C200412FB9 /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B33AA2E30F6C200412FB9 /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		162B33AF2E30F79D00412FB9 /* SocketIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162B33AE2E30F79D00412FB9 /* XCRemoteSwiftPackageReference "socket" */;
+			productName = SocketIO;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 162B305D2E30D38900412FB9 /* Project object */;
 }
