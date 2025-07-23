@@ -1,6 +1,6 @@
 //
 //  ViewController.swift
-//  SweatHome
+//  SweetHome
 //
 //  Created by 김민호 on 7/23/25.
 //

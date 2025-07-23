@@ -21,50 +21,50 @@
 			containerPortal = 162B305D2E30D38900412FB9 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 162B30642E30D38900412FB9;
-			remoteInfo = SweatHome;
+			remoteInfo = SweetHome;
 		};
 		162B30892E30D38B00412FB9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 162B305D2E30D38900412FB9 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 162B30642E30D38900412FB9;
-			remoteInfo = SweatHome;
+			remoteInfo = SweetHome;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		162B30652E30D38900412FB9 /* SweatHome.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SweatHome.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		162B307E2E30D38B00412FB9 /* SweatHomeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SweatHomeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		162B30882E30D38B00412FB9 /* SweatHomeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SweatHomeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		162B30652E30D38900412FB9 /* SweetHome.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SweetHome.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		162B307E2E30D38B00412FB9 /* SweetHomeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SweetHomeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		162B30882E30D38B00412FB9 /* SweetHomeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SweetHomeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		162B329B2E30F1F500412FB9 /* Exceptions for "SweatHome" folder in "SweatHome" target */ = {
+		16217F9F2E310A3700D7EB2D /* Exceptions for "SweetHome" folder in "SweetHome" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
 			);
-			target = 162B30642E30D38900412FB9 /* SweatHome */;
+			target = 162B30642E30D38900412FB9 /* SweetHome */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		162B30672E30D38900412FB9 /* SweatHome */ = {
+		162B30672E30D38900412FB9 /* SweetHome */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				162B329B2E30F1F500412FB9 /* Exceptions for "SweatHome" folder in "SweatHome" target */,
+				16217F9F2E310A3700D7EB2D /* Exceptions for "SweetHome" folder in "SweetHome" target */,
 			);
-			path = SweatHome;
+			path = SweetHome;
 			sourceTree = "<group>";
 		};
-		162B30812E30D38B00412FB9 /* SweatHomeTests */ = {
+		162B30812E30D38B00412FB9 /* SweetHomeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SweatHomeTests;
+			path = SweetHomeTests;
 			sourceTree = "<group>";
 		};
-		162B308B2E30D38B00412FB9 /* SweatHomeUITests */ = {
+		162B308B2E30D38B00412FB9 /* SweetHomeUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SweatHomeUITests;
+			path = SweetHomeUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -103,9 +103,9 @@
 		162B305C2E30D38900412FB9 = {
 			isa = PBXGroup;
 			children = (
-				162B30672E30D38900412FB9 /* SweatHome */,
-				162B30812E30D38B00412FB9 /* SweatHomeTests */,
-				162B308B2E30D38B00412FB9 /* SweatHomeUITests */,
+				162B30672E30D38900412FB9 /* SweetHome */,
+				162B30812E30D38B00412FB9 /* SweetHomeTests */,
+				162B308B2E30D38B00412FB9 /* SweetHomeUITests */,
 				162B30662E30D38900412FB9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -113,9 +113,9 @@
 		162B30662E30D38900412FB9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				162B30652E30D38900412FB9 /* SweatHome.app */,
-				162B307E2E30D38B00412FB9 /* SweatHomeTests.xctest */,
-				162B30882E30D38B00412FB9 /* SweatHomeUITests.xctest */,
+				162B30652E30D38900412FB9 /* SweetHome.app */,
+				162B307E2E30D38B00412FB9 /* SweetHomeTests.xctest */,
+				162B30882E30D38B00412FB9 /* SweetHomeUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -123,9 +123,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		162B30642E30D38900412FB9 /* SweatHome */ = {
+		162B30642E30D38900412FB9 /* SweetHome */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 162B30912E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHome" */;
+			buildConfigurationList = 162B30912E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHome" */;
 			buildPhases = (
 				162B30612E30D38900412FB9 /* Sources */,
 				162B30622E30D38900412FB9 /* Frameworks */,
@@ -136,9 +136,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				162B30672E30D38900412FB9 /* SweatHome */,
+				162B30672E30D38900412FB9 /* SweetHome */,
 			);
-			name = SweatHome;
+			name = SweetHome;
 			packageProductDependencies = (
 				162B33A02E30F68800412FB9 /* RxCocoa */,
 				162B33A22E30F68800412FB9 /* RxRelay */,
@@ -147,13 +147,13 @@
 				162B33AB2E30F6C200412FB9 /* SnapKit */,
 				162B33AF2E30F79D00412FB9 /* SocketIO */,
 			);
-			productName = SweatHome;
-			productReference = 162B30652E30D38900412FB9 /* SweatHome.app */;
+			productName = SweetHome;
+			productReference = 162B30652E30D38900412FB9 /* SweetHome.app */;
 			productType = "com.apple.product-type.application";
 		};
-		162B307D2E30D38B00412FB9 /* SweatHomeTests */ = {
+		162B307D2E30D38B00412FB9 /* SweetHomeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 162B30962E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHomeTests" */;
+			buildConfigurationList = 162B30962E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHomeTests" */;
 			buildPhases = (
 				162B307A2E30D38B00412FB9 /* Sources */,
 				162B307B2E30D38B00412FB9 /* Frameworks */,
@@ -165,18 +165,18 @@
 				162B30802E30D38B00412FB9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				162B30812E30D38B00412FB9 /* SweatHomeTests */,
+				162B30812E30D38B00412FB9 /* SweetHomeTests */,
 			);
-			name = SweatHomeTests;
+			name = SweetHomeTests;
 			packageProductDependencies = (
 			);
-			productName = SweatHomeTests;
-			productReference = 162B307E2E30D38B00412FB9 /* SweatHomeTests.xctest */;
+			productName = SweetHomeTests;
+			productReference = 162B307E2E30D38B00412FB9 /* SweetHomeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		162B30872E30D38B00412FB9 /* SweatHomeUITests */ = {
+		162B30872E30D38B00412FB9 /* SweetHomeUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 162B30992E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHomeUITests" */;
+			buildConfigurationList = 162B30992E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHomeUITests" */;
 			buildPhases = (
 				162B30842E30D38B00412FB9 /* Sources */,
 				162B30852E30D38B00412FB9 /* Frameworks */,
@@ -188,13 +188,13 @@
 				162B308A2E30D38B00412FB9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				162B308B2E30D38B00412FB9 /* SweatHomeUITests */,
+				162B308B2E30D38B00412FB9 /* SweetHomeUITests */,
 			);
-			name = SweatHomeUITests;
+			name = SweetHomeUITests;
 			packageProductDependencies = (
 			);
-			productName = SweatHomeUITests;
-			productReference = 162B30882E30D38B00412FB9 /* SweatHomeUITests.xctest */;
+			productName = SweetHomeUITests;
+			productReference = 162B30882E30D38B00412FB9 /* SweetHomeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -220,7 +220,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 162B30602E30D38900412FB9 /* Build configuration list for PBXProject "SweatHome" */;
+			buildConfigurationList = 162B30602E30D38900412FB9 /* Build configuration list for PBXProject "SweetHome" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -241,9 +241,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				162B30642E30D38900412FB9 /* SweatHome */,
-				162B307D2E30D38B00412FB9 /* SweatHomeTests */,
-				162B30872E30D38B00412FB9 /* SweatHomeUITests */,
+				162B30642E30D38900412FB9 /* SweetHome */,
+				162B307D2E30D38B00412FB9 /* SweetHomeTests */,
+				162B30872E30D38B00412FB9 /* SweetHomeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -299,12 +299,12 @@
 /* Begin PBXTargetDependency section */
 		162B30802E30D38B00412FB9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 162B30642E30D38900412FB9 /* SweatHome */;
+			target = 162B30642E30D38900412FB9 /* SweetHome */;
 			targetProxy = 162B307F2E30D38B00412FB9 /* PBXContainerItemProxy */;
 		};
 		162B308A2E30D38B00412FB9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 162B30642E30D38900412FB9 /* SweatHome */;
+			target = 162B30642E30D38900412FB9 /* SweetHome */;
 			targetProxy = 162B30892E30D38B00412FB9 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -315,12 +315,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SweatHome/Resources/SweatHome.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SweetHome/Resources/SweetHome.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = SweatHome/Resources/Info.plist;
+				INFOPLIST_FILE = SweetHome/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -330,7 +330,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHome;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -343,12 +343,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SweatHome/Resources/SweatHome.entitlements;
+				CODE_SIGN_ENTITLEMENTS = SweetHome/Resources/SweetHome.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = SweatHome/Resources/Info.plist;
+				INFOPLIST_FILE = SweetHome/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -358,7 +358,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHome;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -495,12 +495,12 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHomeTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SweatHome.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SweatHome";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SweetHome.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SweetHome";
 			};
 			name = Debug;
 		};
@@ -514,12 +514,12 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHomeTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SweatHome.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SweatHome";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SweetHome.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SweetHome";
 			};
 			name = Release;
 		};
@@ -531,12 +531,12 @@
 				DEVELOPMENT_TEAM = 69AX92X75M;
 				GENERATE_INFOPLIST_FILE = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHomeUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SweatHome;
+				TEST_TARGET_NAME = SweetHome;
 			};
 			name = Debug;
 		};
@@ -548,19 +548,19 @@
 				DEVELOPMENT_TEAM = 69AX92X75M;
 				GENERATE_INFOPLIST_FILE = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweathome.SweatHomeUITests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = SweatHome;
+				TEST_TARGET_NAME = SweetHome;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		162B30602E30D38900412FB9 /* Build configuration list for PBXProject "SweatHome" */ = {
+		162B30602E30D38900412FB9 /* Build configuration list for PBXProject "SweetHome" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				162B30942E30D38B00412FB9 /* Debug */,
@@ -569,7 +569,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		162B30912E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHome" */ = {
+		162B30912E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHome" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				162B30922E30D38B00412FB9 /* Debug */,
@@ -578,7 +578,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		162B30962E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHomeTests" */ = {
+		162B30962E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHomeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				162B30972E30D38B00412FB9 /* Debug */,
@@ -587,7 +587,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		162B30992E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweatHomeUITests" */ = {
+		162B30992E30D38B00412FB9 /* Build configuration list for PBXNativeTarget "SweetHomeUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				162B309A2E30D38B00412FB9 /* Debug */,

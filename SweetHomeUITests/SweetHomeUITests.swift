@@ -1,13 +1,13 @@
 //
-//  SweatHomeUITests.swift
-//  SweatHomeUITests
+//  SweetHomeUITests.swift
+//  SweetHomeUITests
 //
 //  Created by 김민호 on 7/23/25.
 //
 
 import XCTest
 
-final class SweatHomeUITests: XCTestCase {
+final class SweetHomeUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

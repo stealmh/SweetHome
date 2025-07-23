@@ -1,13 +1,13 @@
 //
-//  SweatHomeUITestsLaunchTests.swift
-//  SweatHomeUITests
+//  SweetHomeUITestsLaunchTests.swift
+//  SweetHomeUITests
 //
 //  Created by 김민호 on 7/23/25.
 //
 
 import XCTest
 
-final class SweatHomeUITestsLaunchTests: XCTestCase {
+final class SweetHomeUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
