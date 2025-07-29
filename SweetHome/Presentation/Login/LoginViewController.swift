@@ -20,7 +20,12 @@ class LoginViewController: BaseViewController {
     private let loginButton = UIButton()
     private let emailRegisterButton = UIButton()
     
-    private let kakaoLoginButton = UIButton()
+    private let kakaoLoginButton: UIButton = {
+        let v = UIButton()
+        v.titleLabel?.text = "까까오 로그인"
+        v.backgroundColor = .yellow
+        return v
+    }()
     private let appleLoginButton: ASAuthorizationAppleIDButton = {
         let button = ASAuthorizationAppleIDButton(type: .signIn, style: .black)
         return button
@@ -35,14 +40,13 @@ class LoginViewController: BaseViewController {
     private let viewModel = LoginViewModel()
     
     // MARK: - Subjects
-    private let onAppearSubject = PublishSubject<Void>()
     private let emailLoginTappedSubject = PublishSubject<(email: String, password: String)>()
     private let appleLoginTappedSubject = PublishSubject<ASAuthorizationControllerPresentationContextProviding>()
+    private let kakaoLoginTappedSubject = PublishSubject<Void>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupSplashOverlay()
-        onAppearSubject.onNext(())
     }
     
     override func setupUI() {
@@ -59,14 +63,21 @@ class LoginViewController: BaseViewController {
         appleLoginButton.snp.makeConstraints {
             $0.center.equalToSuperview()
         }
+        
+        kakaoLoginButton.snp.makeConstraints {
+//            $0.top.equalTo(appleLoginButton.snp.bottom)
+            $0.bottom.equalToSuperview().inset(40)
+            $0.centerX.equalToSuperview()
+        }
     }
     
     override func bind() {
         let input = LoginViewModel.Input(
-            onAppear: onAppearSubject.asObservable(),
+            onAppear: Observable.just(()),
             emailLoginTapped: emailLoginTappedSubject.asObservable(),
             registerTapped: emailRegisterButton.rx.tap.asObservable(),
-            appleLoginTapped: appleLoginTappedSubject.asObservable()
+            appleLoginTapped: appleLoginTappedSubject.asObservable(),
+            kakaoLoginTapped: kakaoLoginButton.rx.tap.asObservable()
         )
         
         let output = viewModel.transform(input: input)
@@ -77,7 +88,7 @@ class LoginViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        output.loginError
+        output.error
             .drive(onNext: { [weak self] error in
                 self?.handleLoginError(error)
             })
@@ -101,6 +112,13 @@ class LoginViewController: BaseViewController {
         output.shouldHideSplash
             .drive(onNext: { [weak self] in
                 self?.hideSplashOverlay()
+            })
+            .disposed(by: disposeBag)
+        
+        output.kakaoLoginResult
+            .drive(onNext: { [weak self] in
+                // 카카오 로그인 성공 시 추가 처리가 필요하면 여기에 작성
+                print("Kakao login completed")
             })
             .disposed(by: disposeBag)
     }
@@ -178,6 +196,10 @@ extension LoginViewController {
         let email = emailTextField.text ?? ""
         let password = passwordTextField.text ?? ""
         emailLoginTappedSubject.onNext((email, password))
+    }
+    
+    @objc private func kakaoLoginButtonTapped() {
+        kakaoLoginTappedSubject.onNext(())
     }
 }
 
