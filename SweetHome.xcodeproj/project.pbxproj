@@ -15,6 +15,7 @@
 		162105BD2E38B7E5006ACD9E /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 162105BC2E38B7E5006ACD9E /* SocketIO */; };
 		162105C02E38B823006ACD9E /* RxKakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 162105BF2E38B823006ACD9E /* RxKakaoSDKAuth */; };
 		162105C22E38B823006ACD9E /* RxKakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 162105C12E38B823006ACD9E /* RxKakaoSDKCommon */; };
+		162105C72E38B9E1006ACD9E /* RxKakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 				162105B12E38B78E006ACD9E /* RxSwift in Frameworks */,
 				162105C22E38B823006ACD9E /* RxKakaoSDKCommon in Frameworks */,
 				162105AF2E38B78E006ACD9E /* RxCocoa in Frameworks */,
+				162105C72E38B9E1006ACD9E /* RxKakaoSDKUser in Frameworks */,
 				162105BA2E38B7C1006ACD9E /* SnapKit in Frameworks */,
 				162105BD2E38B7E5006ACD9E /* SocketIO in Frameworks */,
 			);
@@ -152,6 +154,7 @@
 				162105BC2E38B7E5006ACD9E /* SocketIO */,
 				162105BF2E38B823006ACD9E /* RxKakaoSDKAuth */,
 				162105C12E38B823006ACD9E /* RxKakaoSDKCommon */,
+				162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */,
 			);
 			productName = SweetHome;
 			productReference = 162B30652E30D38900412FB9 /* SweetHome.app */;
@@ -319,6 +322,8 @@
 /* Begin XCBuildConfiguration section */
 		162B30922E30D38B00412FB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 162B30672E30D38900412FB9 /* SweetHome */;
+			baseConfigurationReferenceRelativePath = XCConfig/xcconfig.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -332,6 +337,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -347,6 +353,8 @@
 		};
 		162B30932E30D38B00412FB9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = 162B30672E30D38900412FB9 /* SweetHome */;
+			baseConfigurationReferenceRelativePath = XCConfig/xcconfig.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -360,6 +368,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -696,6 +705,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 162105BE2E38B823006ACD9E /* XCRemoteSwiftPackageReference "kakao-ios-sdk-rx" */;
 			productName = RxKakaoSDKCommon;
+		};
+		162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162105BE2E38B823006ACD9E /* XCRemoteSwiftPackageReference "kakao-ios-sdk-rx" */;
+			productName = RxKakaoSDKUser;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
