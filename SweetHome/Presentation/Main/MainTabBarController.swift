@@ -16,7 +16,7 @@ class MainTabBarController: UITabBarController {
     
     private func setupTabBar() {
         // Home Tab
-        let homeVC = HomeViewController()
+        let homeVC = ViewController()
         let homeNavController = UINavigationController(rootViewController: homeVC)
         homeNavController.tabBarItem = UITabBarItem(
             title: "홈",
@@ -25,7 +25,7 @@ class MainTabBarController: UITabBarController {
         )
         
         // Search Tab
-        let searchVC = HomeViewController()
+        let searchVC = ViewController()
         let searchNavController = UINavigationController(rootViewController: searchVC)
         searchNavController.tabBarItem = UITabBarItem(
             title: "검색",
@@ -34,7 +34,7 @@ class MainTabBarController: UITabBarController {
         )
         
         // Favorites Tab
-        let favoritesVC = HomeViewController()
+        let favoritesVC = ViewController()
         let favoritesNavController = UINavigationController(rootViewController: favoritesVC)
         favoritesNavController.tabBarItem = UITabBarItem(
             title: "즐겨찾기",
@@ -43,7 +43,7 @@ class MainTabBarController: UITabBarController {
         )
         
         // Profile Tab
-        let profileVC = HomeViewController()
+        let profileVC = ViewController()
         let profileNavController = UINavigationController(rootViewController: profileVC)
         profileNavController.tabBarItem = UITabBarItem(
             title: "프로필",
