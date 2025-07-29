@@ -6,6 +6,9 @@
 //
 
 enum KeyChainKey: String {
+    case lastLoginStatus
+    case email
+    case idToken // apple
     case accessToken
     case refreshToken
 }

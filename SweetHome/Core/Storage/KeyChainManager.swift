@@ -96,7 +96,7 @@ private struct KeychainController: Sendable {
             print("🗝️ '\(key)' 상태 = \(status)")
             return
         }
-        print("🗝️ '\(key)' 성공!")
+        print("🗝️ '\(key)' 업데이트 성공!")
     }
 
     // MARK: Delete Item
