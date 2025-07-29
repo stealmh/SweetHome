@@ -10,24 +10,31 @@ import AuthenticationServices
 import RxSwift
 import RxCocoa
 
+import RxKakaoSDKAuth
+import RxKakaoSDKUser
+import KakaoSDKUser
+import KakaoSDKAuth
+import KakaoSDKCommon
+
 protocol LoginSessionProtocol {
-    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<AppleLoginResult>
+    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse>
     func getAppleLoginError() -> Observable<LoginError>
+    func performKakaoLogin() -> Observable<SocialLoginResponse>
 }
 
 class LoginSession: NSObject, LoginSessionProtocol {
     
     // MARK: - Private Properties
-    private let appleLogin = PublishSubject<AppleLoginResult>()
+    private let appleLogin = PublishSubject<SocialLoginResponse>()
     private let appleLoginError = PublishSubject<LoginError>()
     private weak var currentPresentationContext: ASAuthorizationControllerPresentationContextProviding?
     
-    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<AppleLoginResult> {
+    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse> {
         self.currentPresentationContext = presentationContext
         
         let appleIDProvider = ASAuthorizationAppleIDProvider()
         let request = appleIDProvider.createRequest()
-        request.requestedScopes = [.email]
+        request.requestedScopes = [.fullName, .email]
         
         let authorizationController = ASAuthorizationController(authorizationRequests: [request])
         authorizationController.delegate = self
@@ -39,6 +46,28 @@ class LoginSession: NSObject, LoginSessionProtocol {
     
     func getAppleLoginError() -> Observable<LoginError> {
         return appleLoginError.asObservable()
+    }
+    
+    func performKakaoLogin() -> Observable<SocialLoginResponse> {
+        let loginObservable: Observable<SocialLoginResponse>
+        
+        if UserApi.isKakaoTalkLoginAvailable() {
+            loginObservable = UserApi.shared.rx.loginWithKakaoTalk()
+                .map { SocialLoginResponse(name: nil, idToken: $0.accessToken) }.asObservable()
+        } else {
+            loginObservable = UserApi.shared.rx.loginWithKakaoAccount()
+                .map { SocialLoginResponse(name: nil, idToken: $0.accessToken) }.asObservable()
+        }
+        
+        return loginObservable
+            .catch { error -> Observable<SocialLoginResponse> in
+                // 사용자 취소는 에러로 처리하지 않고 빈 스트림 반환
+                if let sdkError = error as? SdkError, case .ClientFailed = sdkError {
+                    return Observable.empty()
+                }
+                
+                return Observable.error(error)
+            }
     }
 }
 //MARK: - ASAuthorizationController Delegate
@@ -59,14 +88,14 @@ extension LoginSession: ASAuthorizationControllerDelegate {
 //MARK: - Login Result Handling
 private extension LoginSession {
     func handleAppleLoginSuccess(_ credential: ASAuthorizationAppleIDCredential) {
-        let email = credential.email
-        let identityToken = credential.identityToken
-        let authorizationCode = credential.authorizationCode
+        guard let name = credential.fullName,
+              let idToken = credential.identityToken,
+              let idTokenString = String(data: idToken, encoding: .utf8) else { return }
         
-        let appleResult = AppleLoginResult(
-            email: email,
-            idToken: identityToken,
-            authorizationCode: authorizationCode
+        let fullName = (name.familyName ?? "") + (name.givenName ?? "")
+        let appleResult = SocialLoginResponse(
+            name: fullName,
+            idToken: idTokenString
         )
         appleLogin.onNext(appleResult)
     }
