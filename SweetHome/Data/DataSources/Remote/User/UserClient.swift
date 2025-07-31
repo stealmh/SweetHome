@@ -16,7 +16,6 @@ class UserClient {
         self.network = network
     }
     
-    // MARK: - Generic Observable Methods
     func request<T: Decodable>(_ endpoint: UserEndpoint) -> Observable<T> {
         print(#function)
         return Observable.create { observer in

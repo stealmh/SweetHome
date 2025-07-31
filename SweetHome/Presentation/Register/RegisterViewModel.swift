@@ -24,8 +24,8 @@ class RegisterViewModel: BaseViewModel {
         let isLoading: Driver<Bool>
         let shouldNavigateToMain: Driver<Void>
         let registerButtonEnable: Driver<Bool>
-        let error: Driver<SHError.RegisterError>
-        let emailValidationState: Driver<EmailValidationState>
+        let error: Driver<SHError>
+        let emailValidationError: Driver<SHError?>
     }
     
     private let userClient: UserClient
@@ -38,7 +38,7 @@ class RegisterViewModel: BaseViewModel {
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let registerErrorRelay = PublishSubject<SHError.RegisterError>()
+        let registerErrorRelay = PublishSubject<SHError>()
         let navigateToMainSubject = PublishSubject<Void>()
         
         // 회원가입 버튼 활성화 로직
@@ -109,7 +109,7 @@ class RegisterViewModel: BaseViewModel {
             shouldNavigateToMain: shouldNavigateToMain.asDriver(onErrorDriveWith: .empty()),
             registerButtonEnable: registerButtonEnable.asDriver(onErrorDriveWith: .empty()),
             error: registerErrorRelay.asDriver(onErrorDriveWith: .empty()),
-            emailValidationState: emailValidationResult.asDriver(onErrorDriveWith: .empty())
+            emailValidationError: emailValidationResult.asDriver(onErrorDriveWith: .just(nil))
         )
     }
 }
@@ -118,10 +118,10 @@ class RegisterViewModel: BaseViewModel {
 private extension RegisterViewModel {
     
     /// 회원가입 데이터 유효성 검사
-    func validateRegistrationData(email: String, password: String, nickname: String) -> SHError.RegisterError? {
-        guard email.isValidEmail else { return .invalidEmail }
-        guard password.isValidPassword else { return .weakPassword }
-        guard !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .emptyNickname }
+    func validateRegistrationData(email: String, password: String, nickname: String) -> SHError? {
+        guard email.isValidEmail else { return .clientError(.textfield(.invalidEmailFormat)) }
+        guard password.isValidPassword else { return .clientError(.textfield(.weakPassword)) }
+        guard !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .clientError(.textfield(.emptyNickname)) }
         
         return nil
     }
@@ -130,7 +130,7 @@ private extension RegisterViewModel {
     func performRegistration(
         requestModel: RegisterRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<SHError.RegisterError>,
+        registerErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -176,10 +176,11 @@ private extension RegisterViewModel {
     func handleRegistrationError(
         error: Error,
         isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<SHError.RegisterError>
+        registerErrorRelay: PublishSubject<SHError>
     ) {
         print("❌ 회원가입 실패: \(error)")
         isLoadingRelay.onNext(false)
-        registerErrorRelay.onNext(.networkError(error))
+        let shError = SHError.from(error)
+        registerErrorRelay.onNext(shError)
     }
 }

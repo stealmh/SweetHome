@@ -18,7 +18,7 @@ import KakaoSDKCommon
 
 protocol LoginSessionProtocol {
     func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse>
-    func getAppleLoginError() -> Observable<SHError.LoginError>
+    func getAppleLoginError() -> Observable<SHError>
     func performKakaoLogin() -> Observable<SocialLoginResponse>
 }
 
@@ -26,7 +26,7 @@ class LoginSession: NSObject, LoginSessionProtocol {
     
     // MARK: - Private Properties
     private let appleLogin = PublishSubject<SocialLoginResponse>()
-    private let appleLoginError = PublishSubject<SHError.LoginError>()
+    private let appleLoginError = PublishSubject<SHError>()
     private weak var currentPresentationContext: ASAuthorizationControllerPresentationContextProviding?
     
     func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse> {
@@ -44,7 +44,7 @@ class LoginSession: NSObject, LoginSessionProtocol {
         return appleLogin.asObservable()
     }
     
-    func getAppleLoginError() -> Observable<SHError.LoginError> {
+    func getAppleLoginError() -> Observable<SHError> {
         return appleLoginError.asObservable()
     }
     
@@ -102,24 +102,22 @@ private extension LoginSession {
     
     func handleAppleLoginError(_ error: Error) {
         if let authError = error as? ASAuthorizationError {
-            let loginError: SHError.LoginError
+            let loginError: SHError
             switch authError.code {
             case .canceled:
-                loginError = .userCanceled
+                loginError = .networkError("사용자가 로그인을 취소했습니다.")
             case .failed:
-                loginError = .authenticationFailed
+                loginError = .networkError("인증에 실패했습니다.")
             case .invalidResponse:
-                loginError = .invalidResponse
+                loginError = .networkError("잘못된 응답입니다.")
             case .notHandled:
-                loginError = .notHandled
-            case .unknown:
-                loginError = .unknown
+                loginError = .networkError("처리되지 않은 오류입니다.")
             default:
-                loginError = .unknown
+                loginError = .networkError("알 수 없는 오류입니다.")
             }
             appleLoginError.onNext(loginError)
         } else {
-            appleLoginError.onNext(.networkError(error))
+            appleLoginError.onNext(.networkError("애플 로그인 중 오류가 발생했습니다."))
         }
     }
 }

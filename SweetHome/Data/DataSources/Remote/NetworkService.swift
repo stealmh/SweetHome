@@ -56,7 +56,7 @@ final class NetworkService: NetworkServiceProtocol {
                     
                     dataRequest = session.request(urlRequest)
                 } catch {
-                    continuation.resume(throwing: SHError.NetworkError.encodingError)
+                    continuation.resume(throwing: SHError.networkError("데이터 인코딩 중 오류가 발생했습니다."))
                     return
                 }
             } else {
@@ -76,7 +76,7 @@ final class NetworkService: NetworkServiceProtocol {
                     logger.logRequest(urlRequest)
                 }
             }
-
+            
             dataRequest
                 .validate(statusCode: 200..<300)
                 .responseData { response in
@@ -91,16 +91,24 @@ final class NetworkService: NetworkServiceProtocol {
                             let decodedData = try JSONDecoder().decode(T.self, from: data)
                             continuation.resume(returning: decodedData)
                         } catch {
-                            self.logger.logError(SHError.NetworkError.decodingError, for: dataRequest.request)
-                            continuation.resume(throwing: SHError.NetworkError.decodingError)
+                            let decodingError = SHError.networkError("데이터 변환 중 오류가 발생했습니다.")
+                            self.logger.logError(decodingError, for: dataRequest.request)
+                            continuation.resume(throwing: decodingError)
                         }
                     case .failure(let error):
+                        /// 로그를 통한 에러 방출
                         self.logger.logError(error, for: dataRequest.request)
-                        if let statusCode = response.response?.statusCode {
-                            continuation.resume(throwing: SHError.NetworkError.serverError(statusCode))
-                        } else {
-                            continuation.resume(throwing: SHError.NetworkError.unknown(error))
-                        }
+                        
+                        /// 🚨 Case [1]. `statusCode`를 받을 수 없을 때
+                        guard let statusCode = response.response?.statusCode
+                        else { continuation.resume(throwing: SHError.networkError("네트워크 연결에 실패했습니다.")); return }
+                        
+                        /// 🚨 Case [2]. 파싱에 실패했을 때
+                        guard let data = response.data,
+                              let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+                        else { continuation.resume(throwing: SHError.networkError("서버 오류가 발생했습니다. (코드: \(statusCode))")); return }
+                        
+                        continuation.resume(throwing: SHError.networkError(errorResponse.message))
                     }
                 }
         }
@@ -108,7 +116,7 @@ final class NetworkService: NetworkServiceProtocol {
     
     func upload<T: Codable>(_ target: TargetType) async throws -> T {
         guard let multipartData = target.multipartData else {
-            throw SHError.NetworkError.invalidURL
+            throw SHError.networkError("유효하지 않은 업로드 데이터입니다.")
         }
         
         // Calculate total data size for logging
@@ -149,15 +157,24 @@ final class NetworkService: NetworkServiceProtocol {
                             let decodedData = try JSONDecoder().decode(T.self, from: data)
                             continuation.resume(returning: decodedData)
                         } catch {
-                            self.logger.logError(SHError.NetworkError.decodingError, for: uploadRequest.request)
-                            continuation.resume(throwing: SHError.NetworkError.decodingError)
+                            let decodingError = SHError.networkError("데이터 변환 중 오류가 발생했습니다.")
+                            self.logger.logError(decodingError, for: uploadRequest.request)
+                            continuation.resume(throwing: decodingError)
                         }
                     case .failure(let error):
                         self.logger.logError(error, for: uploadRequest.request)
                         if let statusCode = response.response?.statusCode {
-                            continuation.resume(throwing: SHError.NetworkError.serverError(statusCode))
+                            // 에러 응답에서 서버 메시지 파싱 시도
+                            if let data = response.data,
+                               let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                                // 서버 메시지가 있는 경우 이를 사용
+                                continuation.resume(throwing: SHError.networkError(errorResponse.message))
+                            } else {
+                                // 파싱 실패 시 기본 네트워크 에러
+                                continuation.resume(throwing: SHError.networkError("서버 오류가 발생했습니다. (코드: \(statusCode))"))
+                            }
                         } else {
-                            continuation.resume(throwing: SHError.NetworkError.unknown(error))
+                            continuation.resume(throwing: SHError.networkError("네트워크 연결에 실패했습니다."))
                         }
                     }
                 }

@@ -123,13 +123,10 @@ class LoginViewController: BaseViewController {
     
     // MARK: - Dependencies
     private let viewModel = LoginViewModel()
-    
-    // MARK: - Subjects
-    private let appleLoginTappedSubject = PublishSubject<ASAuthorizationControllerPresentationContextProviding>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupSplashOverlay()
+//        setupSplashOverlay()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -166,8 +163,6 @@ class LoginViewController: BaseViewController {
             registerStackView,
             socialLoginGuideLabel
         )
-        
-        appleLoginButton.addTarget(self, action: #selector(appleLoginButtonTapped), for: .touchUpInside)
     }
     
     override func setupConstraints() {
@@ -218,13 +213,17 @@ class LoginViewController: BaseViewController {
     }
     
     override func bind() {
+        let appleLoginInput = appleLoginButton.rx.tap
+            .compactMap { [weak self] in self }
+            .map { $0 as ASAuthorizationControllerPresentationContextProviding }
+        
         let input = LoginViewModel.Input(
-            onAppear: Observable.just(()),
+            onAppear: .just(()),
             email: emailInputField.inputTextField.rx.text.orEmpty.asObservable(),
             password: passwordInputField.inputTextField.rx.text.orEmpty.asObservable(),
             emailLoginTapped: loginButton.rx.tap.throttle(.seconds(2), scheduler: MainScheduler.instance).asObservable(),
             registerTapped: emailRegisterButton.rx.tap.asObservable(),
-            appleLoginTapped: appleLoginTappedSubject.asObservable(),
+            appleLoginTapped: appleLoginInput.asObservable(),
             kakaoLoginTapped: kakaoLoginButton.rx.tap.asObservable()
         )
         
@@ -253,7 +252,8 @@ class LoginViewController: BaseViewController {
         
         output.error
             .drive(onNext: { [weak self] error in
-                self?.handleLoginError(error)
+                guard let self else { return }
+                ErrorAlertHelper.showAlert(for: error, on: self)
             })
             .disposed(by: disposeBag)
         
@@ -290,17 +290,13 @@ class LoginViewController: BaseViewController {
 
 // MARK: - Error Handling
 extension LoginViewController {
-    private func handleLoginError(_ error: SHError.LoginError) {
-        showErrorAlert(message: error.localizedDescription)
-    }
+//    private func handleLoginError(_ error: SHError) {
+//        ErrorAlertHelper.showAlert(for: error, on: self)
+//    }
     
-    private func showErrorAlert(message: String) {
-        // TODO: 경고 Alert
-    }
-    
-    @objc private func appleLoginButtonTapped() {
-        appleLoginTappedSubject.onNext(self)
-    }
+//    @objc private func appleLoginButtonTapped() {
+//        appleLoginTappedSubject.onNext(self)
+//    }
     
 }
 

@@ -179,9 +179,9 @@ class RegisterViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        output.emailValidationState
-            .drive(onNext: { [weak self] state in
-                self?.emailInputField.updateEmailValidationUI(state)
+        output.emailValidationError
+            .drive(onNext: { [weak self] error in
+                self?.emailInputField.updateEmailValidationUI(error)
             })
             .disposed(by: disposeBag)
         
@@ -206,6 +206,13 @@ class RegisterViewController: BaseViewController {
                 }
             })
             .disposed(by: disposeBag)
+        
+        // 에러 처리
+        output.error
+            .drive(onNext: { [weak self] error in
+                self?.handleRegisterError(error)
+            })
+            .disposed(by: disposeBag)
     }
     
     deinit {
@@ -219,13 +226,8 @@ class RegisterViewController: BaseViewController {
 }
 // MARK: - Error Handling
 extension RegisterViewController {
-    private func handleRegisterError(_ error: SHError.RegisterError) {
-        showErrorAlert(message: error.localizedDescription)
-    }
-    
-    private func showErrorAlert(message: String) {
-        // TODO: 경고 Alert
-        print("Register Error: \(message)")
+    private func handleRegisterError(_ error: SHError) {
+        ErrorAlertHelper.showAlert(for: error, on: self)
     }
 }
 

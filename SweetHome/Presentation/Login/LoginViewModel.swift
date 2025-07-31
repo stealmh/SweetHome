@@ -27,9 +27,8 @@ class LoginViewModel: BaseViewModel {
         let shouldNavigateToMain: Driver<Void>
         let shouldNavigateToRegister: Driver<Void>
         let shouldHideSplash: Driver<Void>
-        let kakaoLoginResult: Driver<Void>
         let loginButtonEnable: Driver<Bool>
-        let error: Driver<SHError.LoginError>
+        let error: Driver<SHError>
     }
     
     
@@ -44,19 +43,15 @@ class LoginViewModel: BaseViewModel {
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let loginErrorRelay = PublishSubject<SHError.LoginError>()
+        let loginErrorRelay = PublishSubject<SHError>()
         let navigateToMainSubject = PublishSubject<Void>()
         
-        let onAppear = input.onAppear
-            .delay(.seconds(2), scheduler: MainScheduler.instance)
-            .share()
+        let onAppear = input.onAppear.delay(.seconds(2), scheduler: MainScheduler.instance).share()
         
         input.emailLoginTapped
             .withLatestFrom(Observable.combineLatest(input.email, input.password))
             .flatMap { [weak self] (email, password) -> Observable<Void> in
-                guard let self = self else { return Observable.empty() }
-                
-                print("🔥 이메일 로그인 시도: email=\(email)")
+                guard let self else { return Observable.empty() }
                 
                 // 유효성 검사
                 if let validationError = self.validateLoginData(email: email, password: password) {
@@ -64,7 +59,6 @@ class LoginViewModel: BaseViewModel {
                     return Observable.empty()
                 }
                 
-                print("로그인 유효성 검사 통과, 네트워크 요청 시작")
                 isLoadingRelay.onNext(true)
                 
                 let requestModel = EmailLoginRequest(email: email, password: password, deviceToken: nil)
@@ -86,14 +80,9 @@ class LoginViewModel: BaseViewModel {
                 return owner.loginSession.performKakaoLogin()
             }
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
-                guard let self = self else { return Observable.empty() }
-                
-                print("🔥 카카오 로그인 성공, 서버 인증 시작")
-                
-                let requestModel = KakaoLoginRequest(
-                    oauthToken: socialLoginResponse.idToken,
-                    deviceToken: nil
-                )
+                guard let self else { return Observable.empty() }
+
+                let requestModel = KakaoLoginRequest(oauthToken: socialLoginResponse.idToken, deviceToken: nil)
                 
                 return self.performKakaoLogin(
                     requestModel: requestModel,
@@ -104,7 +93,8 @@ class LoginViewModel: BaseViewModel {
             }
             .catch { error -> Observable<Void> in
                 isLoadingRelay.onNext(false)
-                loginErrorRelay.onNext(.networkError(error))
+                let shError = SHError.from(error)
+                loginErrorRelay.onNext(shError)
                 return Observable.empty()
             }
             .subscribe()
@@ -138,7 +128,8 @@ class LoginViewModel: BaseViewModel {
             }
             .catch { error -> Observable<Void> in
                 isLoadingRelay.onNext(false)
-                loginErrorRelay.onNext(.networkError(error))
+                let shError = SHError.from(error)
+                loginErrorRelay.onNext(shError)
                 return Observable.empty()
             }
             .subscribe()
@@ -147,7 +138,7 @@ class LoginViewModel: BaseViewModel {
         let appleLoginError = loginSession.getAppleLoginError()
             .do(onNext: { error in
                 isLoadingRelay.onNext(false)
-                loginErrorRelay.onNext(error)
+                loginErrorRelay.onNext(SHError.from(error))
             })
             .map { _ in () }
         
@@ -167,8 +158,6 @@ class LoginViewModel: BaseViewModel {
                 !owner.isUserLoggedIn() ? () : nil
             }
         
-        let kakaoLoginResult = Observable<Void>.empty().asObservable()
-        
         let loginButtonEnable = Observable.combineLatest(input.email, input.password)
             .map { (email, password) -> Bool in
                 return email.isValidEmail && password.isValidPassword
@@ -181,7 +170,6 @@ class LoginViewModel: BaseViewModel {
             shouldNavigateToMain: shouldNavigateToMain.asDriver(onErrorDriveWith: .empty()),
             shouldNavigateToRegister: registerTapped.asDriver(onErrorDriveWith: .empty()),
             shouldHideSplash: shouldHideSplash.asDriver(onErrorDriveWith: .empty()),
-            kakaoLoginResult: kakaoLoginResult.asDriver(onErrorDriveWith: .empty()),
             loginButtonEnable: loginButtonEnable.asDriver(onErrorDriveWith: .empty()),
             error: loginErrorRelay.asDriver(onErrorDriveWith: .empty())
         )
@@ -196,16 +184,11 @@ private extension LoginViewModel {
     }
     
     /// 이메일 로그인 데이터 유효성 검사
-    func validateLoginData(email: String, password: String) -> SHError.LoginError? {
-        guard email.isValidEmail else {
-            print("이메일 유효성 검사 실패: \(email)")
-            return .invalidCredentials
-        }
-        
-        guard password.isValidPassword else {
-            print("비밀번호 유효성 검사 실패: \(password.passwordValidationMessage ?? "알 수 없는 오류")")
-            return .invalidCredentials
-        }
+    func validateLoginData(email: String, password: String) -> SHError? {
+        /// 🚨 Case [1]. 잘못된 이메일 형식
+        guard email.isValidEmail else { return .clientError(.textfield(.invalidEmailFormat)) }
+        /// 🚨 Case [2]. 잘못된 비밀번호 형식
+        guard password.isValidPassword else { return .clientError(.textfield(.invalidEmailFormat)) }
         
         return nil
     }
@@ -214,7 +197,7 @@ private extension LoginViewModel {
     func performEmailLogin(
         requestModel: EmailLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError.LoginError>,
+        loginErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -261,32 +244,23 @@ private extension LoginViewModel {
     func handleLoginError(
         error: Error,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError.LoginError>
+        loginErrorRelay: PublishSubject<SHError>
     ) {
         print("❌ 이메일 로그인 실패: \(error)")
         isLoadingRelay.onNext(false)
         
-        if let networkError = error as? SHError.NetworkError {
-            switch networkError {
-            case .serverError(let statusCode):
-                if statusCode == 401 {
-                    loginErrorRelay.onNext(.invalidCredentials)
-                } else {
-                    loginErrorRelay.onNext(.networkError(error))
-                }
-            default:
-                loginErrorRelay.onNext(.networkError(error))
-            }
-        } else {
-            loginErrorRelay.onNext(.networkError(error))
-        }
+        // SHError.from을 사용하여 통합 에러 처리
+        let shError = SHError.from(error)
+        
+        // 특별한 경우 처리
+        loginErrorRelay.onNext(shError)
     }
     
     /// 카카오 로그인 네트워크 요청 수행
     func performKakaoLogin(
         requestModel: KakaoLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError.LoginError>,
+        loginErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -317,7 +291,7 @@ private extension LoginViewModel {
     func performAppleLogin(
         requestModel: AppleLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError.LoginError>,
+        loginErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         return userClient.request(.appleLogin(requestModel))
@@ -367,11 +341,12 @@ private extension LoginViewModel {
         error: Error,
         loginType: String,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError.LoginError>
+        loginErrorRelay: PublishSubject<SHError>
     ) {
         print("❌ \(loginType) 로그인 실패: \(error)")
         isLoadingRelay.onNext(false)
-        loginErrorRelay.onNext(.networkError(error))
+        let shError = SHError.from(error)
+        loginErrorRelay.onNext(shError)
     }
 }
 

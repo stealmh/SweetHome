@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import Alamofire
 
 class EmailValidator {
     private let userClient: UserClient
@@ -15,60 +16,34 @@ class EmailValidator {
         self.userClient = userClient
     }
     
-    func validateEmail(_ email: String) -> Observable<EmailValidationState> {
-        // 1. 빈 값 체크
-        if email.isEmpty {
-            return Observable.just(.idle)
-        }
+    func validateEmail(_ email: String) -> Observable<SHError?> {
+        /// [1]. 이메일 값이 비어있는지 확인 (클라이언트 검증)
+        if email.isEmpty { return Observable.just(nil) }
         
-        // 2. 이메일 형식 체크
-        if !email.isValidEmail {
-            return Observable.just(.invalid("잘못된 형식입니다."))
-        }
-        
-        // 3. API 호출
+        /// [2]. 이메일 형식 확인 (클라이언트 검증)
+        if !email.isValidEmail { return Observable.just(.clientError(.textfield(.invalidEmailFormat))) }
+
+        // 서버 검증이 필요한 경우만 API 호출
         return checkEmailAvailability(email)
     }
     
-    func validateEmailStream(_ emailStream: Observable<String>) -> Observable<EmailValidationState> {
+    func validateEmailStream(_ emailStream: Observable<String>) -> Observable<SHError?> {
         return emailStream
             .distinctUntilChanged()
             .debounce(.milliseconds(300), scheduler: MainScheduler.instance)
-            .flatMapLatest { [weak self] email -> Observable<EmailValidationState> in
-                guard let self = self else { return Observable.just(.error) }
+            .flatMapLatest { [weak self] email -> Observable<SHError?> in
+                guard let self else { return Observable.just(.commonError(.weakSelfFailure)) }
                 return self.validateEmail(email)
             }
-            .startWith(.idle)
+            .startWith(nil)
     }
     
-    private func checkEmailAvailability(_ email: String) -> Observable<EmailValidationState> {
-        return Observable.just(.checking)
-            .concat(
-                Observable.just(email)
-                    .debounce(.milliseconds(500), scheduler: MainScheduler.instance)
-                    .flatMapLatest { [weak self] validEmail -> Observable<EmailValidationState> in
-                        guard let self = self else { return Observable.just(.error) }
-                        
-                        let requestModel = EmailValidationRequest(email: validEmail)
-                        return self.userClient.request(.emailValidation(requestModel))
-                            .map { (response: BaseResponse) -> EmailValidationState in
-                                return .available
-                            }
-                            .catch { error -> Observable<EmailValidationState> in
-                                if let networkError = error as? SHError.NetworkError,
-                                   let statusCode = networkError.statusCode {
-                                    switch statusCode {
-                                    case 400:
-                                        return Observable.just(.invalid("필수값을 채워주세요."))
-                                    case 409:
-                                        return Observable.just(.unavailable)
-                                    default:
-                                        return Observable.just(.error)
-                                    }
-                                }
-                                return Observable.just(.error)
-                            }
-                    }
-            )
+    private func checkEmailAvailability(_ email: String) -> Observable<SHError?> {
+        let requestModel = EmailValidationRequest(email: email)
+        return self.userClient.request(.emailValidation(requestModel))
+            .map { (response: BaseResponse) -> SHError? in
+                return nil
+            }
+            .catch { handleEmailValidationError($0) }
     }
 }

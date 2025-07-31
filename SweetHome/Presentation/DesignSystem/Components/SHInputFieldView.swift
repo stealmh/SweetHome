@@ -211,50 +211,16 @@ class SHInputFieldView: UIView {
         }
     }
     
-    func updateEmailValidationUI(_ state: EmailValidationState) {
-        switch state {
-        case .idle:
-            // 초기 상태 - 기본 테두리와 메시지 숨김
-            textField.makeCapsule(borderColor: SHColor.GrayScale.gray_45)
-            validationMessageLabel.isHidden = true
-            
-        case .checking:
-            // 검사 중 - 기본 테두리 유지
-            textField.makeCapsule(borderColor: SHColor.GrayScale.gray_45)
-            validationMessageLabel.isHidden = true
-            
-        case .available:
-            // 사용 가능 - 초록색 테두리와 성공 메시지
+    func updateEmailValidationUI(_ error: SHError?) {
+        if let error {
+            textField.makeCapsule(borderColor: UIColor.systemRed)
+            validationMessageLabel.text = error.localizedDescription
+            validationMessageLabel.textColor = UIColor.systemRed
+            validationMessageLabel.isHidden = false
+        } else {
             textField.makeCapsule(borderColor: UIColor.systemGreen)
             validationMessageLabel.text = "사용 가능한 이메일입니다"
             validationMessageLabel.textColor = UIColor.systemGreen
-            validationMessageLabel.isHidden = false
-            
-        case .unavailable:
-            // 사용 불가 - 빨간색 테두리와 에러 메시지
-            textField.makeCapsule(borderColor: UIColor.systemRed)
-            validationMessageLabel.text = "사용이 불가능한 이메일입니다"
-            validationMessageLabel.textColor = UIColor.systemRed
-            validationMessageLabel.isHidden = false
-            
-        case let .invalid(message):
-            // 잘못된 형식 - 빨간색 테두리와 에러 메시지
-            textField.makeCapsule(borderColor: UIColor.systemRed)
-            validationMessageLabel.text = message
-            validationMessageLabel.textColor = UIColor.systemRed
-            validationMessageLabel.isHidden = false
-            
-        case .error:
-            // 네트워크 오류 - 기본 테두리와 오류 메시지
-            textField.makeCapsule(borderColor: SHColor.GrayScale.gray_45)
-            validationMessageLabel.text = "잠시 후 다시 시도해주세요."
-            validationMessageLabel.textColor = UIColor.systemRed
-            validationMessageLabel.isHidden = false
-        case let .customError(message):
-            
-            textField.makeCapsule(borderColor: SHColor.GrayScale.gray_45)
-            validationMessageLabel.text = message
-            validationMessageLabel.textColor = UIColor.systemRed
             validationMessageLabel.isHidden = false
         }
     }
