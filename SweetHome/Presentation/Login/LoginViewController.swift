@@ -290,7 +290,7 @@ class LoginViewController: BaseViewController {
 
 // MARK: - Error Handling
 extension LoginViewController {
-    private func handleLoginError(_ error: LoginError) {
+    private func handleLoginError(_ error: SHError.LoginError) {
         showErrorAlert(message: error.localizedDescription)
     }
     

@@ -18,7 +18,7 @@ import KakaoSDKCommon
 
 protocol LoginSessionProtocol {
     func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse>
-    func getAppleLoginError() -> Observable<LoginError>
+    func getAppleLoginError() -> Observable<SHError.LoginError>
     func performKakaoLogin() -> Observable<SocialLoginResponse>
 }
 
@@ -26,7 +26,7 @@ class LoginSession: NSObject, LoginSessionProtocol {
     
     // MARK: - Private Properties
     private let appleLogin = PublishSubject<SocialLoginResponse>()
-    private let appleLoginError = PublishSubject<LoginError>()
+    private let appleLoginError = PublishSubject<SHError.LoginError>()
     private weak var currentPresentationContext: ASAuthorizationControllerPresentationContextProviding?
     
     func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse> {
@@ -44,7 +44,7 @@ class LoginSession: NSObject, LoginSessionProtocol {
         return appleLogin.asObservable()
     }
     
-    func getAppleLoginError() -> Observable<LoginError> {
+    func getAppleLoginError() -> Observable<SHError.LoginError> {
         return appleLoginError.asObservable()
     }
     
@@ -102,7 +102,7 @@ private extension LoginSession {
     
     func handleAppleLoginError(_ error: Error) {
         if let authError = error as? ASAuthorizationError {
-            let loginError: LoginError
+            let loginError: SHError.LoginError
             switch authError.code {
             case .canceled:
                 loginError = .userCanceled

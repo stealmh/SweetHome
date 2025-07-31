@@ -219,7 +219,7 @@ class RegisterViewController: BaseViewController {
 }
 // MARK: - Error Handling
 extension RegisterViewController {
-    private func handleRegisterError(_ error: RegisterError) {
+    private func handleRegisterError(_ error: SHError.RegisterError) {
         showErrorAlert(message: error.localizedDescription)
     }
     

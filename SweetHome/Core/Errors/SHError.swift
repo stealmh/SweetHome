@@ -169,6 +169,9 @@ extension SHError {
         case socialLoginFailed(String)
         case userCanceled
         case authenticationFailed
+        case invalidResponse
+        case notHandled
+        case unknown
         case networkError(Error)
         
         var errorDescription: String? {
@@ -181,6 +184,12 @@ extension SHError {
                 return "사용자가 로그인을 취소했습니다."
             case .authenticationFailed:
                 return "인증에 실패했습니다."
+            case .invalidResponse:
+                return "잘못된 응답입니다."
+            case .notHandled:
+                return "처리되지 않은 오류입니다."
+            case .unknown:
+                return "알 수 없는 오류입니다."
             case .networkError(let error):
                 return "네트워크 오류: \(error.localizedDescription)"
             }
