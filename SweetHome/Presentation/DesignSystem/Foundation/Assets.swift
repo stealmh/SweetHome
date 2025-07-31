@@ -52,4 +52,9 @@ enum SHAsset {
         static let settingEmpty = UIImage(named: "setting_empty")
         static let settingFill = UIImage(named: "setting_fill")
     }
+    
+    enum LoginIcon {
+        static let apple = UIImage(named: "appleid_button")
+        static let kakao = UIImage(named: "kakao")
+    }
 }
