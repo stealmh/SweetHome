@@ -7,8 +7,6 @@
 
 enum KeyChainKey: String, CaseIterable {
     case lastLoginStatus
-    case email
-    case idToken // apple
     case accessToken
     case refreshToken
     case deviceToken
