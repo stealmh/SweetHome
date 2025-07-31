@@ -24,7 +24,7 @@ class RegisterViewModel: BaseViewModel {
         let isLoading: Driver<Bool>
         let shouldNavigateToMain: Driver<Void>
         let registerButtonEnable: Driver<Bool>
-        let error: Driver<RegisterError>
+        let error: Driver<SHError.RegisterError>
         let emailValidationState: Driver<EmailValidationState>
     }
     
@@ -38,7 +38,7 @@ class RegisterViewModel: BaseViewModel {
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let registerErrorRelay = PublishSubject<RegisterError>()
+        let registerErrorRelay = PublishSubject<SHError.RegisterError>()
         let navigateToMainSubject = PublishSubject<Void>()
         
         // 회원가입 버튼 활성화 로직
@@ -118,7 +118,7 @@ class RegisterViewModel: BaseViewModel {
 private extension RegisterViewModel {
     
     /// 회원가입 데이터 유효성 검사
-    func validateRegistrationData(email: String, password: String, nickname: String) -> RegisterError? {
+    func validateRegistrationData(email: String, password: String, nickname: String) -> SHError.RegisterError? {
         guard email.isValidEmail else { return .invalidEmail }
         guard password.isValidPassword else { return .weakPassword }
         guard !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .emptyNickname }
@@ -130,7 +130,7 @@ private extension RegisterViewModel {
     func performRegistration(
         requestModel: RegisterRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<RegisterError>,
+        registerErrorRelay: PublishSubject<SHError.RegisterError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -176,7 +176,7 @@ private extension RegisterViewModel {
     func handleRegistrationError(
         error: Error,
         isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<RegisterError>
+        registerErrorRelay: PublishSubject<SHError.RegisterError>
     ) {
         print("❌ 회원가입 실패: \(error)")
         isLoadingRelay.onNext(false)

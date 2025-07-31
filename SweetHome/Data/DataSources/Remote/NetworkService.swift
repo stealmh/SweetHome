@@ -56,7 +56,7 @@ final class NetworkService: NetworkServiceProtocol {
                     
                     dataRequest = session.request(urlRequest)
                 } catch {
-                    continuation.resume(throwing: NetworkError.encodingError)
+                    continuation.resume(throwing: SHError.NetworkError.encodingError)
                     return
                 }
             } else {
@@ -91,15 +91,15 @@ final class NetworkService: NetworkServiceProtocol {
                             let decodedData = try JSONDecoder().decode(T.self, from: data)
                             continuation.resume(returning: decodedData)
                         } catch {
-                            self.logger.logError(NetworkError.decodingError, for: dataRequest.request)
-                            continuation.resume(throwing: NetworkError.decodingError)
+                            self.logger.logError(SHError.NetworkError.decodingError, for: dataRequest.request)
+                            continuation.resume(throwing: SHError.NetworkError.decodingError)
                         }
                     case .failure(let error):
                         self.logger.logError(error, for: dataRequest.request)
                         if let statusCode = response.response?.statusCode {
-                            continuation.resume(throwing: NetworkError.serverError(statusCode))
+                            continuation.resume(throwing: SHError.NetworkError.serverError(statusCode))
                         } else {
-                            continuation.resume(throwing: NetworkError.unknown)
+                            continuation.resume(throwing: SHError.NetworkError.unknown(error))
                         }
                     }
                 }
@@ -108,7 +108,7 @@ final class NetworkService: NetworkServiceProtocol {
     
     func upload<T: Codable>(_ target: TargetType) async throws -> T {
         guard let multipartData = target.multipartData else {
-            throw NetworkError.invalidURL
+            throw SHError.NetworkError.invalidURL
         }
         
         // Calculate total data size for logging
@@ -149,15 +149,15 @@ final class NetworkService: NetworkServiceProtocol {
                             let decodedData = try JSONDecoder().decode(T.self, from: data)
                             continuation.resume(returning: decodedData)
                         } catch {
-                            self.logger.logError(NetworkError.decodingError, for: uploadRequest.request)
-                            continuation.resume(throwing: NetworkError.decodingError)
+                            self.logger.logError(SHError.NetworkError.decodingError, for: uploadRequest.request)
+                            continuation.resume(throwing: SHError.NetworkError.decodingError)
                         }
                     case .failure(let error):
                         self.logger.logError(error, for: uploadRequest.request)
                         if let statusCode = response.response?.statusCode {
-                            continuation.resume(throwing: NetworkError.serverError(statusCode))
+                            continuation.resume(throwing: SHError.NetworkError.serverError(statusCode))
                         } else {
-                            continuation.resume(throwing: NetworkError.unknown)
+                            continuation.resume(throwing: SHError.NetworkError.unknown(error))
                         }
                     }
                 }

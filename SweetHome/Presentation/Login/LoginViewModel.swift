@@ -29,7 +29,7 @@ class LoginViewModel: BaseViewModel {
         let shouldHideSplash: Driver<Void>
         let kakaoLoginResult: Driver<Void>
         let loginButtonEnable: Driver<Bool>
-        let error: Driver<LoginError>
+        let error: Driver<SHError.LoginError>
     }
     
     
@@ -44,7 +44,7 @@ class LoginViewModel: BaseViewModel {
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let loginErrorRelay = PublishSubject<LoginError>()
+        let loginErrorRelay = PublishSubject<SHError.LoginError>()
         let navigateToMainSubject = PublishSubject<Void>()
         
         let onAppear = input.onAppear
@@ -126,7 +126,7 @@ class LoginViewModel: BaseViewModel {
                 let requestModel = AppleLoginRequest(
                     idToken: socialLoginResponse.idToken,
                     deviceToken: nil,
-                    nick: socialLoginResponse.name ?? "Apple User"
+                    nick: socialLoginResponse.name ?? ""
                 )
                 
                 return self.performAppleLogin(
@@ -196,7 +196,7 @@ private extension LoginViewModel {
     }
     
     /// 이메일 로그인 데이터 유효성 검사
-    func validateLoginData(email: String, password: String) -> LoginError? {
+    func validateLoginData(email: String, password: String) -> SHError.LoginError? {
         guard email.isValidEmail else {
             print("이메일 유효성 검사 실패: \(email)")
             return .invalidCredentials
@@ -214,7 +214,7 @@ private extension LoginViewModel {
     func performEmailLogin(
         requestModel: EmailLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<LoginError>,
+        loginErrorRelay: PublishSubject<SHError.LoginError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -261,12 +261,12 @@ private extension LoginViewModel {
     func handleLoginError(
         error: Error,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<LoginError>
+        loginErrorRelay: PublishSubject<SHError.LoginError>
     ) {
         print("❌ 이메일 로그인 실패: \(error)")
         isLoadingRelay.onNext(false)
         
-        if let networkError = error as? NetworkError {
+        if let networkError = error as? SHError.NetworkError {
             switch networkError {
             case .serverError(let statusCode):
                 if statusCode == 401 {
@@ -286,7 +286,7 @@ private extension LoginViewModel {
     func performKakaoLogin(
         requestModel: KakaoLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<LoginError>,
+        loginErrorRelay: PublishSubject<SHError.LoginError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
@@ -317,7 +317,7 @@ private extension LoginViewModel {
     func performAppleLogin(
         requestModel: AppleLoginRequest,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<LoginError>,
+        loginErrorRelay: PublishSubject<SHError.LoginError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         return userClient.request(.appleLogin(requestModel))
@@ -367,7 +367,7 @@ private extension LoginViewModel {
         error: Error,
         loginType: String,
         isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<LoginError>
+        loginErrorRelay: PublishSubject<SHError.LoginError>
     ) {
         print("❌ \(loginType) 로그인 실패: \(error)")
         isLoadingRelay.onNext(false)

@@ -55,7 +55,7 @@ class EmailValidator {
                                 return .available
                             }
                             .catch { error -> Observable<EmailValidationState> in
-                                if let networkError = error as? NetworkError,
+                                if let networkError = error as? SHError.NetworkError,
                                    let statusCode = networkError.statusCode {
                                     switch statusCode {
                                     case 400:
