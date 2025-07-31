@@ -14,6 +14,7 @@ protocol TargetType {
     var method: HTTPMethod { get }
     var headers: [String: String]? { get }
     var parameters: [String: Any]? { get }
+    var body: Encodable? { get }
     var encoding: ParameterEncoding { get }
     var multipartData: [MultipartFormData]? { get }
 }
@@ -24,6 +25,8 @@ extension TargetType {
     var headers: [String: String]? { return ["Content-Type": "application/json"] }
     
     var parameters: [String: Any]? { return nil }
+    
+    var body: Encodable? { return nil }
     
     var encoding: ParameterEncoding { return JSONEncoding.default }
     
