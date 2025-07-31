@@ -20,8 +20,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        //TODO: - 삭제하기
-        KeyChainManager.shared.deleteAll()
         Task {
             await configureUserNotifications()
         }
