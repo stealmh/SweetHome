@@ -12,6 +12,7 @@ enum SHFont {
     case yeongdeok
     
     enum Size: CGFloat {
+        case extra = 40
         case title1 = 20
         case body1 = 16
         case body2 = 14

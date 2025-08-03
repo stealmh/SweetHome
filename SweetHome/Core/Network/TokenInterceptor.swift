@@ -19,7 +19,7 @@ final class TokenInterceptor: RequestInterceptor {
         var adaptedRequest = urlRequest
         
         if let accessToken = keyChainManager.read(.accessToken) {
-            adaptedRequest.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            adaptedRequest.setValue(accessToken, forHTTPHeaderField: "Authorization")
         }
         
         completion(.success(adaptedRequest))
@@ -36,7 +36,12 @@ final class TokenInterceptor: RequestInterceptor {
         
         Task {
             do {
-                // TODO: Refresh API 호출하고 값 넣기
+                guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { return }
+                let client = AuthClient(network: NetworkService.shared)
+                let tokenResponse: ReIssueResponse = try await client.request(.refresh(refreshToken: refreshToken))
+                
+                keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
+                keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)
                 logger.logTokenRefreshSuccess()
                 completion(.retry)
             } catch {

@@ -5,7 +5,9 @@
 //  Created by 김민호 on 7/24/25.
 //
 
-enum KeyChainKey: String {
+enum KeyChainKey: String, CaseIterable {
+    case lastLoginStatus
     case accessToken
     case refreshToken
+    case deviceToken
 }

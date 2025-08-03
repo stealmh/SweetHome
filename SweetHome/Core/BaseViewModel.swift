@@ -38,5 +38,6 @@ protocol ViewModelLoadable {
 
 /// - Output에 붙여 사용: 네트워크 에러 처리가 필요한 Presents에서 사용
 protocol ViewModelErrorable {
-    var error: Driver<Error> { get }
+    associatedtype ErrorType: Error
+    var error: Driver<ErrorType> { get }
 }
