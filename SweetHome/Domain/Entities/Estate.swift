@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Domain Models (Entity)
-struct Estate {
+struct Estate: Hashable {
     let id: String
     let category: String
     let title: String
@@ -28,7 +28,7 @@ struct Estate {
     let updatedAt: Date
 }
 
-struct Geolocation {
+struct Geolocation: Hashable {
     let lon: Float
     let lat: Float
 }

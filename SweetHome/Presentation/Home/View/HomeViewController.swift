@@ -13,24 +13,58 @@ import RxCocoa
 class HomeViewController: BaseViewController {
     private let searchBar = SHSearchBar()
     
+    // Section 정의
+    enum Section: Int, CaseIterable {
+        case banner
+    }
+    
+    // Item 정의
+    enum Item: Hashable {
+        case estate(Estate, uniqueID: String)
+    }
+    
     // 컬렉션 뷰와 페이지 컨트롤
     private lazy var collectionView: UICollectionView = {
-        let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
-        layout.minimumLineSpacing = 0
-        layout.minimumInteritemSpacing = 0
-        
+        let layout = createLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.isPagingEnabled = true
+        cv.isPagingEnabled = false
         cv.showsHorizontalScrollIndicator = false
         cv.showsVerticalScrollIndicator = false
         cv.contentInsetAdjustmentBehavior = .never
         cv.bounces = true
         cv.alwaysBounceVertical = false
-        cv.alwaysBounceHorizontal = true
+        cv.alwaysBounceHorizontal = false
         cv.isScrollEnabled = true
         cv.register(BannerCollectionViewCell.self, forCellWithReuseIdentifier: BannerCollectionViewCell.identifier)
+        cv.register(BannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: BannerFooterView.identifier)
         return cv
+    }()
+    
+    private lazy var dataSource: UICollectionViewDiffableDataSource<Section, Item> = {
+        let dataSource = UICollectionViewDiffableDataSource<Section, Item>(
+            collectionView: collectionView
+        ) { [weak self] collectionView, indexPath, item in
+            switch item {
+            case .estate(let estate, _):
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerCollectionViewCell.identifier, for: indexPath) as! BannerCollectionViewCell
+                cell.configure(with: estate)
+                return cell
+            }
+        }
+        
+        dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+            if kind == UICollectionView.elementKindSectionFooter {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: BannerFooterView.identifier,
+                    for: indexPath
+                ) as! BannerFooterView
+                return footer
+            }
+            return nil
+        }
+        
+        return dataSource
     }()
     
     private let pageControl: UIPageControl = {
@@ -45,32 +79,27 @@ class HomeViewController: BaseViewController {
     private let viewModel = HomeViewModel()
     private var estates: [Estate] = []
     private var infiniteArray: [Estate] = []
+    private var currentAutoScrollIndex = 1
     
     private let startAutoScrollSubject = PublishSubject<Void>()
     private let stopAutoScrollSubject = PublishSubject<Void>()
     private let userScrollingSubject = BehaviorSubject<Bool>(value: false)
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
     }
     
     override func setupUI() {
         view.addSubviews(collectionView, searchBar, pageControl)
-        collectionView.dataSource = self
-        collectionView.delegate = self
-        
         pageControl.addTarget(self, action: #selector(pageControlValueChanged), for: .valueChanged)
-        
-        if let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout {
-            layout.itemSize = CGSize(width: UIScreen.main.bounds.width, height: 335)
-        }
     }
     
     override func setupConstraints() {
         collectionView.snp.makeConstraints {
             $0.top.equalToSuperview()
             $0.leading.trailing.equalTo(view)
-            $0.height.equalTo(335)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            //            $0.height.equalTo(335)
         }
         
         searchBar.snp.makeConstraints {
@@ -80,7 +109,7 @@ class HomeViewController: BaseViewController {
         }
         
         pageControl.snp.makeConstraints {
-            $0.bottom.equalTo(collectionView.snp.bottom).inset(16)
+            $0.top.equalTo(collectionView.snp.top).offset(335 - 16)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(6)
         }
@@ -103,10 +132,11 @@ class HomeViewController: BaseViewController {
                 self.infiniteArray = self.createInfiniteArray(estates)
                 self.pageControl.numberOfPages = estates.count
                 self.pageControl.currentPage = 0
-                self.collectionView.reloadData()
+                self.updateSnapshot()
                 
                 if !self.infiniteArray.isEmpty {
                     DispatchQueue.main.async {
+                        self.currentAutoScrollIndex = 1
                         self.collectionView.scrollToItem(
                             at: IndexPath(item: 1, section: 0),
                             at: .left,
@@ -128,17 +158,17 @@ class HomeViewController: BaseViewController {
     private func moveToNextPage() {
         guard !infiniteArray.isEmpty else { return }
         
-        let pageWidth = collectionView.frame.width
-        let currentIndex = Int(collectionView.contentOffset.x / pageWidth)
-        let nextIndex = currentIndex + 1
+        currentAutoScrollIndex += 1
         
-        if nextIndex < infiniteArray.count {
-            collectionView.scrollToItem(
-                at: IndexPath(item: nextIndex, section: 0),
-                at: .left,
-                animated: true
-            )
+        if currentAutoScrollIndex >= infiniteArray.count - 1 {
+            currentAutoScrollIndex = 1
         }
+        
+        collectionView.scrollToItem(
+            at: IndexPath(item: currentAutoScrollIndex, section: 0),
+            at: .centeredHorizontally,
+            animated: true
+        )
     }
     
     private func createInfiniteArray(_ items: [Estate]) -> [Estate] {
@@ -154,23 +184,6 @@ class HomeViewController: BaseViewController {
         return infiniteArray
     }
     
-    private func updatePageControl() {
-        guard !estates.isEmpty else { return }
-        let pageWidth = collectionView.frame.width
-        let currentIndex = Int(collectionView.contentOffset.x / pageWidth)
-        
-        let actualPage: Int
-        
-        if currentIndex == 0 {
-            actualPage = estates.count - 1
-        } else if currentIndex <= estates.count {
-            actualPage = currentIndex - 1
-        } else {
-            actualPage = 0
-        }
-        
-        pageControl.currentPage = actualPage
-    }
     
     @objc private func pageControlValueChanged() {
         userScrollingSubject.onNext(true)
@@ -179,6 +192,7 @@ class HomeViewController: BaseViewController {
         let targetIndex = targetPage + 1
         
         if targetIndex < infiniteArray.count {
+            currentAutoScrollIndex = targetIndex
             collectionView.scrollToItem(
                 at: IndexPath(item: targetIndex, section: 0),
                 at: .left,
@@ -190,55 +204,104 @@ class HomeViewController: BaseViewController {
             self?.userScrollingSubject.onNext(false)
         }
     }
-}
-
-// MARK: - UICollectionViewDataSource
-extension HomeViewController: UICollectionViewDataSource {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return infiniteArray.count
+    
+    private func createLayout() -> UICollectionViewCompositionalLayout {
+        return UICollectionViewCompositionalLayout { sectionIndex, environment in
+            switch Section.allCases[sectionIndex] {
+            case .banner:
+                return self.createBannerSection()
+            }
+        }
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerCollectionViewCell.identifier, for: indexPath) as! BannerCollectionViewCell
+    private func createBannerSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .fractionalHeight(1.0)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
-        if indexPath.item < infiniteArray.count {
-            cell.configure(with: infiniteArray[indexPath.item])
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(335)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .groupPaging
+        
+        section.visibleItemsInvalidationHandler = { [weak self] items, contentOffset, environment in
+            guard let self = self else { return }
+            
+            let pageWidth = environment.container.contentSize.width
+            let currentPage = Int(contentOffset.x / pageWidth)
+            
+            if self.currentAutoScrollIndex != currentPage {
+                self.userScrollingSubject.onNext(true)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                    self?.userScrollingSubject.onNext(false)
+                }
+            }
+            
+            self.currentAutoScrollIndex = currentPage
+            
+            if currentPage == 0 && !self.infiniteArray.isEmpty {
+                DispatchQueue.main.async {
+                    let targetIndex = self.infiniteArray.count - 2
+                    self.currentAutoScrollIndex = targetIndex
+                    self.collectionView.scrollToItem(at: IndexPath(item: targetIndex, section: 0), at: .left, animated: false)
+                }
+            } else if currentPage == self.infiniteArray.count - 1 && !self.infiniteArray.isEmpty {
+                DispatchQueue.main.async {
+                    self.currentAutoScrollIndex = 1
+                    self.collectionView.scrollToItem(at: IndexPath(item: 1, section: 0), at: .left, animated: false)
+                }
+            }
+            
+            self.updatePageControlFromOrthogonal(currentPage: currentPage)
         }
         
-        return cell
-    }
-}
-
-// MARK: - UICollectionViewDelegate
-extension HomeViewController: UICollectionViewDelegate {
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        userScrollingSubject.onNext(true)
-    }
-    
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        handleInfiniteScroll()
-        updatePageControl()
-        userScrollingSubject.onNext(false)
-    }
-    
-    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
-        handleInfiniteScroll()
-        updatePageControl()
-    }
-    
-    private func handleInfiniteScroll() {
-        guard !infiniteArray.isEmpty else { return }
-        let pageWidth = collectionView.frame.width
-        let currentIndex = Int(collectionView.contentOffset.x / pageWidth)
+        let footerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(120)
+        )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: footerSize,
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        section.boundarySupplementaryItems = [footer]
         
-        if currentIndex == 0 {
-            let targetIndex = infiniteArray.count - 2
-            collectionView.scrollToItem(at: IndexPath(item: targetIndex, section: 0), at: .left, animated: false)
+        return section
+    }
+    
+    private func updatePageControlFromOrthogonal(currentPage: Int) {
+        guard !estates.isEmpty else { return }
+        
+        let actualPage: Int
+        
+        if currentPage == 0 {
+            actualPage = estates.count - 1
+        } else if currentPage <= estates.count {
+            actualPage = currentPage - 1
+        } else {
+            actualPage = 0
         }
-
-        if currentIndex == infiniteArray.count - 1 {
-            collectionView.scrollToItem(at: IndexPath(item: 1, section: 0), at: .left, animated: false)
+        
+        pageControl.currentPage = actualPage
+    }
+    
+    private func updateSnapshot() {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections(Section.allCases)
+        
+        let bannerItems = infiniteArray.enumerated().map { index, estate in
+            Item.estate(estate, uniqueID: "\(estate.id)_\(index)")
         }
+        snapshot.appendItems(bannerItems, toSection: .banner)
+        
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 }
 
