@@ -13,17 +13,14 @@ import RxCocoa
 class HomeViewController: BaseViewController {
     private let searchBar = SHSearchBar()
     
-    // Section 정의
     enum Section: Int, CaseIterable {
         case banner
     }
     
-    // Item 정의
     enum Item: Hashable {
         case estate(Estate, uniqueID: String)
     }
     
-    // 컬렉션 뷰와 페이지 컨트롤
     private lazy var collectionView: UICollectionView = {
         let layout = createLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -235,6 +232,8 @@ class HomeViewController: BaseViewController {
             
             let pageWidth = environment.container.contentSize.width
             let currentPage = Int(contentOffset.x / pageWidth)
+            let currentOffset = contentOffset.x
+            let progress = (currentOffset / pageWidth) - floor(currentOffset / pageWidth)
             
             if self.currentAutoScrollIndex != currentPage {
                 self.userScrollingSubject.onNext(true)
@@ -246,13 +245,13 @@ class HomeViewController: BaseViewController {
             
             self.currentAutoScrollIndex = currentPage
             
-            if currentPage == 0 && !self.infiniteArray.isEmpty {
+            if currentPage == 0 && !self.infiniteArray.isEmpty && abs(progress) < 0.1 {
                 DispatchQueue.main.async {
                     let targetIndex = self.infiniteArray.count - 2
                     self.currentAutoScrollIndex = targetIndex
                     self.collectionView.scrollToItem(at: IndexPath(item: targetIndex, section: 0), at: .left, animated: false)
                 }
-            } else if currentPage == self.infiniteArray.count - 1 && !self.infiniteArray.isEmpty {
+            } else if currentPage == self.infiniteArray.count - 1 && !self.infiniteArray.isEmpty && abs(progress) < 0.1 {
                 DispatchQueue.main.async {
                     self.currentAutoScrollIndex = 1
                     self.collectionView.scrollToItem(at: IndexPath(item: 1, section: 0), at: .left, animated: false)
