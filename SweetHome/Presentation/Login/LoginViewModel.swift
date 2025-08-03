@@ -10,7 +10,8 @@ import AuthenticationServices
 import RxSwift
 import RxCocoa
 
-class LoginViewModel: BaseViewModel {
+class LoginViewModel: ViewModelable {
+    let disposeBag = DisposeBag()
     
     struct Input {
         let onAppear: Observable<Void>

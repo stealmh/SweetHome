@@ -9,7 +9,8 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-class RegisterViewModel: BaseViewModel {
+class RegisterViewModel: ViewModelable {
+    let disposeBag = DisposeBag()
     
     struct Input {
         let email: Observable<String>
