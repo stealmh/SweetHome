@@ -93,4 +93,8 @@ final class NetworkLogger {
     func logTokenCleared() {
         logger.notice("🗑️ TOKEN CLEARED: All tokens have been cleared")
     }
+    
+    func logTokenRefreshTokenExpired() {
+        logger.error("🔐 REFRESH TOKEN EXPIRED: Refresh token has expired, navigating to login")
+    }
 }

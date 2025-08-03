@@ -26,30 +26,50 @@ final class TokenInterceptor: RequestInterceptor {
     }
     
     func retry(_ request: Request, for session: Session, dueTo error: Error, completion: @escaping (RetryResult) -> Void) {
-        guard let response = request.task?.response as? HTTPURLResponse,
-              response.statusCode == 401 else { 
+        guard let response = request.task?.response as? HTTPURLResponse else {
             completion(.doNotRetryWithError(error))
             return
         }
         
-        logger.logTokenRefresh()
-        
-        Task {
-            do {
-                guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { return }
-                let apiClient = ApiClient.shared
-                let tokenResponse: ReIssueResponse = try await apiClient.request(AuthEndpoint.refresh(refreshToken: refreshToken))
-                
-                keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
-                keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)
-                logger.logTokenRefreshSuccess()
-                completion(.retry)
-            } catch {
-                logger.logTokenRefreshFailed(error)
-                keyChainManager.deleteAll()
-                logger.logTokenCleared()
-                completion(.doNotRetryWithError(error))
+        switch response.statusCode {
+        case 418:
+            // 리프레시 토큰 만료 - 로그인 화면으로 이동
+            logger.logTokenRefreshTokenExpired()
+            keyChainManager.deleteAll()
+            logger.logTokenCleared()
+            
+            // Notification을 통해 로그인 화면 이동 요청
+            NotificationCenter.default.post(name: .refreshTokenExpired, object: nil)
+            
+            completion(.doNotRetryWithError(SHError.networkError("세션이 만료되었습니다. 다시 로그인해주세요.")))
+            
+        case 419:
+            // 액세스 토큰 만료 - 토큰 갱신 시도
+            logger.logTokenRefresh()
+            
+            Task {
+                do {
+                    guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { 
+                        completion(.doNotRetryWithError(SHError.networkError("리프레시 토큰이 없습니다.")))
+                        return 
+                    }
+                    let apiClient = ApiClient.shared
+                    let tokenResponse: ReIssueResponse = try await apiClient.request(AuthEndpoint.refresh(refreshToken: refreshToken))
+                    
+                    keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
+                    keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)
+                    logger.logTokenRefreshSuccess()
+                    completion(.retry)
+                } catch {
+                    logger.logTokenRefreshFailed(error)
+                    keyChainManager.deleteAll()
+                    logger.logTokenCleared()
+                    completion(.doNotRetryWithError(error))
+                }
             }
+            
+        default:
+            completion(.doNotRetryWithError(error))
         }
     }
 }
