@@ -33,11 +33,11 @@ class LoginViewModel: ViewModelable {
     
     
     // MARK: - Dependencies
-    private let userClient: UserClient
+    private let apiClient: ApiClient
     private let loginSession: LoginSessionProtocol
     
-    init(network: NetworkServiceProtocol = NetworkService.shared, loginSession: LoginSessionProtocol = LoginSession()) {
-        self.userClient = UserClient(network: network)
+    init(apiClient: ApiClient = ApiClient.shared, loginSession: LoginSessionProtocol = LoginSession()) {
+        self.apiClient = apiClient
         self.loginSession = loginSession
     }
     
@@ -180,7 +180,7 @@ private extension LoginViewModel {
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
-        return userClient.request(.emailLogin(requestModel))
+        return apiClient.requestObservable(UserEndpoint.emailLogin(requestModel))
             .do(
                 onNext: { [weak self] (response: LoginResponse) in
                     self?.handleLoginSuccess(
@@ -243,7 +243,7 @@ private extension LoginViewModel {
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
         
-        return userClient.request(.kakaoLogin(requestModel))
+        return apiClient.requestObservable(UserEndpoint.kakaoLogin(requestModel))
             .do(
                 onNext: { [weak self] (response: LoginResponse) in
                     self?.handleSocialLoginSuccess(
@@ -273,7 +273,7 @@ private extension LoginViewModel {
         loginErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
-        return userClient.request(.appleLogin(requestModel))
+        return apiClient.requestObservable(UserEndpoint.appleLogin(requestModel))
             .do(
                 onNext: { [weak self] (response: LoginResponse) in
                     self?.handleSocialLoginSuccess(

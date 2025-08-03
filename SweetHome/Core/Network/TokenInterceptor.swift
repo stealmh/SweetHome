@@ -37,8 +37,8 @@ final class TokenInterceptor: RequestInterceptor {
         Task {
             do {
                 guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { return }
-                let client = AuthClient(network: NetworkService.shared)
-                let tokenResponse: ReIssueResponse = try await client.request(.refresh(refreshToken: refreshToken))
+                let apiClient = ApiClient.shared
+                let tokenResponse: ReIssueResponse = try await apiClient.request(AuthEndpoint.refresh(refreshToken: refreshToken))
                 
                 keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
                 keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)

@@ -29,12 +29,12 @@ class RegisterViewModel: ViewModelable {
         let emailValidationError: Driver<SHError?>
     }
     
-    private let userClient: UserClient
+    private let apiClient: ApiClient
     private let emailValidator: EmailValidator
     
-    init(network: NetworkServiceProtocol = NetworkService.shared) {
-        self.userClient = UserClient(network: network)
-        self.emailValidator = EmailValidator(userClient: userClient)
+    init(apiClient: ApiClient = ApiClient.shared) {
+        self.apiClient = apiClient
+        self.emailValidator = EmailValidator(apiClient: apiClient)
     }
     
     func transform(input: Input) -> Output {
@@ -134,8 +134,7 @@ private extension RegisterViewModel {
         registerErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
-        
-        return userClient.request(.emailRegister(requestModel))
+        return apiClient.requestObservable(UserEndpoint.emailRegister(requestModel))
             .do(
                 onNext: { [weak self] (response: RegisterResponse) in
                     self?.handleRegistrationSuccess(
