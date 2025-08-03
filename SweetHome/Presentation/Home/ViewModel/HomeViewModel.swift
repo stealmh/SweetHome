@@ -14,15 +14,21 @@ class HomeViewModel: ViewModelable {
     
     struct Input {
         let onAppear: Observable<Void>
+        let startAutoScroll: Observable<Void>
+        let stopAutoScroll: Observable<Void>
+        let userScrolling: Observable<Bool>
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
         let isLoading: Driver<Bool>
         let todayEstates: Driver<[Estate]>
         let error: Driver<SHError>
+        let autoScrollTrigger: Driver<Void>
     }
     
     private let apiClient: ApiClient
+    private var autoScrollTimer: Timer?
+    private let autoScrollTriggerRelay = PublishSubject<Void>()
     
     init(apiClient: ApiClient = ApiClient.shared) {
         self.apiClient = apiClient
@@ -55,10 +61,55 @@ class HomeViewModel: ViewModelable {
             })
             .disposed(by: disposeBag)
         
+        // 타이머 시작 로직
+        input.startAutoScroll
+            .subscribe(onNext: { [weak self] _ in
+                self?.startAutoScroll()
+            })
+            .disposed(by: disposeBag)
+        
+        // 타이머 정지 로직
+        input.stopAutoScroll
+            .subscribe(onNext: { [weak self] _ in
+                self?.stopAutoScroll()
+            })
+            .disposed(by: disposeBag)
+        
+        // 사용자 스크롤 상태에 따른 타이머 제어
+        input.userScrolling
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] isScrolling in
+                if isScrolling {
+                    self?.stopAutoScroll()
+                } else {
+                    self?.startAutoScroll()
+                }
+            })
+            .disposed(by: disposeBag)
+        
         return Output(
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
             todayEstates: todayEstatesRelay.asDriver(onErrorDriveWith: .empty()),
-            error: errorRelay.asDriver(onErrorDriveWith: .empty())
+            error: errorRelay.asDriver(onErrorDriveWith: .empty()),
+            autoScrollTrigger: autoScrollTriggerRelay.asDriver(onErrorDriveWith: .empty())
         )
+    }
+    
+    // MARK: - Auto Scroll Methods
+    private func startAutoScroll() {
+        stopAutoScroll()
+        
+        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+            self?.autoScrollTriggerRelay.onNext(())
+        }
+    }
+    
+    private func stopAutoScroll() {
+        autoScrollTimer?.invalidate()
+        autoScrollTimer = nil
+    }
+    
+    deinit {
+        stopAutoScroll()
     }
 }

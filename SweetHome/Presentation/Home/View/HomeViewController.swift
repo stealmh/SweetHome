@@ -45,8 +45,10 @@ class HomeViewController: BaseViewController {
     private let viewModel = HomeViewModel()
     private var estates: [Estate] = []
     private var infiniteArray: [Estate] = []
-    private var autoScrollTimer: Timer?
-    private var isUserScrolling = false
+    
+    private let startAutoScrollSubject = PublishSubject<Void>()
+    private let stopAutoScrollSubject = PublishSubject<Void>()
+    private let userScrollingSubject = BehaviorSubject<Bool>(value: false)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -85,7 +87,12 @@ class HomeViewController: BaseViewController {
     }
     
     override func bind() {
-        let input = HomeViewModel.Input(onAppear: .just(()))
+        let input = HomeViewModel.Input(
+            onAppear: .just(()),
+            startAutoScroll: startAutoScrollSubject.asObservable(),
+            stopAutoScroll: stopAutoScrollSubject.asObservable(),
+            userScrolling: userScrollingSubject.asObservable()
+        )
         let output = viewModel.transform(input: input)
         
         output.todayEstates
@@ -105,31 +112,21 @@ class HomeViewController: BaseViewController {
                             at: .left,
                             animated: false
                         )
-                        self.startAutoScroll()
+                        self.startAutoScrollSubject.onNext(())
                     }
                 }
             })
             .disposed(by: disposeBag)
-    }
-    
-    // MARK: - Auto Scroll Methods
-    private func startAutoScroll() {
-        stopAutoScroll()
-        guard !infiniteArray.isEmpty else { return }
         
-        autoScrollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            self?.moveToNextPage()
-        }
-    }
-    
-    private func stopAutoScroll() {
-        autoScrollTimer?.invalidate()
-        autoScrollTimer = nil
+        output.autoScrollTrigger
+            .drive(onNext: { [weak self] _ in
+                self?.moveToNextPage()
+            })
+            .disposed(by: disposeBag)
     }
     
     private func moveToNextPage() {
-        guard !isUserScrolling,
-              !infiniteArray.isEmpty else { return }
+        guard !infiniteArray.isEmpty else { return }
         
         let pageWidth = collectionView.frame.width
         let currentIndex = Int(collectionView.contentOffset.x / pageWidth)
@@ -142,10 +139,6 @@ class HomeViewController: BaseViewController {
                 animated: true
             )
         }
-    }
-    
-    deinit {
-        stopAutoScroll()
     }
     
     private func createInfiniteArray(_ items: [Estate]) -> [Estate] {
@@ -180,7 +173,7 @@ class HomeViewController: BaseViewController {
     }
     
     @objc private func pageControlValueChanged() {
-        stopAutoScroll()
+        userScrollingSubject.onNext(true)
         
         let targetPage = pageControl.currentPage
         let targetIndex = targetPage + 1
@@ -194,7 +187,7 @@ class HomeViewController: BaseViewController {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.startAutoScroll()
+            self?.userScrollingSubject.onNext(false)
         }
     }
 }
@@ -219,15 +212,13 @@ extension HomeViewController: UICollectionViewDataSource {
 // MARK: - UICollectionViewDelegate
 extension HomeViewController: UICollectionViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        isUserScrolling = true
-        stopAutoScroll()
+        userScrollingSubject.onNext(true)
     }
     
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        isUserScrolling = false
         handleInfiniteScroll()
         updatePageControl()
-        startAutoScroll()
+        userScrollingSubject.onNext(false)
     }
     
     func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
