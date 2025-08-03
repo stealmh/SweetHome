@@ -123,10 +123,9 @@ class LoginViewController: BaseViewController {
     
     // MARK: - Dependencies
     private let viewModel = LoginViewModel()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-//        setupSplashOverlay()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -146,8 +145,6 @@ class LoginViewController: BaseViewController {
     
     override func setupUI() {
         super.setupUI()
-        
-//        view.backgroundColor = SHColor.Brand.brightCream
         setupHouseAnimation()
         
         socialLoginStackView.addArrangeSubviews(kakaoLoginButton, appleLoginButton)
@@ -233,7 +230,7 @@ class LoginViewController: BaseViewController {
             .drive(onNext: { [weak self] (isLoading, isFormValid) in
                 let shouldEnable = isFormValid && !isLoading
                 self?.loginButton.isEnabled = shouldEnable
-
+                
                 if isLoading {
                     self?.loginButton.alpha = 0.6
                     self?.loginButton.setTitle("로그인중...", for: .normal)
@@ -243,8 +240,8 @@ class LoginViewController: BaseViewController {
                     
                     UIView.animate(withDuration: 0.25) {
                         self?.loginButton.backgroundColor = isFormValid
-                            ? SHColor.Brand.deepWood
-                            : SHColor.GrayScale.gray_60
+                        ? SHColor.Brand.deepWood
+                        : SHColor.GrayScale.gray_60
                     }
                 }
             })
@@ -261,7 +258,6 @@ class LoginViewController: BaseViewController {
             .drive(onNext: { [weak self] in
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     self?.navigateToMain()
-                    self?.hideSplashOverlay()
                 }
             })
             .disposed(by: disposeBag)
@@ -272,87 +268,28 @@ class LoginViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        output.shouldHideSplash
-            .drive(onNext: { [weak self] in
-                self?.hideSplashOverlay()
-            })
-            .disposed(by: disposeBag)
-        
-        output.kakaoLoginResult
-            .drive(onNext: { [weak self] in
-                // 카카오 로그인 성공 시 추가 처리가 필요하면 여기에 작성
-                print("Kakao login completed")
-            })
-            .disposed(by: disposeBag)
-        
     }
 }
 
-// MARK: - Error Handling
-extension LoginViewController {
-//    private func handleLoginError(_ error: SHError) {
-//        ErrorAlertHelper.showAlert(for: error, on: self)
-//    }
-    
-//    @objc private func appleLoginButtonTapped() {
-//        appleLoginTappedSubject.onNext(self)
-//    }
-    
-}
-
 // MARK: - Navigation
-extension LoginViewController {
-    private func navigateToMain() {
+private extension LoginViewController {
+    func navigateToMain() {
         let mainTabBarController = MainTabBarController()
         
         if let sceneDelegate = UIApplication.shared.connectedScenes.first?.delegate as? SceneDelegate,
            let window = sceneDelegate.window {
             
-            // 부드러운 fade 애니메이션과 함께 전환
             UIView.transition(with: window, duration: 0.5, options: .transitionCrossDissolve, animations: {
                 window.rootViewController = mainTabBarController
             }, completion: nil)
         }
     }
     
-    private func navigateToRegister() {
+    func navigateToRegister() {
         let registerViewController = RegisterViewController()
         navigationController?.pushViewController(registerViewController, animated: true)
     }
 }
-
-// MARK: - Splash Overlay
-extension LoginViewController {
-    private func setupSplashOverlay() {
-        splashOverlayView.backgroundColor = .systemBackground
-        
-        logoImageView.contentMode = .scaleAspectFit
-        logoImageView.image = UIImage(systemName: "house.fill")
-        logoImageView.tintColor = .systemBlue
-        
-        view.addSubview(splashOverlayView)
-        splashOverlayView.addSubviews(logoImageView)
-        
-        splashOverlayView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
-        
-        logoImageView.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
-            $0.centerY.equalToSuperview().offset(-50)
-            $0.size.equalTo(100)
-        }
-    }
-    
-    private func hideSplashOverlay() {
-        UIView.animate(withDuration: 0.3, animations: {
-            self.splashOverlayView.alpha = 0
-        }) { _ in
-            self.splashOverlayView.removeFromSuperview()
-        }
-    }
-}
-
 // MARK: - House Animation
 extension LoginViewController {
     private func setupHouseAnimation() {

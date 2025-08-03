@@ -26,7 +26,6 @@ class LoginViewModel: BaseViewModel {
         let isLoading: Driver<Bool>
         let shouldNavigateToMain: Driver<Void>
         let shouldNavigateToRegister: Driver<Void>
-        let shouldHideSplash: Driver<Void>
         let loginButtonEnable: Driver<Bool>
         let error: Driver<SHError>
     }
@@ -46,7 +45,7 @@ class LoginViewModel: BaseViewModel {
         let loginErrorRelay = PublishSubject<SHError>()
         let navigateToMainSubject = PublishSubject<Void>()
         
-        let onAppear = input.onAppear.delay(.seconds(2), scheduler: MainScheduler.instance).share()
+        let onAppear = input.onAppear.share()
         
         input.emailLoginTapped
             .withLatestFrom(Observable.combineLatest(input.email, input.password))
@@ -142,21 +141,7 @@ class LoginViewModel: BaseViewModel {
             })
             .map { _ in () }
         
-        // 메인 화면으로 이동 (모든 로그인 성공 시)
-        let shouldNavigateToMain = Observable.merge(
-            onAppear
-                .withUnretained(self)
-                .compactMap { owner, _ in
-                    owner.isUserLoggedIn() ? () : nil
-                },
-            navigateToMainSubject.asObservable()
-        )
-        
-        let shouldHideSplash = onAppear
-            .withUnretained(self)
-            .compactMap { owner, _ in
-                !owner.isUserLoggedIn() ? () : nil
-            }
+        let shouldNavigateToMain = navigateToMainSubject.asObservable()
         
         let loginButtonEnable = Observable.combineLatest(input.email, input.password)
             .map { (email, password) -> Bool in
@@ -169,7 +154,6 @@ class LoginViewModel: BaseViewModel {
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
             shouldNavigateToMain: shouldNavigateToMain.asDriver(onErrorDriveWith: .empty()),
             shouldNavigateToRegister: registerTapped.asDriver(onErrorDriveWith: .empty()),
-            shouldHideSplash: shouldHideSplash.asDriver(onErrorDriveWith: .empty()),
             loginButtonEnable: loginButtonEnable.asDriver(onErrorDriveWith: .empty()),
             error: loginErrorRelay.asDriver(onErrorDriveWith: .empty())
         )
@@ -177,12 +161,6 @@ class LoginViewModel: BaseViewModel {
 }
 
 private extension LoginViewModel {
-    func isUserLoggedIn() -> Bool {
-        guard let _ = KeyChainManager.shared.read(.accessToken),
-              let _ = KeyChainManager.shared.read(.refreshToken) else { return false }
-        return true
-    }
-    
     /// 이메일 로그인 데이터 유효성 검사
     func validateLoginData(email: String, password: String) -> SHError? {
         /// 🚨 Case [1]. 잘못된 이메일 형식
