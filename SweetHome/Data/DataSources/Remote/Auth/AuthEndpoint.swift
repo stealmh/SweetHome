@@ -14,15 +14,12 @@ enum AuthEndpoint: TargetType {
 }
 
 extension AuthEndpoint {
-    var baseURL: String {
-        guard let baseURL = Bundle.main.object(forInfoDictionaryKey: "BASE_URL") as? String else { return "" }
-        return baseURL
-    }
+    var baseURL: String { return APIConstants.baseURL }
     
     var path: String {
         switch self {
         case .refresh:
-            return "auth/refresh"
+            return "/auth/refresh"
         }
     }
     
