@@ -19,7 +19,8 @@ extension UIImageView {
             self.image = defaultImage
             return
         }
-        guard let accessToken = KeyChainManager.shared.read(.accessToken) else {
+        
+        guard let accessToken = AuthTokenManager.shared.accessToken else {
             self.image = defaultImage
             return
         }
@@ -28,7 +29,7 @@ extension UIImageView {
         let modifier = AnyModifier { request in
             var req = request
             req.setValue(accessToken, forHTTPHeaderField: "Authorization")
-            req.setValue(APIConstants.sesacKey, forHTTPHeaderField: "SeSACKey")
+            req.setValue(AuthTokenManager.shared.sesacKey, forHTTPHeaderField: "SeSACKey")
             return req
         }
         

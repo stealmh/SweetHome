@@ -1,5 +1,5 @@
 //
-//  SHImageCardView.swift
+//  BannerCollectionViewCell.swift
 //  SweetHome
 //
 //  Created by 김민호 on 8/3/25.
@@ -7,9 +7,10 @@
 
 import UIKit
 import SnapKit
-import Kingfisher
+import RxSwift
 
-class SHImageCardView: UIView {
+class BannerCollectionViewCell: UICollectionViewCell {
+    static let identifier = "BannerCollectionViewCell"
     
     // MARK: - UI Components
     private let backgroundImageView: UIImageView = {
@@ -37,8 +38,8 @@ class SHImageCardView: UIView {
         return v
     }()
     
+    private var disposeBag = DisposeBag()
     
-    // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -51,10 +52,13 @@ class SHImageCardView: UIView {
         setupConstraints()
     }
     
-    // MARK: - Setup Methods
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        disposeBag = DisposeBag()
+    }
+    
     private func setupUI() {
-        
-        addSubviews(
+        contentView.addSubviews(
             backgroundImageView,
             locationTagView,
             titleLabel,
@@ -67,30 +71,28 @@ class SHImageCardView: UIView {
             $0.edges.equalToSuperview()
         }
         
-        locationTagView.snp.makeConstraints {
+        introductionLabel.snp.makeConstraints {
+            $0.bottom.equalToSuperview().inset(40)
             $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().inset(20)
         }
         
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(locationTagView.snp.bottom).offset(8)
+            $0.bottom.equalTo(introductionLabel.snp.top).offset(-10)
             $0.leading.equalToSuperview().offset(20)
             $0.trailing.equalToSuperview().inset(20)
         }
         
-        introductionLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(10)
+        locationTagView.snp.makeConstraints {
+            $0.bottom.equalTo(titleLabel.snp.top).offset(-8)
             $0.leading.equalToSuperview().offset(20)
-            $0.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalToSuperview().inset(40)
         }
     }
     
-    //TODO: Domain Model 정의 시 함께 작업
-    func setData(_ data: Estate) {
-        backgroundImageView.setAuthenticatedImage(with: data.thumbnails.first!)
-        
+    func configure(with estate: Estate) {
+        backgroundImageView.setAuthenticatedImage(with: estate.thumbnails.first!)
         locationTagView.setLabel(location: "서울 반포동")
-        titleLabel.text = data.title
-        introductionLabel.text = data.introduction
+        titleLabel.text = estate.title
+        introductionLabel.text = estate.introduction
     }
 }
