@@ -59,6 +59,10 @@ final class TokenInterceptor: RequestInterceptor {
                     keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
                     keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)
                     logger.logTokenRefreshSuccess()
+                    
+                    // 토큰 갱신 알림
+                    NotificationCenter.default.post(name: NSNotification.Name("TokenRefreshed"), object: nil)
+                    
                     completion(.retry)
                 } catch {
                     logger.logTokenRefreshFailed(error)
