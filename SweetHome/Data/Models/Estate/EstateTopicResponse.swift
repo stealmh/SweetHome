@@ -15,5 +15,17 @@ struct EstateTopicDataResponse: Decodable {
     let content: String
     // format: "25.4.4"
     let date: String
-    let link: String
+    let link: String?
+}
+
+// MARK: - Domain Mapping
+extension EstateTopicDataResponse {
+    var toDomain: EstateTopic {
+        return EstateTopic(
+            title: self.title,
+            content: self.content,
+            date: self.date,
+            link: self.link
+        )
+    }
 }
