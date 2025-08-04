@@ -22,23 +22,20 @@ enum UserEndpoint: TargetType {
 }
 
 extension UserEndpoint {
-    var baseURL: String {
-        guard let baseURL = Bundle.main.object(forInfoDictionaryKey: "BASE_URL") as? String else { return "" }
-        return baseURL
-    }
+    var baseURL: String { return APIConstants.baseURL }
     
     var path: String {
         switch self {
         case .emailValidation:
-            return "users/validation/email"
+            return "/users/validation/email"
         case .emailRegister:
-            return "users/join"
+            return "/users/join"
         case .emailLogin:
-            return "users/login"
+            return "/users/login"
         case .kakaoLogin:
-            return "users/login/kakao"
+            return "/users/login/kakao"
         case .appleLogin:
-            return "users/login/apple"
+            return "/users/login/apple"
         }
     }
     
@@ -64,12 +61,12 @@ extension UserEndpoint {
         }
     }
     
-    var headers: [String : String]? {
+    var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else {
-            return ["Content-Type": "application/json"]
+            return HTTPHeaders(["Content-Type": "application/json"])
         }
-        return [
+        return HTTPHeaders([
             "SeSACKey": key
-        ]
+        ])
     }
 }

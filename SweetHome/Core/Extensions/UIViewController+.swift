@@ -9,6 +9,7 @@ import UIKit
 import SnapKit
 
 extension UIViewController {
+    /// - 네비게이션 세팅
     func setupNavigationBar(title: String? = nil) {
         navigationItem.hidesBackButton = true
         
@@ -38,5 +39,13 @@ extension UIViewController {
     
     @objc private func backButtonTapped() {
         navigationController?.popViewController(animated: true)
+    }
+    
+    /// - Status Bar의 높이를 통해 컴포넌트를 배치할 때 사용
+    func getStatusBarHeight() -> CGFloat {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            return windowScene.statusBarManager?.statusBarFrame.height ?? 0
+        }
+        return 0
     }
 }

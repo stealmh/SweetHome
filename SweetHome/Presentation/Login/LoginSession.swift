@@ -105,19 +105,19 @@ private extension LoginSession {
             let loginError: SHError
             switch authError.code {
             case .canceled:
-                loginError = .networkError("사용자가 로그인을 취소했습니다.")
+                loginError = .networkError(.apple(.canceled))
             case .failed:
-                loginError = .networkError("인증에 실패했습니다.")
+                loginError = .networkError(.apple(.failed))
             case .invalidResponse:
-                loginError = .networkError("잘못된 응답입니다.")
+                loginError = .networkError(.apple(.invalidResponse))
             case .notHandled:
-                loginError = .networkError("처리되지 않은 오류입니다.")
+                loginError = .networkError(.apple(.notHandled))
             default:
-                loginError = .networkError("알 수 없는 오류입니다.")
+                loginError = .networkError(.apple(.unknown))
             }
             appleLoginError.onNext(loginError)
         } else {
-            appleLoginError.onNext(.networkError("애플 로그인 중 오류가 발생했습니다."))
+            appleLoginError.onNext(.networkError(.apple(.unknown)))
         }
     }
 }

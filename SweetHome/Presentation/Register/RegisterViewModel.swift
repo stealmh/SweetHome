@@ -9,7 +9,8 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-class RegisterViewModel: BaseViewModel {
+class RegisterViewModel: ViewModelable {
+    let disposeBag = DisposeBag()
     
     struct Input {
         let email: Observable<String>
@@ -28,12 +29,17 @@ class RegisterViewModel: BaseViewModel {
         let emailValidationError: Driver<SHError?>
     }
     
-    private let userClient: UserClient
+    private let apiClient: ApiClient
     private let emailValidator: EmailValidator
+    private let keychainManager: KeyChainManagerProtocol
     
-    init(network: NetworkServiceProtocol = NetworkService.shared) {
-        self.userClient = UserClient(network: network)
-        self.emailValidator = EmailValidator(userClient: userClient)
+    init(
+        apiClient: ApiClient = ApiClient.shared,
+        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared
+    ) {
+        self.apiClient = apiClient
+        self.emailValidator = EmailValidator(apiClient: apiClient)
+        self.keychainManager = keychainManager
     }
     
     func transform(input: Input) -> Output {
@@ -133,8 +139,7 @@ private extension RegisterViewModel {
         registerErrorRelay: PublishSubject<SHError>,
         navigateToMainSubject: PublishSubject<Void>
     ) -> Observable<Void> {
-        
-        return userClient.request(.emailRegister(requestModel))
+        return apiClient.requestObservable(UserEndpoint.emailRegister(requestModel))
             .do(
                 onNext: { [weak self] (response: RegisterResponse) in
                     self?.handleRegistrationSuccess(
@@ -165,8 +170,8 @@ private extension RegisterViewModel {
         isLoadingRelay.onNext(false)
         
         // 토큰 저장
-        KeyChainManager.shared.save(.accessToken, value: response.accessToken)
-        KeyChainManager.shared.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.accessToken, value: response.accessToken)
+        keychainManager.save(.refreshToken, value: response.refreshToken)
         
         // 메인 화면으로 이동
         navigateToMainSubject.onNext(())

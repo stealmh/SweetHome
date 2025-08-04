@@ -227,7 +227,7 @@ class RegisterViewController: BaseViewController {
 // MARK: - Error Handling
 extension RegisterViewController {
     private func handleRegisterError(_ error: SHError) {
-        ErrorAlertHelper.showAlert(for: error, on: self)
+        self.showAlert(for: error)
     }
 }
 

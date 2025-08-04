@@ -24,4 +24,13 @@ class BaseViewController: UIViewController {
     func setupUI() { view.backgroundColor = .white }
     func setupConstraints() {}
     func bind() {}
+    
+    // MARK: - Error Handling
+    func showAlert(for error: SHError) {
+        guard error.displayType == .toast else { return }
+        
+        let alert = UIAlertController(title: "오류", message: error.message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
 }

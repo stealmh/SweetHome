@@ -10,10 +10,10 @@ import RxSwift
 import Alamofire
 
 class EmailValidator {
-    private let userClient: UserClient
+    private let apiClient: ApiClient
     
-    init(userClient: UserClient) {
-        self.userClient = userClient
+    init(apiClient: ApiClient) {
+        self.apiClient = apiClient
     }
     
     func validateEmail(_ email: String) -> Observable<SHError?> {
@@ -40,7 +40,7 @@ class EmailValidator {
     
     private func checkEmailAvailability(_ email: String) -> Observable<SHError?> {
         let requestModel = EmailValidationRequest(email: email)
-        return self.userClient.request(.emailValidation(requestModel))
+        return self.apiClient.requestObservable(UserEndpoint.emailValidation(requestModel))
             .map { (response: BaseResponse) -> SHError? in
                 return nil
             }
