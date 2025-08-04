@@ -44,21 +44,12 @@ class HomeViewModel: ViewModelable {
         let hotEstatesRelay = BehaviorSubject<[Estate]>(value: [])
         let topicsRelay = BehaviorSubject<[EstateTopic]>(value: [])
         let errorRelay = PublishSubject<SHError>()
-        let retryTrigger = PublishRelay<Void>()
         
-        // API 호출들을 병렬로 실행
-        
-        NotificationCenter.default.rx.notification(Notification.Name("TokenRefreshed"))
-            .map { _ in }
-            .bind(to: retryTrigger)
-            .disposed(by: disposeBag)
-        
-        let _ = Observable.merge(input.onAppear, retryTrigger.asObservable())
+        let _ = input.onAppear
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<Void> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
                 
-                // 3개 API를 병렬로 호출
                 let todayEstatesObservable = self.apiClient
                     .requestObservable(EstateEndpoint.todayEstates)
                     .map { (response: BaseEstateResponse) -> [Estate] in
@@ -89,12 +80,12 @@ class HomeViewModel: ViewModelable {
                         return Observable.just([])
                     }
                 
-                // 모든 API 결과를 합쳐서 처리
                 return Observable.combineLatest(
                     todayEstatesObservable,
                     hotEstatesObservable,
                     topicsObservable
                 ) { todayEstates, hotEstates, topics in
+                    
                     todayEstatesRelay.onNext(todayEstates)
                     hotEstatesRelay.onNext(hotEstates)
                     topicsRelay.onNext(topics)
@@ -108,21 +99,18 @@ class HomeViewModel: ViewModelable {
             })
             .disposed(by: disposeBag)
         
-        // 타이머 시작 로직
         input.startAutoScroll
             .subscribe(onNext: { [weak self] _ in
                 self?.startAutoScroll()
             })
             .disposed(by: disposeBag)
         
-        // 타이머 정지 로직
         input.stopAutoScroll
             .subscribe(onNext: { [weak self] _ in
                 self?.stopAutoScroll()
             })
             .disposed(by: disposeBag)
         
-        // 사용자 스크롤 상태에 따른 타이머 제어
         input.userScrolling
             .distinctUntilChanged()
             .subscribe(onNext: { [weak self] isScrolling in
@@ -134,12 +122,10 @@ class HomeViewModel: ViewModelable {
             })
             .disposed(by: disposeBag)
         
-        // 최근 검색 매물 데이터 (Mock 데이터 사용 - 실제로는 로컬 저장소에서 가져와야 함)
         let recentSearchEstates = input.onAppear
             .map { _ in DetailEstate.mockData }
             .asDriver(onErrorJustReturn: [])
         
-        // View All 버튼 탭 처리
         input.viewAllTapped
             .subscribe(onNext: { _ in
                 print("👀 View All 버튼 탭됨 - 최근 검색 매물")
@@ -157,7 +143,6 @@ class HomeViewModel: ViewModelable {
         )
     }
     
-    // MARK: - Auto Scroll Methods
     private func startAutoScroll() {
         stopAutoScroll()
         

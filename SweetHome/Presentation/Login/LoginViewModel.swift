@@ -35,10 +35,16 @@ class LoginViewModel: ViewModelable {
     // MARK: - Dependencies
     private let apiClient: ApiClient
     private let loginSession: LoginSessionProtocol
+    private let keychainManager: KeyChainManagerProtocol
     
-    init(apiClient: ApiClient = ApiClient.shared, loginSession: LoginSessionProtocol = LoginSession()) {
+    init(
+        apiClient: ApiClient = ApiClient.shared,
+        loginSession: LoginSessionProtocol = LoginSession(),
+        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared
+    ) {
         self.apiClient = apiClient
         self.loginSession = loginSession
+        self.keychainManager = keychainManager
     }
     
     func transform(input: Input) -> Output {
@@ -211,9 +217,9 @@ private extension LoginViewModel {
         isLoadingRelay.onNext(false)
         
         // 토큰 저장
-        KeyChainManager.shared.save(.accessToken, value: response.accessToken)
-        KeyChainManager.shared.save(.refreshToken, value: response.refreshToken)
-        KeyChainManager.shared.save(.lastLoginStatus, value: "email")
+        keychainManager.save(.accessToken, value: response.accessToken)
+        keychainManager.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.lastLoginStatus, value: "email")
         
         // 메인 화면으로 이동
         navigateToMainSubject.onNext(())
@@ -307,9 +313,9 @@ private extension LoginViewModel {
         isLoadingRelay.onNext(false)
         
         // 토큰 저장
-        KeyChainManager.shared.save(.accessToken, value: response.accessToken)
-        KeyChainManager.shared.save(.refreshToken, value: response.refreshToken)
-        KeyChainManager.shared.save(.lastLoginStatus, value: loginType)
+        keychainManager.save(.accessToken, value: response.accessToken)
+        keychainManager.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.lastLoginStatus, value: loginType)
         
         // 메인 화면으로 이동
         navigateToMainSubject.onNext(())

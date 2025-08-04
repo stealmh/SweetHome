@@ -40,12 +40,12 @@ extension APIEndpoint: TargetType {
         }
     }
     
-    var headers: [String: String]? {
+    var headers: HTTPHeaders? {
         switch self {
         case .uploadImage:
-            return ["Content-Type": "multipart/form-data"]
+            return HTTPHeaders(["Content-Type": "multipart/form-data"])
         default:
-            return ["Content-Type": "application/json"]
+            return HTTPHeaders(["Content-Type": "application/json"])
         }
     }
     

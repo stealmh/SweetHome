@@ -31,10 +31,15 @@ class RegisterViewModel: ViewModelable {
     
     private let apiClient: ApiClient
     private let emailValidator: EmailValidator
+    private let keychainManager: KeyChainManagerProtocol
     
-    init(apiClient: ApiClient = ApiClient.shared) {
+    init(
+        apiClient: ApiClient = ApiClient.shared,
+        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared
+    ) {
         self.apiClient = apiClient
         self.emailValidator = EmailValidator(apiClient: apiClient)
+        self.keychainManager = keychainManager
     }
     
     func transform(input: Input) -> Output {
@@ -165,8 +170,8 @@ private extension RegisterViewModel {
         isLoadingRelay.onNext(false)
         
         // 토큰 저장
-        KeyChainManager.shared.save(.accessToken, value: response.accessToken)
-        KeyChainManager.shared.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.accessToken, value: response.accessToken)
+        keychainManager.save(.refreshToken, value: response.refreshToken)
         
         // 메인 화면으로 이동
         navigateToMainSubject.onNext(())

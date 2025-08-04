@@ -10,7 +10,7 @@ import Alamofire
 
 enum AuthEndpoint: TargetType {
     /// - 토큰 리프래시
-    case refresh(refreshToken: String)
+    case refresh(refreshToken: String, keychainManager: KeyChainManagerProtocol = KeyChainManager.shared)
 }
 
 extension AuthEndpoint {
@@ -30,17 +30,17 @@ extension AuthEndpoint {
         }
     }
     
-    var headers: [String : String]? {
+    var headers: HTTPHeaders? {
         switch self {
-        case let .refresh(refreshToken):
+        case let .refresh(refreshToken, keychainManager):
             guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
             
-            let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
-            return [
+            let accessToken = keychainManager.read(.accessToken) ?? ""
+            return HTTPHeaders([
                 "Authorization": accessToken,
                 "RefreshToken": refreshToken,
                 "SeSACKey": key
-            ]
+            ])
         }
     }
 }

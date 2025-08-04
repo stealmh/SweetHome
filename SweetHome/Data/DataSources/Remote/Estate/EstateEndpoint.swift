@@ -35,11 +35,11 @@ extension EstateEndpoint {
         }
     }
     
-    var headers: [String: String]? {
+    var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
-        return [
+        return HTTPHeaders([
             "SeSACKey": key,
             "Content-Type": "application/json"
-        ]
+        ])
     }
 }

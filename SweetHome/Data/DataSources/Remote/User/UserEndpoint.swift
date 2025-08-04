@@ -61,12 +61,12 @@ extension UserEndpoint {
         }
     }
     
-    var headers: [String : String]? {
+    var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else {
-            return ["Content-Type": "application/json"]
+            return HTTPHeaders(["Content-Type": "application/json"])
         }
-        return [
+        return HTTPHeaders([
             "SeSACKey": key
-        ]
+        ])
     }
 }
