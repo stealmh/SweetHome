@@ -7,7 +7,6 @@
 
 import UIKit
 import SnapKit
-import RxSwift
 
 class BannerCollectionViewCell: UICollectionViewCell {
     static let identifier = "BannerCollectionViewCell"
@@ -38,8 +37,6 @@ class BannerCollectionViewCell: UICollectionViewCell {
         return v
     }()
     
-    private var disposeBag = DisposeBag()
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -50,11 +47,6 @@ class BannerCollectionViewCell: UICollectionViewCell {
         super.init(coder: coder)
         setupUI()
         setupConstraints()
-    }
-    
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        disposeBag = DisposeBag()
     }
     
     private func setupUI() {
