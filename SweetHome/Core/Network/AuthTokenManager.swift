@@ -10,21 +10,14 @@ import Foundation
 final class AuthTokenManager {
     static let shared = AuthTokenManager()
     
-    private let keyChainManager = KeyChainManager.shared
+    private let keychainManager: KeyChainManagerProtocol
     private var cachedAccessToken: String?
     private var cachedSesacKey: String?
     
-    private init() {
-        // 앱 시작 시 토큰 캐시
-        loadTokensFromKeyChain()
+    init(keychainManager: KeyChainManagerProtocol = KeyChainManager.shared) {
+        self.keychainManager = keychainManager
         
-        // 토큰 갱신 Notification 감지
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleTokenRefresh),
-            name: NSNotification.Name("TokenRefreshed"),
-            object: nil
-        )
+        loadTokensFromKeyChain()
         
         // 토큰 만료 Notification 감지
         NotificationCenter.default.addObserver(
@@ -33,6 +26,11 @@ final class AuthTokenManager {
             name: .refreshTokenExpired,
             object: nil
         )
+    }
+    
+    // Convenience initializer for shared instance
+    private convenience init() {
+        self.init(keychainManager: KeyChainManager.shared)
     }
     
     deinit {
@@ -65,12 +63,8 @@ final class AuthTokenManager {
     
     // MARK: - Private Methods
     private func loadTokensFromKeyChain() {
-        cachedAccessToken = keyChainManager.read(.accessToken)
+        cachedAccessToken = keychainManager.read(.accessToken)
         cachedSesacKey = APIConstants.sesacKey
-    }
-    
-    @objc private func handleTokenRefresh() {
-        refreshCache()
     }
     
     @objc private func handleTokenExpired() {
