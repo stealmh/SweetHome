@@ -315,6 +315,7 @@ extension HomeViewController: HomeCollectionViewDataSourceDelegate {
 
 extension HomeViewController: UIScrollViewDelegate {
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        /// - SearchBar와 pageControl 위치 설정
         let offsetY = scrollView.contentOffset.y
         
         let topLimit: CGFloat = -44
@@ -334,6 +335,11 @@ extension HomeViewController: UIScrollViewDelegate {
             $0.top.equalToSuperview().offset(pageControlY)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(6)
+        }
+        
+        /// - ScrollView의 위치가 맨 위일 때는 스크롤 방지
+        if scrollView.contentOffset.y < 0 {
+            scrollView.contentOffset.y = 0
         }
     }
 }
