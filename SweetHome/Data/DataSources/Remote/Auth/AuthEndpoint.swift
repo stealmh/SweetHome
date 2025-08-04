@@ -34,7 +34,10 @@ extension AuthEndpoint {
         switch self {
         case let .refresh(refreshToken):
             guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
+            
+            let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
             return [
+                "Authorization": accessToken,
                 "RefreshToken": refreshToken,
                 "SeSACKey": key
             ]

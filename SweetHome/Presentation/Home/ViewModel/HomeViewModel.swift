@@ -44,9 +44,16 @@ class HomeViewModel: ViewModelable {
         let hotEstatesRelay = BehaviorSubject<[Estate]>(value: [])
         let topicsRelay = BehaviorSubject<[EstateTopic]>(value: [])
         let errorRelay = PublishSubject<SHError>()
+        let retryTrigger = PublishRelay<Void>()
         
         // API 호출들을 병렬로 실행
-        input.onAppear
+        
+        NotificationCenter.default.rx.notification(Notification.Name("TokenRefreshed"))
+            .map { _ in }
+            .bind(to: retryTrigger)
+            .disposed(by: disposeBag)
+        
+        let _ = Observable.merge(input.onAppear, retryTrigger.asObservable())
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<Void> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
