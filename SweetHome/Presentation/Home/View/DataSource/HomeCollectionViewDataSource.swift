@@ -115,7 +115,7 @@ class HomeCollectionViewDataSource {
         // Topic items
         snapshot.appendItems(topicItems, toSection: .topic)
         
-        dataSource.apply(snapshot, animatingDifferences: true)
+        dataSource.apply(snapshot, animatingDifferences: false)
     }
 }
 

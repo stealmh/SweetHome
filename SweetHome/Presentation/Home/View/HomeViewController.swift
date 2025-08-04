@@ -72,6 +72,8 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     private var recentEstates: [DetailEstate] = []
     private var hotEstates: [Estate] = []
     private var topics: [EstateTopic] = []
+    private var isInitialLayoutSet = false
+    private var isDataLoaded = false
     
     private let startAutoScrollSubject = PublishSubject<Void>()
     private let stopAutoScrollSubject = PublishSubject<Void>()
@@ -95,7 +97,24 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        scrollViewDidScroll(collectionView)
+        
+        if !isInitialLayoutSet {
+            isInitialLayoutSet = true
+    
+            collectionView.contentOffset = CGPoint(x: 0, y: 0)
+            
+            if isDataLoaded && !infiniteArray.isEmpty {
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    self.currentAutoScrollIndex = 1
+                    self.collectionView.scrollToItem(
+                        at: IndexPath(item: 1, section: 0),
+                        at: .left,
+                        animated: false
+                    )
+                }
+            }
+        }
     }
     
     override func setupUI() {
@@ -133,8 +152,30 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         )
         let output = viewModel.transform(input: input)
         
+        // Loading state binding
+        output.isLoading
+            .drive(onNext: { [weak self] isLoading in
+                guard let self else { return }
+                if isLoading {
+                    collectionView.isHidden = true
+                    self.showLoading()
+                } else {
+                    collectionView.isHidden = false
+                    self.hideLoading()
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        // Error handling
+        output.error
+            .drive(onNext: { [weak self] error in
+                self?.hideLoading()
+                // TODO: 에러 처리 로직 추가
+                print("Error occurred: \(error)")
+            })
+            .disposed(by: disposeBag)
+        
         output.todayEstates
-            .skip(1)
             .drive(onNext: { [weak self] estates in
                 guard let self else { return }
                 self.estates = estates
@@ -143,14 +184,19 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
                 self.pageControl.currentPage = 0
                 self.updateFullSnapshot()
                 
-                if !self.infiniteArray.isEmpty {
+                // 데이터가 있고 초기 레이아웃이 완료된 후에만 자동 스크롤 시작
+                if !self.infiniteArray.isEmpty && !estates.isEmpty && !self.isDataLoaded {
+                    self.isDataLoaded = true
                     DispatchQueue.main.async {
-                        self.currentAutoScrollIndex = 1
-                        self.collectionView.scrollToItem(
-                            at: IndexPath(item: 1, section: 0),
-                            at: .left,
-                            animated: false
-                        )
+                        // 초기 레이아웃이 완료된 후에만 스크롤 위치 이동
+                        if self.isInitialLayoutSet {
+                            self.currentAutoScrollIndex = 1
+                            self.collectionView.scrollToItem(
+                                at: IndexPath(item: 1, section: 0),
+                                at: .left,
+                                animated: false
+                            )
+                        }
                         self.startAutoScrollSubject.onNext(())
                     }
                 }
@@ -252,8 +298,16 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     }
     
     private func updateFullSnapshot() {
+        // 현재 스크롤 위치 저장
+        let currentOffset = collectionView.contentOffset
+        
         // 레이아웃 업데이트
         collectionView.setCollectionViewLayout(layoutManager.createLayout(), animated: false)
+        
+        // 스크롤 위치 복원 (초기 로드가 아닌 경우에만)
+        if isInitialLayoutSet {
+            collectionView.contentOffset = currentOffset
+        }
         
         // Banner items
         let bannerItems = infiniteArray.enumerated().map { index, estate in
