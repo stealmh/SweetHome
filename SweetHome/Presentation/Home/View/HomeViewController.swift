@@ -15,10 +15,13 @@ class HomeViewController: BaseViewController {
     
     enum Section: Int, CaseIterable {
         case banner
+        case recentSearchEstate
     }
     
     enum Item: Hashable {
         case estate(Estate, uniqueID: String)
+        case recentEstate(DetailEstate, uniqueID: String)
+        case emptyRecentSearch
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -33,7 +36,10 @@ class HomeViewController: BaseViewController {
         cv.alwaysBounceHorizontal = false
         cv.isScrollEnabled = true
         cv.register(BannerCollectionViewCell.self, forCellWithReuseIdentifier: BannerCollectionViewCell.identifier)
+        cv.register(RecentSearchEstateViewCell.self, forCellWithReuseIdentifier: RecentSearchEstateViewCell.identifier)
+        cv.register(EmptyRecentSearchViewCell.self, forCellWithReuseIdentifier: EmptyRecentSearchViewCell.identifier)
         cv.register(BannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: BannerFooterView.identifier)
+        cv.register(EstateSectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "EstateSectionHeaderView")
         return cv
     }()
     
@@ -46,6 +52,13 @@ class HomeViewController: BaseViewController {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: BannerCollectionViewCell.identifier, for: indexPath) as! BannerCollectionViewCell
                 cell.configure(with: estate)
                 return cell
+            case .recentEstate(let estate, _):
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSearchEstateViewCell.identifier, for: indexPath) as! RecentSearchEstateViewCell
+                cell.configure(with: estate)
+                return cell
+            case .emptyRecentSearch:
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EmptyRecentSearchViewCell.identifier, for: indexPath) as! EmptyRecentSearchViewCell
+                return cell
             }
         }
         
@@ -57,6 +70,21 @@ class HomeViewController: BaseViewController {
                     for: indexPath
                 ) as! BannerFooterView
                 return footer
+            } else if kind == UICollectionView.elementKindSectionHeader {
+                let header = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: "EstateSectionHeaderView",
+                    for: indexPath
+                ) as! EstateSectionHeaderView
+                
+                if self?.recentEstates.isEmpty == true {
+                    header.configure(title: "최근 검색 매물", hideViewAll: true)
+                } else {
+                    header.configure(title: "최근 검색 매물") {
+                        self?.viewAllTappedSubject.onNext(())
+                    }
+                }
+                return header
             }
             return nil
         }
@@ -77,10 +105,12 @@ class HomeViewController: BaseViewController {
     private var estates: [Estate] = []
     private var infiniteArray: [Estate] = []
     private var currentAutoScrollIndex = 1
+    private var recentEstates: [DetailEstate] = []
     
     private let startAutoScrollSubject = PublishSubject<Void>()
     private let stopAutoScrollSubject = PublishSubject<Void>()
     private let userScrollingSubject = BehaviorSubject<Bool>(value: false)
+    private let viewAllTappedSubject = PublishSubject<Void>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -117,7 +147,8 @@ class HomeViewController: BaseViewController {
             onAppear: .just(()),
             startAutoScroll: startAutoScrollSubject.asObservable(),
             stopAutoScroll: stopAutoScrollSubject.asObservable(),
-            userScrolling: userScrollingSubject.asObservable()
+            userScrolling: userScrollingSubject.asObservable(),
+            viewAllTapped: viewAllTappedSubject.asObservable()
         )
         let output = viewModel.transform(input: input)
         
@@ -129,7 +160,7 @@ class HomeViewController: BaseViewController {
                 self.infiniteArray = self.createInfiniteArray(estates)
                 self.pageControl.numberOfPages = estates.count
                 self.pageControl.currentPage = 0
-                self.updateSnapshot()
+                self.updateFullSnapshot()
                 
                 if !self.infiniteArray.isEmpty {
                     DispatchQueue.main.async {
@@ -148,6 +179,13 @@ class HomeViewController: BaseViewController {
         output.autoScrollTrigger
             .drive(onNext: { [weak self] _ in
                 self?.moveToNextPage()
+            })
+            .disposed(by: disposeBag)
+        
+        output.recentSearchEstates
+            .drive(onNext: { [weak self] estates in
+//                self?.recentEstates = estates
+//                self?.updateFullSnapshot()
             })
             .disposed(by: disposeBag)
     }
@@ -207,6 +245,8 @@ class HomeViewController: BaseViewController {
             switch Section.allCases[sectionIndex] {
             case .banner:
                 return self.createBannerSection()
+            case .recentSearchEstate:
+                return self.createRecentSearchEstateSection()
             }
         }
     }
@@ -226,7 +266,6 @@ class HomeViewController: BaseViewController {
         
         let section = NSCollectionLayoutSection(group: group)
         section.orthogonalScrollingBehavior = .groupPaging
-        
         section.visibleItemsInvalidationHandler = { [weak self] items, contentOffset, environment in
             guard let self = self else { return }
             
@@ -291,16 +330,103 @@ class HomeViewController: BaseViewController {
         pageControl.currentPage = actualPage
     }
     
-    private func updateSnapshot() {
+    private func updateFullSnapshot() {
+        // 레이아웃 업데이트
+        collectionView.setCollectionViewLayout(createLayout(), animated: false)
+        
         var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
         snapshot.appendSections(Section.allCases)
         
+        // Banner items
         let bannerItems = infiniteArray.enumerated().map { index, estate in
             Item.estate(estate, uniqueID: "\(estate.id)_\(index)")
         }
         snapshot.appendItems(bannerItems, toSection: .banner)
         
+        // Recent search estate items
+        if recentEstates.isEmpty {
+            snapshot.appendItems([.emptyRecentSearch], toSection: .recentSearchEstate)
+        } else {
+            let recentItems = recentEstates.enumerated().map { index, estate in
+                Item.recentEstate(estate, uniqueID: "\(estate.id)_recent_\(index)")
+            }
+            snapshot.appendItems(recentItems, toSection: .recentSearchEstate)
+        }
+        
         dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    private func createRecentSearchEstateSection() -> NSCollectionLayoutSection {
+        // Empty 상태인지 확인
+        if recentEstates.isEmpty {
+            return createEmptyRecentSearchSection()
+        } else {
+            return createNormalRecentSearchSection()
+        }
+    }
+    
+    private func createNormalRecentSearchSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .absolute(190),
+            heightDimension: .absolute(88)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .absolute(190),
+            heightDimension: .absolute(88)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .continuous
+        section.interGroupSpacing = 8
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 4 + 16, trailing: 20)
+        
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        section.boundarySupplementaryItems = [header]
+        
+        return section
+    }
+    
+    private func createEmptyRecentSearchSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(88)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(88)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 4 + 16, trailing: 20)
+        
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        section.boundarySupplementaryItems = [header]
+        
+        return section
     }
 }
 

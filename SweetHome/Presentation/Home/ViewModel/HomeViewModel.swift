@@ -17,6 +17,7 @@ class HomeViewModel: ViewModelable {
         let startAutoScroll: Observable<Void>
         let stopAutoScroll: Observable<Void>
         let userScrolling: Observable<Bool>
+        let viewAllTapped: Observable<Void>
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
@@ -24,6 +25,7 @@ class HomeViewModel: ViewModelable {
         let todayEstates: Driver<[Estate]>
         let error: Driver<SHError>
         let autoScrollTrigger: Driver<Void>
+        let recentSearchEstates: Driver<[DetailEstate]>
     }
     
     private let apiClient: ApiClient
@@ -87,11 +89,24 @@ class HomeViewModel: ViewModelable {
             })
             .disposed(by: disposeBag)
         
+        // 최근 검색 매물 데이터 (Mock 데이터 사용)
+        let recentSearchEstates = input.onAppear
+            .map { _ in DetailEstate.mockData }
+            .asDriver(onErrorJustReturn: [])
+        
+        // View All 버튼 탭 처리
+        input.viewAllTapped
+            .subscribe(onNext: { _ in
+                print("👀 View All 버튼 탭됨 - 최근 검색 매물")
+            })
+            .disposed(by: disposeBag)
+        
         return Output(
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
             todayEstates: todayEstatesRelay.asDriver(onErrorDriveWith: .empty()),
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
-            autoScrollTrigger: autoScrollTriggerRelay.asDriver(onErrorDriveWith: .empty())
+            autoScrollTrigger: autoScrollTriggerRelay.asDriver(onErrorDriveWith: .empty()),
+            recentSearchEstates: recentSearchEstates
         )
     }
     
