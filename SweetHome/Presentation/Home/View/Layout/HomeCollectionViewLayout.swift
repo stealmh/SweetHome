@@ -24,6 +24,8 @@ class HomeCollectionViewLayout {
                 return self.createRecentSearchEstateSection()
             case .hotEstate:
                 return self.createHotEstateSection()
+            case .topic:
+                return self.createTopicSection()
             }
         }
     }
@@ -156,6 +158,39 @@ class HomeCollectionViewLayout {
         section.interGroupSpacing = 8
         section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 4 + 16, trailing: 20)
         
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        section.boundarySupplementaryItems = [header]
+        
+        return section
+    }
+    
+    private func createTopicSection() -> NSCollectionLayoutSection {
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(66)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(66)
+        )
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = 10
+        section.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 20, bottom: 4 + 16, trailing: 20)
+        
+        // Header 추가
         let headerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .absolute(32)

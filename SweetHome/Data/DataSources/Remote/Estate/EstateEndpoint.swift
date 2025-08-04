@@ -10,6 +10,8 @@ import Alamofire
 
 enum EstateEndpoint: TargetType {
     case todayEstates
+    case hotEstates
+    case topics
 }
 
 extension EstateEndpoint {
@@ -19,12 +21,16 @@ extension EstateEndpoint {
         switch self {
         case .todayEstates:
             return "/estates/today-estates"
+        case .hotEstates:
+            return "/estates/hot-estates"
+        case .topics:
+            return "/estates/today-topic"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .todayEstates:
+        case .todayEstates, .hotEstates, .topics:
             return .get
         }
     }

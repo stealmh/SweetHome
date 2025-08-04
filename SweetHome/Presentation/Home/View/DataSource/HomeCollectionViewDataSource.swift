@@ -43,6 +43,10 @@ class HomeCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: HotEstateViewCell.identifier, for: indexPath) as! HotEstateViewCell
             cell.configure(with: estate)
             return cell
+        case .topic(let topic):
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateTopicViewCell.identifier, for: indexPath) as! EstateTopicViewCell
+            cell.configure(topic)
+            return cell
         case .emptyRecentSearch:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EmptyRecentSearchViewCell.identifier, for: indexPath) as! EmptyRecentSearchViewCell
             return cell
@@ -60,7 +64,7 @@ class HomeCollectionViewDataSource {
         } else if kind == UICollectionView.elementKindSectionHeader {
             let header = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
-                withReuseIdentifier: "EstateSectionHeaderView",
+                withReuseIdentifier: EstateSectionHeaderView.identifier,
                 for: indexPath
             ) as! EstateSectionHeaderView
             
@@ -80,6 +84,8 @@ class HomeCollectionViewDataSource {
                 header.configure(title: "HOT 매물") {
                     delegate.hotEstateViewAllTapped()
                 }
+            case .topic:
+                header.configure(title: "오늘의 부동산 TOPIC", hideViewAll: true)
             default:
                 break
             }
@@ -88,7 +94,12 @@ class HomeCollectionViewDataSource {
         return nil
     }
     
-    func updateSnapshot(bannerItems: [HomeViewController.Item], recentItems: [HomeViewController.Item], hotItems: [HomeViewController.Item] = []) {
+    func updateSnapshot(
+        bannerItems: [HomeViewController.Item],
+        recentItems: [HomeViewController.Item],
+        hotItems: [HomeViewController.Item] = [],
+        topicItems: [HomeViewController.Item] = []
+    ) {
         var snapshot = NSDiffableDataSourceSnapshot<HomeViewController.Section, HomeViewController.Item>()
         snapshot.appendSections(HomeViewController.Section.allCases)
         
@@ -101,7 +112,10 @@ class HomeCollectionViewDataSource {
         // Hot estate items
         snapshot.appendItems(hotItems, toSection: .hotEstate)
         
-        dataSource.apply(snapshot, animatingDifferences: false)
+        // Topic items
+        snapshot.appendItems(topicItems, toSection: .topic)
+        
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
 }
 
