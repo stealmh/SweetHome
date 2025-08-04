@@ -13,6 +13,11 @@ final class TokenInterceptor: RequestInterceptor {
     private let keyChainManager = KeyChainManager.shared
     private let logger = NetworkLogger.shared
     
+    // 토큰 재요청용 별도 ApiClient (인터셉터 없음)
+    private lazy var refreshApiClient: ApiClient = {
+        return ApiClient(network: NetworkService(interceptor: nil))
+    }()
+    
     private init() {}
     
     func adapt(_ urlRequest: URLRequest, for session: Session, completion: @escaping (Result<URLRequest, Error>) -> Void) {
@@ -46,16 +51,20 @@ final class TokenInterceptor: RequestInterceptor {
         case 419:
             // 액세스 토큰 만료 - 토큰 갱신 시도
             logger.logTokenRefresh()
+            print("🔄 TokenInterceptor: 419 에러 발생, 토큰 재요청 시작")
             
             Task {
                 do {
-                    guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { 
+                    guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else {
+                        print("❌ TokenInterceptor: RefreshToken이 없음")
                         completion(.doNotRetryWithError(SHError.networkError(.tokenExpired)))
                         return 
                     }
-                    let apiClient = ApiClient.shared
-                    let tokenResponse: ReIssueResponse = try await apiClient.request(AuthEndpoint.refresh(refreshToken: refreshToken))
                     
+                    print("🔄 TokenInterceptor: RefreshToken 존재, 토큰 재요청 API 호출")
+                    let tokenResponse: ReIssueResponse = try await refreshApiClient.request(AuthEndpoint.refresh(refreshToken: refreshToken))
+                    
+                    print("✅ TokenInterceptor: 토큰 재요청 성공")
                     keyChainManager.save(.accessToken, value: tokenResponse.accessToken)
                     keyChainManager.save(.refreshToken, value: tokenResponse.refreshToken)
                     logger.logTokenRefreshSuccess()
@@ -65,6 +74,7 @@ final class TokenInterceptor: RequestInterceptor {
                     
                     completion(.retry)
                 } catch {
+                    print("❌ TokenInterceptor: 토큰 재요청 실패 - \(error)")
                     logger.logTokenRefreshFailed(error)
                     keyChainManager.deleteAll()
                     logger.logTokenCleared()

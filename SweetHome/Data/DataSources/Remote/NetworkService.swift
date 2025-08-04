@@ -23,6 +23,11 @@ final class NetworkService: NetworkServiceProtocol {
         self.session = Session(interceptor: TokenInterceptor.shared)
     }
     
+    // 인터셉터를 옵셔널로 받는 생성자 (토큰 재요청용)
+    init(interceptor: RequestInterceptor?) {
+        self.session = Session(interceptor: interceptor)
+    }
+    
     func request<T: Decodable>(_ target: TargetType) async throws -> T {
         print(#function)
         return try await withCheckedThrowingContinuation { continuation in
