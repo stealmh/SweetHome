@@ -10,7 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class HomeViewController: BaseViewController {
+class HomeViewController: BaseViewController, UICollectionViewDelegate {
     private let searchBar = SHSearchBar()
     
     // MARK: - Layout & DataSource
@@ -76,6 +76,12 @@ class HomeViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        collectionView.delegate = self
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        scrollViewDidScroll(collectionView)
     }
     
     override func setupUI() {
@@ -307,3 +313,27 @@ extension HomeViewController: HomeCollectionViewDataSourceDelegate {
     }
 }
 
+extension HomeViewController: UIScrollViewDelegate {
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let offsetY = scrollView.contentOffset.y
+        
+        let topLimit: CGFloat = -44
+        let baseTop: CGFloat = getStatusBarHeight() + 3
+        let adjustedTop = max(topLimit, baseTop - offsetY)
+        
+        searchBar.snp.remakeConstraints {
+            $0.top.equalToSuperview().offset(adjustedTop)
+            $0.leading.equalToSuperview().offset(20)
+            $0.trailing.equalToSuperview().inset(20)
+        }
+        
+        let bannerBottomY: CGFloat = 335 - 16
+        let pageControlY = max(0, bannerBottomY - offsetY)
+        
+        pageControl.snp.remakeConstraints {
+            $0.top.equalToSuperview().offset(pageControlY)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(6)
+        }
+    }
+}
