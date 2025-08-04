@@ -21,6 +21,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         case banner
         case recentSearchEstate
         case hotEstate
+        case topic
     }
     
     enum Item: Hashable {
@@ -28,6 +29,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         case recentEstate(DetailEstate, uniqueID: String)
         case hotEstate(Estate, uniqueID: String)
         case emptyRecentSearch
+        case topic(EstateTopic)
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -46,7 +48,8 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         cv.register(HotEstateViewCell.self, forCellWithReuseIdentifier: HotEstateViewCell.identifier)
         cv.register(EmptyRecentSearchViewCell.self, forCellWithReuseIdentifier: EmptyRecentSearchViewCell.identifier)
         cv.register(BannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: BannerFooterView.identifier)
-        cv.register(EstateSectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "EstateSectionHeaderView")
+        cv.register(EstateSectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: EstateSectionHeaderView.identifier)
+        cv.register(EstateTopicViewCell.self, forCellWithReuseIdentifier: EstateTopicViewCell.identifier)
         
         dataSourceManager = HomeCollectionViewDataSource(collectionView: cv, delegate: self)
         return cv
@@ -68,6 +71,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     private var currentAutoScrollIndex = 1
     private var recentEstates: [DetailEstate] = []
     private var hotEstates: [Estate] = []
+    private var topics: [EstateTopic] = []
     
     private let startAutoScrollSubject = PublishSubject<Void>()
     private let stopAutoScrollSubject = PublishSubject<Void>()
@@ -104,7 +108,6 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
             $0.top.equalToSuperview()
             $0.leading.trailing.equalTo(view)
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
-            //            $0.height.equalTo(335)
         }
         
         searchBar.snp.makeConstraints {
@@ -162,16 +165,24 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         
         output.recentSearchEstates
             .drive(onNext: { [weak self] estates in
-//                self?.recentEstates = estates
-//                self?.updateFullSnapshot()
+                self?.recentEstates = estates
+                self?.updateFullSnapshot()
             })
             .disposed(by: disposeBag)
         
-        // HOT 매물 목 데이터 (실제로는 ViewModel에서 받아와야 함)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-            self?.hotEstates = MockEstateData.hotEstates
-            self?.updateFullSnapshot()
-        }
+        output.hotEstates
+            .drive(onNext: { [weak self] estates in
+                self?.hotEstates = estates
+                self?.updateFullSnapshot()
+            })
+            .disposed(by: disposeBag)
+        
+        output.topics
+            .drive(onNext: { [weak self] topics in
+                self?.topics = topics
+                self?.updateFullSnapshot()
+            })
+            .disposed(by: disposeBag)
     }
     
     private func moveToNextPage() {
@@ -264,10 +275,16 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
             Item.hotEstate(estate, uniqueID: "\(estate.id)_hot_\(index)")
         }
         
+        // Topic items
+        let topicItems = topics.map { topic in
+            Item.topic(topic)
+        }
+        
         dataSourceManager.updateSnapshot(
             bannerItems: bannerItems, 
             recentItems: recentItems,
-            hotItems: hotItems
+            hotItems: hotItems,
+            topicItems: topicItems
         )
     }
 }

@@ -26,6 +26,8 @@ class HomeViewModel: ViewModelable {
         let error: Driver<SHError>
         let autoScrollTrigger: Driver<Void>
         let recentSearchEstates: Driver<[DetailEstate]>
+        let hotEstates: Driver<[Estate]>
+        let topics: Driver<[EstateTopic]>
     }
     
     private let apiClient: ApiClient
@@ -39,25 +41,61 @@ class HomeViewModel: ViewModelable {
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
         let todayEstatesRelay = BehaviorSubject<[Estate]>(value: [])
+        let hotEstatesRelay = BehaviorSubject<[Estate]>(value: [])
+        let topicsRelay = BehaviorSubject<[EstateTopic]>(value: [])
         let errorRelay = PublishSubject<SHError>()
         
+        // API 호출들을 병렬로 실행
         input.onAppear
-            .do(onNext: { _ in
-                isLoadingRelay.onNext(true)
-            })
-            .flatMapLatest { [weak self] _ -> Observable<BaseEstateResponse> in
+            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+            .flatMapLatest { [weak self] _ -> Observable<Void> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
-                return self.apiClient.requestObservable(EstateEndpoint.todayEstates)
-                    .catch { error -> Observable<BaseEstateResponse> in
-                        errorRelay.onNext(SHError.from(error))
-                        return Observable.empty()
+                
+                // 3개 API를 병렬로 호출
+                let todayEstatesObservable = self.apiClient
+                    .requestObservable(EstateEndpoint.todayEstates)
+                    .map { (response: BaseEstateResponse) -> [Estate] in
+                        response.data.map { $0.toDomain }
                     }
+                    .catch { error -> Observable<[Estate]> in
+                        errorRelay.onNext(SHError.from(error))
+                        return Observable.just([])
+                    }
+                
+                let hotEstatesObservable = self.apiClient
+                    .requestObservable(EstateEndpoint.hotEstates)
+                    .map { (response: BaseEstateResponse) -> [Estate] in
+                        response.data.map { $0.toDomain }
+                    }
+                    .catch { error -> Observable<[Estate]> in
+                        errorRelay.onNext(SHError.from(error))
+                        return Observable.just([])
+                    }
+                
+                let topicsObservable = self.apiClient
+                    .requestObservable(EstateEndpoint.topics)
+                    .map { (response: EstateTopicResponse) -> [EstateTopic] in
+                        response.data.map { $0.toDomain }
+                    }
+                    .catch { error -> Observable<[EstateTopic]> in
+                        errorRelay.onNext(SHError.from(error))
+                        return Observable.just([])
+                    }
+                
+                // 모든 API 결과를 합쳐서 처리
+                return Observable.combineLatest(
+                    todayEstatesObservable,
+                    hotEstatesObservable,
+                    topicsObservable
+                ) { todayEstates, hotEstates, topics in
+                    todayEstatesRelay.onNext(todayEstates)
+                    hotEstatesRelay.onNext(hotEstates)
+                    topicsRelay.onNext(topics)
+                    isLoadingRelay.onNext(false)
+                    return ()
+                }
             }
-            .subscribe(onNext: { response in
-                isLoadingRelay.onNext(false)
-                let estates = response.data.map { $0.toDomain }
-                todayEstatesRelay.onNext(estates)
-            }, onError: { error in
+            .subscribe(onError: { error in
                 isLoadingRelay.onNext(false)
                 errorRelay.onNext(SHError.from(error))
             })
@@ -89,7 +127,7 @@ class HomeViewModel: ViewModelable {
             })
             .disposed(by: disposeBag)
         
-        // 최근 검색 매물 데이터 (Mock 데이터 사용)
+        // 최근 검색 매물 데이터 (Mock 데이터 사용 - 실제로는 로컬 저장소에서 가져와야 함)
         let recentSearchEstates = input.onAppear
             .map { _ in DetailEstate.mockData }
             .asDriver(onErrorJustReturn: [])
@@ -106,7 +144,9 @@ class HomeViewModel: ViewModelable {
             todayEstates: todayEstatesRelay.asDriver(onErrorDriveWith: .empty()),
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
             autoScrollTrigger: autoScrollTriggerRelay.asDriver(onErrorDriveWith: .empty()),
-            recentSearchEstates: recentSearchEstates
+            recentSearchEstates: recentSearchEstates,
+            hotEstates: hotEstatesRelay.asDriver(onErrorDriveWith: .empty()),
+            topics: topicsRelay.asDriver(onErrorDriveWith: .empty())
         )
     }
     
