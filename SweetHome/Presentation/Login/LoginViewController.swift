@@ -250,7 +250,7 @@ class LoginViewController: BaseViewController {
         output.error
             .drive(onNext: { [weak self] error in
                 guard let self else { return }
-                ErrorAlertHelper.showAlert(for: error, on: self)
+                self.showAlert(for: error)
             })
             .disposed(by: disposeBag)
         

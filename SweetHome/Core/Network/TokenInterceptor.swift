@@ -41,7 +41,7 @@ final class TokenInterceptor: RequestInterceptor {
             // Notification을 통해 로그인 화면 이동 요청
             NotificationCenter.default.post(name: .refreshTokenExpired, object: nil)
             
-            completion(.doNotRetryWithError(SHError.networkError("세션이 만료되었습니다. 다시 로그인해주세요.")))
+            completion(.doNotRetryWithError(SHError.networkError(.refreshTokenExpired)))
             
         case 419:
             // 액세스 토큰 만료 - 토큰 갱신 시도
@@ -50,7 +50,7 @@ final class TokenInterceptor: RequestInterceptor {
             Task {
                 do {
                     guard let refreshToken = KeyChainManager.shared.read(.refreshToken) else { 
-                        completion(.doNotRetryWithError(SHError.networkError("리프레시 토큰이 없습니다.")))
+                        completion(.doNotRetryWithError(SHError.networkError(.tokenExpired)))
                         return 
                     }
                     let apiClient = ApiClient.shared
