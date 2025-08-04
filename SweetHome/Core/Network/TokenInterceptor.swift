@@ -48,7 +48,7 @@ final class TokenInterceptor: RequestInterceptor {
             
             completion(.doNotRetryWithError(SHError.networkError(.refreshTokenExpired)))
             
-        case 419:
+        case 403, 419:
             // 액세스 토큰 만료 - 토큰 갱신 시도
             logger.logTokenRefresh()
             print("🔄 TokenInterceptor: 419 에러 발생, 토큰 재요청 시작")

@@ -32,6 +32,12 @@ class EstateTopicViewCell: UICollectionViewCell {
         return v
     }()
     
+    private let divideView: UIView = {
+        let v = UIView()
+        v.backgroundColor = SHColor.GrayScale.gray_15
+        return v
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -45,7 +51,7 @@ class EstateTopicViewCell: UICollectionViewCell {
     }
     
     private func setupUI() {
-        addSubviews(topicTitleLabel, contentLabel, dateLabel)
+        addSubviews(topicTitleLabel, contentLabel, dateLabel, divideView)
     }
     
     private func setupConstraints() {
@@ -57,11 +63,16 @@ class EstateTopicViewCell: UICollectionViewCell {
             $0.top.equalTo(topicTitleLabel.snp.bottom).offset(8)
             $0.leading.equalTo(topicTitleLabel)
             $0.trailing.equalToSuperview().inset(54)
-            $0.bottom.equalToSuperview().inset(12)
         }
         dateLabel.snp.makeConstraints {
             $0.centerY.equalToSuperview()
             $0.trailing.equalToSuperview()
+        }
+        
+        divideView.snp.makeConstraints {
+            $0.top.equalTo(contentLabel.snp.bottom).offset(12 + 5)
+            $0.height.equalTo(1)
+            $0.leading.trailing.equalToSuperview()
         }
     }
     
