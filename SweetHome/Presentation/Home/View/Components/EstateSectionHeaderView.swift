@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 
 class EstateSectionHeaderView: UICollectionReusableView {
-    
+    static let identifier = "EstateSectionHeaderView"
     // MARK: - Properties
     var onViewAllTapped: (() -> Void)?
     
