@@ -177,6 +177,88 @@ extension DetailEstate {
     ]
 }
 
+// MARK: - Estate Mock Data
+struct MockEstateData {
+    static let hotEstates: [Estate] = [
+        Estate(
+            id: "hot1",
+            category: "오피스텔",
+            title: "🔥역세권 신축 오피스텔",
+            introduction: "지하철 2분거리 초역세권",
+            thumbnails: ["/data/estates/aaron-huber-G7sE2S4Lab4-unsplash_1747105359870.jpg"],
+            deposit: 2000,
+            monthlyRent: 80,
+            builtYear: "2024-01-01",
+            area: 30.5,
+            floors: 12,
+            geolocation: Geolocation(lon: 126.886557, lat: 37.51775),
+            distance: nil,
+            likeCount: 45,
+            isSafeEstate: true,
+            isRecommended: true,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Estate(
+            id: "hot2",
+            category: "원룸",
+            title: "🔥신설동 신축 원룸",
+            introduction: "풀옵션 즉시입주 가능",
+            thumbnails: ["/data/estates/collov-home-design-4_jQL4JCS98-unsplash_1747105359959.jpg"],
+            deposit: 1500,
+            monthlyRent: 65,
+            builtYear: "2023-12-15",
+            area: 22.3,
+            floors: 8,
+            geolocation: Geolocation(lon: 126.888557, lat: 37.51875),
+            distance: nil,
+            likeCount: 32,
+            isSafeEstate: true,
+            isRecommended: true,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Estate(
+            id: "hot3",
+            category: "아파트",
+            title: "🔥한강뷰 프리미엄 아파트",
+            introduction: "한강이 한눈에 들어오는 최고층",
+            thumbnails: ["/data/estates/aaron-huber-G7sE2S4Lab4-unsplash_1747105359870.jpg"],
+            deposit: 80000,
+            monthlyRent: 0, // 전세
+            builtYear: "2019-05-20",
+            area: 84.5,
+            floors: 25,
+            geolocation: Geolocation(lon: 126.890557, lat: 37.52075),
+            distance: nil,
+            likeCount: 67,
+            isSafeEstate: true,
+            isRecommended: true,
+            createdAt: Date(),
+            updatedAt: Date()
+        ),
+        Estate(
+            id: "hot4",
+            category: "투룸",
+            title: "🔥넓은 투룸 베란다 있음",
+            introduction: "신혼부부 추천 매물",
+            thumbnails: ["/data/estates/collov-home-design-4_jQL4JCS98-unsplash_1747105359959.jpg"],
+            deposit: 3000,
+            monthlyRent: 120,
+            builtYear: "2021-08-10",
+            area: 45.2,
+            floors: 5,
+            geolocation: Geolocation(lon: 126.892557, lat: 37.51975),
+            distance: nil,
+            likeCount: 23,
+            isSafeEstate: true,
+            isRecommended: true,
+            createdAt: Date(),
+            updatedAt: Date()
+        )
+    ]
+}
+
 // MARK: - Mock Response Data
 extension DetailEstateResponse {
     static let mockResponseData: [DetailEstateResponse] = [
