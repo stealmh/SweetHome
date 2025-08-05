@@ -40,28 +40,12 @@ extension APIEndpoint: TargetType {
         }
     }
     
-    var headers: HTTPHeaders? {
+    var task: HTTPTask {
         switch self {
-        case .uploadImage:
-            return HTTPHeaders(["Content-Type": "multipart/form-data"])
-        default:
-            return HTTPHeaders(["Content-Type": "application/json"])
-        }
-    }
-    
-    var encoding: ParameterEncoding {
-        switch self {
-        case .uploadImage: return URLEncoding.default
-        default:           return JSONEncoding.default
-        }
-    }
-    
-    var multipartData: [MultipartFormData]? {
-        switch self {
+        case .users, .user:
+            return .requestPlain
         case .uploadImage(let data, let fileName):
-            return [MultipartFormData(data: data, name: "file", fileName: fileName, mimeType: "image/jpeg")]
-        default:
-            return nil
+            return .uploadMultipart([MultipartFormData(data: data, name: "file", fileName: fileName, mimeType: "image/jpeg")])
         }
     }
 }

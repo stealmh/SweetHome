@@ -46,24 +46,24 @@ extension UserEndpoint {
         }
     }
     
-    var body: Encodable? {
+    var task: HTTPTask {
         switch self {
         case let .emailValidation(model):
-            return model
+            return .requestJSONEncodable(model)
         case let .emailRegister(model):
-            return model
+            return .requestJSONEncodable(model)
         case let .emailLogin(model):
-            return model
+            return .requestJSONEncodable(model)
         case let .kakaoLogin(model):
-            return model
+            return .requestJSONEncodable(model)
         case let .appleLogin(model):
-            return model
+            return .requestJSONEncodable(model)
         }
     }
     
     var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else {
-            return HTTPHeaders(["Content-Type": "application/json"])
+            return nil
         }
         return HTTPHeaders([
             "SeSACKey": key

@@ -35,6 +35,13 @@ extension EstateEndpoint {
         }
     }
     
+    var task: HTTPTask {
+        switch self {
+        case .todayEstates, .hotEstates, .topics:
+            return .requestPlain
+        }
+    }
+    
     var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
         return HTTPHeaders([
