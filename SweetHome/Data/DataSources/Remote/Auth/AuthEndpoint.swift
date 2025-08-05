@@ -43,4 +43,11 @@ extension AuthEndpoint {
             ])
         }
     }
+    
+    var task: HTTPTask {
+        switch self {
+        case .refresh:
+            return .requestPlain
+        }
+    }
 }

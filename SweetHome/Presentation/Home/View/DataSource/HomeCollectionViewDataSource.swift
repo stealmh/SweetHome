@@ -60,6 +60,11 @@ class HomeCollectionViewDataSource {
                 withReuseIdentifier: BannerFooterView.identifier,
                 for: indexPath
             ) as! BannerFooterView
+            
+            footer.buttonTapped = { [weak self] estateType in
+                self?.delegate?.bannerEstateTypeTapped(estateType)
+            }
+            
             return footer
         } else if kind == UICollectionView.elementKindSectionHeader {
             let header = collectionView.dequeueReusableSupplementaryView(
@@ -117,6 +122,10 @@ class HomeCollectionViewDataSource {
         
         dataSource.apply(snapshot, animatingDifferences: false)
     }
+    
+    func getItem(for indexPath: IndexPath) -> HomeViewController.Item? {
+        return dataSource.itemIdentifier(for: indexPath)
+    }
 }
 
 // MARK: - HomeCollectionViewDataSourceDelegate
@@ -124,4 +133,5 @@ protocol HomeCollectionViewDataSourceDelegate: AnyObject {
     func isRecentEstatesEmpty() -> Bool
     func viewAllTapped()
     func hotEstateViewAllTapped()
+    func bannerEstateTypeTapped(_ estateType: BannerEstateType)
 }

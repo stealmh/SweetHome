@@ -8,15 +8,19 @@
 import Foundation
 import Alamofire
 
+enum HTTPTask {
+    case requestPlain
+    case requestParameters(parameters: [String: Any], encoding: ParameterEncoding)
+    case requestJSONEncodable(Encodable)
+    case uploadMultipart([MultipartFormData])
+}
+
 protocol TargetType: URLRequestConvertible {
     var baseURL: String { get }
     var path: String { get }
     var method: HTTPMethod { get }
     var headers: HTTPHeaders? { get }
-    var body: Encodable? { get }
-    var parameters: [String: Any]? { get }
-    var encoding: ParameterEncoding { get }
-    var multipartData: [MultipartFormData]? { get }
+    var task: HTTPTask { get }
     var timeout: TimeInterval { get }
 }
 
@@ -29,15 +33,7 @@ extension TargetType {
         return url
     }
     
-    var headers: HTTPHeaders? {  return HTTPHeaders(["Content-Type": "application/json"]) }
-    
-    var body: Encodable? { return nil }
-    
-    var parameters: [String: Any]? { return nil }
-    
-    var encoding: ParameterEncoding { return body != nil ? JSONEncoding.default : URLEncoding.default }
-    
-    var multipartData: [MultipartFormData]? { return nil }
+    var headers: HTTPHeaders? { return nil }
     
     var timeout: TimeInterval { return 30.0 }
 }
@@ -53,15 +49,33 @@ extension TargetType {
             request.setValue(header.value, forHTTPHeaderField: header.name)
         }
         
-        if let body = body {
-            request.httpBody = try JSONEncoder().encode(body)
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        }
-    
-        else if let parameters = parameters {
+        switch task {
+        case .requestPlain:
+            break
+            
+        case .requestParameters(let parameters, let encoding):
             request = try encoding.encode(request, with: parameters)
+            
+        case .requestJSONEncodable(let encodable):
+            request.httpBody = try JSONEncoder().encode(encodable)
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+        case .uploadMultipart(_):
+            break
         }
         
         return request
+    }
+}
+
+// MARK: - HTTPTask Extension for NetworkService compatibility
+extension TargetType {
+    var multipartData: [MultipartFormData]? {
+        switch task {
+        case .uploadMultipart(let data):
+            return data
+        default:
+            return nil
+        }
     }
 }

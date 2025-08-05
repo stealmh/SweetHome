@@ -78,7 +78,6 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     private let startAutoScrollSubject = PublishSubject<Void>()
     private let stopAutoScrollSubject = PublishSubject<Void>()
     private let userScrollingSubject = BehaviorSubject<Bool>(value: false)
-    private let viewAllTappedSubject = PublishSubject<Void>()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -147,8 +146,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
             onAppear: .just(()),
             startAutoScroll: startAutoScrollSubject.asObservable(),
             stopAutoScroll: stopAutoScrollSubject.asObservable(),
-            userScrolling: userScrollingSubject.asObservable(),
-            viewAllTapped: viewAllTappedSubject.asObservable()
+            userScrolling: userScrollingSubject.asObservable()
         )
         let output = viewModel.transform(input: input)
         
@@ -384,13 +382,20 @@ extension HomeViewController: HomeCollectionViewLayoutDelegate {
 
 // MARK: - HomeCollectionViewDataSourceDelegate
 extension HomeViewController: HomeCollectionViewDataSourceDelegate {
+    /// - 최근검색 매물 전체보기 버튼 눌렀을 때
     func viewAllTapped() {
-        viewAllTappedSubject.onNext(())
+        // TODO: 최근 검색 매물 전체보기 로직 구현
+        print("HOT 매물 전체보기 탭")
     }
-    
+    /// - 핫 매물 전체보기 버튼 눌렀을 때
     func hotEstateViewAllTapped() {
         // TODO: HOT 매물 전체보기 로직 구현
-        print("HOT 매물 전체보기 탭됨")
+        print("HOT 매물 전체보기 탭")
+    }
+    /// - 배너 Footer의 카테고리 항목 눌렀을 때
+    func bannerEstateTypeTapped(_ estateType: BannerEstateType) {
+        let detailVC = EstateMapViewController()
+        navigationController?.pushViewController(detailVC, animated: true)
     }
 }
 
@@ -421,6 +426,38 @@ extension HomeViewController: UIScrollViewDelegate {
         /// - ScrollView의 위치가 맨 위일 때는 스크롤 방지
         if scrollView.contentOffset.y < 0 {
             scrollView.contentOffset.y = 0
+        }
+    }
+}
+
+// MARK: - UICollectionViewDelegate Methods
+extension HomeViewController {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let item = dataSourceManager.getItem(for: indexPath) else { return }
+        
+        switch item {
+        /// - 상단 배너 눌렀을 때
+        case .estate(let estate, _):
+            let detailVC = EstateDetailViewController(estate: estate)
+            navigationController?.pushViewController(detailVC, animated: true)
+        /// - 최근 검색 매물 눌렀을 때
+        case .recentEstate(let estate, _):
+            let detailVC = EstateDetailViewController(estate: estate.toBaseEstate)
+            navigationController?.pushViewController(detailVC, animated: true)
+        /// - 핫 매물 눌렀을 때
+        case .hotEstate(let estate, _):
+            let detailVC = EstateDetailViewController(estate: estate)
+            navigationController?.pushViewController(detailVC, animated: true)
+        /// - 토픽 눌렀을 때
+        case .topic(let topic):
+            if let linkString = topic.link,
+               let url = URL(string: linkString) {
+                let webViewController = WebViewController(url: url, title: topic.title)
+                navigationController?.pushViewController(webViewController, animated: true)
+            }
+            
+        case .emptyRecentSearch:
+            break
         }
     }
 }

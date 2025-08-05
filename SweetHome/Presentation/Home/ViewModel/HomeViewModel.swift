@@ -17,7 +17,6 @@ class HomeViewModel: ViewModelable {
         let startAutoScroll: Observable<Void>
         let stopAutoScroll: Observable<Void>
         let userScrolling: Observable<Bool>
-        let viewAllTapped: Observable<Void>
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
@@ -125,12 +124,6 @@ class HomeViewModel: ViewModelable {
         let recentSearchEstates = input.onAppear
             .map { _ in DetailEstate.mockData }
             .asDriver(onErrorJustReturn: [])
-        
-        input.viewAllTapped
-            .subscribe(onNext: { _ in
-                print("👀 View All 버튼 탭됨 - 최근 검색 매물")
-            })
-            .disposed(by: disposeBag)
         
         return Output(
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
