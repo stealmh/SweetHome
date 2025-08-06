@@ -59,14 +59,16 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     @objc private func handleRefreshTokenExpired() {
-        guard let window = window else { return }
-        
-        let loginViewController = LoginViewController()
-        
-        window.rootViewController = loginViewController
-        window.makeKeyAndVisible()
-        
-        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: nil, completion: nil)
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let window = self.window else { return }
+            let loginViewController = LoginViewController()
+            
+            UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve, animations: {
+                window.rootViewController = loginViewController
+            }) { _ in
+                window.makeKeyAndVisible()
+            }
+        }
     }
 }
 
