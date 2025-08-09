@@ -10,6 +10,10 @@ import SnapKit
 
 class SHSearchBar: UIView {
     
+    // MARK: - Callbacks
+    /// - 검색 완료 시 호출되는 클로저 (엔터 키 입력 또는 편집 종료 시)
+    var onSearchCompleted: ((String) -> Void)?
+    
     // MARK: - UI Components
     private let containerView: UIView = {
         let v = UIView()
@@ -45,6 +49,7 @@ class SHSearchBar: UIView {
         setupUI()
         setupConstraints()
         setupTextFieldEvents()
+        setupDelegate()
     }
     
     required init?(coder: NSCoder) {
@@ -52,6 +57,7 @@ class SHSearchBar: UIView {
         setupUI()
         setupConstraints()
         setupTextFieldEvents()
+        setupDelegate()
     }
     
     // MARK: - Setup Methods
@@ -86,6 +92,10 @@ class SHSearchBar: UIView {
         textField.addTarget(self, action: #selector(textFieldDidEndEditing), for: .editingDidEnd)
     }
     
+    private func setupDelegate() {
+        textField.delegate = self
+    }
+    
     // MARK: - TextField Events
     @objc private func textFieldDidBeginEditing() {
 //        setFocusState(true)
@@ -93,6 +103,8 @@ class SHSearchBar: UIView {
     
     @objc private func textFieldDidEndEditing() {
 //        setFocusState(false)
+        let text = textField.text ?? ""
+        onSearchCompleted?(text)
     }
     
     // MARK: - Public Methods
@@ -118,5 +130,16 @@ class SHSearchBar: UIView {
     @discardableResult
     override func resignFirstResponder() -> Bool {
         return textField.resignFirstResponder()
+    }
+}
+
+// MARK: - UITextFieldDelegate
+extension SHSearchBar: UITextFieldDelegate {
+    /// - 엔터 키 입력 시 호출되는 메서드
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        let searchText = textField.text ?? ""
+        onSearchCompleted?(searchText)
+        textField.resignFirstResponder()
+        return true
     }
 }
