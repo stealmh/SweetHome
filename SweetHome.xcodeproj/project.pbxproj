@@ -46,7 +46,6 @@
 		16217F9F2E310A3700D7EB2D /* Exceptions for "SweetHome" folder in "SweetHome" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Presentation/EstateMap/View/Untitled.swift,
 				Resources/Info.plist,
 			);
 			target = 162B30642E30D38900412FB9 /* SweetHome */;
