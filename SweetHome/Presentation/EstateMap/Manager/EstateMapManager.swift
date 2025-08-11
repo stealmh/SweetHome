@@ -84,11 +84,17 @@ class EstateMapManager: NSObject {
     
     /// - 정리 작업
     func cleanup() {
+        zoomTimer?.invalidate()
+        zoomTimer = nil
         mapController?.pauseEngine()
         mapController?.resetEngine()
         removeObservers()
     }
 }
+
+// MARK: - Properties for Zoom Tracking
+private var currentZoomLevel: Int = 0
+private var zoomTimer: Timer?
 
 // MARK: - MapControllerDelegate
 extension EstateMapManager: MapControllerDelegate {
@@ -130,6 +136,9 @@ extension EstateMapManager: MapControllerDelegate {
         
         mapView.viewRect = container.bounds
         
+        // 줌 레벨 변경 감지를 위한 이벤트 리스너 추가
+        setupZoomLevelTracking(mapView: mapView)
+        
         /// - 델리게이트에게 맵 준비 완료 알림
         delegate?.mapDidFinishSetup()
     }
@@ -137,6 +146,76 @@ extension EstateMapManager: MapControllerDelegate {
     func addViewFailed(_ viewName: String, viewInfoName: String) {
         print("❌ Map view failed to add: \(viewName)")
         delegate?.mapDidFailSetup(error: "Failed to add map view: \(viewName)")
+    }
+}
+
+// MARK: - Zoom Level Tracking
+private extension EstateMapManager {
+    
+    /// - 줌 레벨 추적 설정
+    func setupZoomLevelTracking(mapView: KakaoMap) {
+        // 초기 줌 레벨 저장
+        currentZoomLevel = Int(mapView.zoomLevel)
+        print("📏 Initial zoom level: \(currentZoomLevel)")
+        
+        // 줌 레벨 변경 감지를 위한 타이머 시작
+        startZoomLevelMonitoring(mapView: mapView)
+    }
+    
+    /// - 줌 레벨 모니터링 시작
+    func startZoomLevelMonitoring(mapView: KakaoMap) {
+        // 기존 타이머가 있다면 정리
+        zoomTimer?.invalidate()
+        
+        // 0.1초마다 줌 레벨 체크
+        zoomTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.checkZoomLevelChange(mapView: mapView)
+        }
+    }
+    
+    /// - 줌 레벨 변경 체크
+    func checkZoomLevelChange(mapView: KakaoMap) {
+        let newZoomLevel = Int(mapView.zoomLevel)
+        
+        if newZoomLevel != currentZoomLevel {
+            currentZoomLevel = newZoomLevel
+            onZoomLevelChanging(zoomLevel: newZoomLevel)
+        }
+    }
+    
+    /// - 줌 레벨 변경 중일 때 호출
+    func onZoomLevelChanging(zoomLevel: Int) {
+        // 이전 타이머 무효화
+        zoomTimer?.invalidate()
+        
+        // 0.5초 후에 줌 변경이 완료되었다고 간주
+        zoomTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.onZoomLevelChangeCompleted(zoomLevel: zoomLevel)
+        }
+    }
+    
+    /// - 줌 레벨 변경 완료 시 호출
+    func onZoomLevelChangeCompleted(zoomLevel: Int) {
+        print("🔍 Zoom level changed to: \(zoomLevel)")
+        
+        // maxDistance 계산
+        let maxDistance = calculateMaxDistance(from: zoomLevel)
+        print("📍 Max search distance: \(maxDistance)m")
+        
+        // 모니터링 재시작
+        guard let mapView = mapController?.getView("mapview") as? KakaoMap else { return }
+        startZoomLevelMonitoring(mapView: mapView)
+    }
+    
+    /// - 줌 레벨로부터 최대 검색 거리 계산
+    func calculateMaxDistance(from zoomLevel: Int) -> Int {
+        switch zoomLevel {
+        case 0...5: return 10000    // 10km
+        case 6...8: return 5000     // 5km
+        case 9...11: return 2000    // 2km
+        case 12...14: return 1000   // 1km
+        default: return 500         // 500m
+        }
     }
 }
 
