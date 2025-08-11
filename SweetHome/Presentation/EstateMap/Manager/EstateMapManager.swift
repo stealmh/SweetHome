@@ -84,17 +84,22 @@ class EstateMapManager: NSObject {
     
     /// - 정리 작업
     func cleanup() {
-        zoomTimer?.invalidate()
-        zoomTimer = nil
+        positionChangeTimer?.invalidate()
+        positionChangeTimer = nil
+        delayTimer?.invalidate()
+        delayTimer = nil
         mapController?.pauseEngine()
         mapController?.resetEngine()
         removeObservers()
     }
+    
+    // MARK: - Properties for Map Tracking
+    private var currentZoomLevel: Int = 0
+    private var currentMapPosition: MapPoint?
+    private var positionChangeTimer: Timer?  // 주기적 모니터링용
+    private var delayTimer: Timer?           // 0.5초 딜레이용
+    private var lastReportedPosition: MapPoint?
 }
-
-// MARK: - Properties for Zoom Tracking
-private var currentZoomLevel: Int = 0
-private var zoomTimer: Timer?
 
 // MARK: - MapControllerDelegate
 extension EstateMapManager: MapControllerDelegate {
@@ -136,8 +141,9 @@ extension EstateMapManager: MapControllerDelegate {
         
         mapView.viewRect = container.bounds
         
-        // 줌 레벨 변경 감지를 위한 이벤트 리스너 추가
+        // 줌 레벨 및 맵 이동 감지를 위한 이벤트 리스너 추가
         setupZoomLevelTracking(mapView: mapView)
+        setupMapMoveTracking(mapView: mapView)
         
         /// - 델리게이트에게 맵 준비 완료 알림
         delegate?.mapDidFinishSetup()
@@ -149,62 +155,125 @@ extension EstateMapManager: MapControllerDelegate {
     }
 }
 
-// MARK: - Zoom Level Tracking
+// MARK: - Map Tracking (Zoom & Move)
 private extension EstateMapManager {
     
     /// - 줌 레벨 추적 설정
     func setupZoomLevelTracking(mapView: KakaoMap) {
-        // 초기 줌 레벨 저장
+        /// - 초기 줌 레벨 저장
         currentZoomLevel = Int(mapView.zoomLevel)
-        print("📏 Initial zoom level: \(currentZoomLevel)")
-        
-        // 줌 레벨 변경 감지를 위한 타이머 시작
-        startZoomLevelMonitoring(mapView: mapView)
+        print("📏 초기 zoom level: \(currentZoomLevel)")
     }
     
-    /// - 줌 레벨 모니터링 시작
-    func startZoomLevelMonitoring(mapView: KakaoMap) {
-        // 기존 타이머가 있다면 정리
-        zoomTimer?.invalidate()
-        
-        // 0.1초마다 줌 레벨 체크
-        zoomTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.checkZoomLevelChange(mapView: mapView)
+    /// - 맵 이동 추적 설정
+    func setupMapMoveTracking(mapView: KakaoMap) {
+        /// - 초기 맵 중심 좌표 저장
+        currentMapPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
+        if let position = currentMapPosition {
+            print("📍 초기 위치 - Lat: \(position.wgsCoord.latitude), Lng: \(position.wgsCoord.longitude)")
         }
+        
+        // 맵 이동 감지를 위한 타이머 시작
+        startMapMoveMonitoring(mapView: mapView)
     }
     
-    /// - 줌 레벨 변경 체크
+    /// - 줌 레벨 변경 체크 (통합 모니터링에서 호출)
     func checkZoomLevelChange(mapView: KakaoMap) {
         let newZoomLevel = Int(mapView.zoomLevel)
         
         if newZoomLevel != currentZoomLevel {
             currentZoomLevel = newZoomLevel
-            onZoomLevelChanging(zoomLevel: newZoomLevel)
+            /// - 줌 변경도 위치 변경으로 간주하여 통합 타이머 사용
+            triggerPositionChangeCheck(mapView: mapView)
         }
     }
     
-    /// - 줌 레벨 변경 중일 때 호출
-    func onZoomLevelChanging(zoomLevel: Int) {
-        // 이전 타이머 무효화
-        zoomTimer?.invalidate()
-        
-        // 0.5초 후에 줌 변경이 완료되었다고 간주
-        zoomTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
-            self?.onZoomLevelChangeCompleted(zoomLevel: zoomLevel)
+    /// - 맵 이동 감지 시작 (위치 변화 기반 감지 - 제스처 충돌 방지)
+    func startMapMoveMonitoring(mapView: KakaoMap) {
+        /// - 0.2초마다 줌과 위치를 함께 체크
+        positionChangeTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
+            self?.monitorMapChanges(mapView: mapView)
         }
     }
     
-    /// - 줌 레벨 변경 완료 시 호출
-    func onZoomLevelChangeCompleted(zoomLevel: Int) {
-        print("🔍 Zoom level changed to: \(zoomLevel)")
+    /// - 맵 변화 모니터링 (줌과 위치를 통합 체크)
+    func monitorMapChanges(mapView: KakaoMap) {
+        /// - 줌 레벨 변경 체크
+        checkZoomLevelChange(mapView: mapView)
         
-        // maxDistance 계산
-        let maxDistance = calculateMaxDistance(from: zoomLevel)
-        print("📍 Max search distance: \(maxDistance)m")
+        /// - 위치 변경 체크
+        let newPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
         
-        // 모니터링 재시작
-        guard let mapView = mapController?.getView("mapview") as? KakaoMap else { return }
-        startZoomLevelMonitoring(mapView: mapView)
+        guard let currentPosition = currentMapPosition else {
+            currentMapPosition = newPosition
+            return
+        }
+        
+        let latDiff = abs(newPosition.wgsCoord.latitude - currentPosition.wgsCoord.latitude)
+        let lngDiff = abs(newPosition.wgsCoord.longitude - currentPosition.wgsCoord.longitude)
+        
+        /// - 위치가 변했다면 (아주 작은 변화도 감지)
+        if latDiff > 0.0000001 || lngDiff > 0.0000001 {
+            // 위치 변화 감지
+            triggerPositionChangeCheck(mapView: mapView)
+        }
+    }
+    
+    /// - 위치 변경 체크 트리거 (줌/드래그 공통)
+    func triggerPositionChangeCheck(mapView: KakaoMap) {
+        /// - 기존 딜레이 타이머가 있다면 취소
+        delayTimer?.invalidate()
+        delayTimer = nil
+        
+        /// - 현재 위치 업데이트
+        currentMapPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
+        
+        /// - 0.5초 후에 최종 위치 체크 (별도 타이머 사용)
+        delayTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.checkFinalMapPosition(mapView: mapView)
+        }
+    }
+    
+    /// - 드래그 완료 후 최종 위치 체크 (의미있는 변화만)
+    func checkFinalMapPosition(mapView: KakaoMap) {
+        let finalPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
+        
+        /// - 줌 레벨에 따른 의미있는 움직임인지 체크
+        let threshold = getMovementThreshold(for: currentZoomLevel)
+        
+        if let lastReportedPosition = lastReportedPosition {
+            let latDiff = abs(finalPosition.wgsCoord.latitude - lastReportedPosition.wgsCoord.latitude)
+            let lngDiff = abs(finalPosition.wgsCoord.longitude - lastReportedPosition.wgsCoord.longitude)
+            
+            if latDiff > threshold || lngDiff > threshold {
+                self.lastReportedPosition = finalPosition
+                onMapMoveCompleted(position: finalPosition)
+            }
+        } else {
+            self.lastReportedPosition = finalPosition
+            onMapMoveCompleted(position: finalPosition)
+        }
+    }
+    
+    
+    /// - 맵 이동 완료 시 호출 (마커 업데이트를 위한 좌표 출력)
+    func onMapMoveCompleted(position: MapPoint) {
+        print("🗺️ Map position changed - Lat: \(position.wgsCoord.latitude), Lng: \(position.wgsCoord.longitude)")
+        print("📍 Ready to fetch markers for current location with \(calculateMaxDistance(from: currentZoomLevel))m radius")
+        
+        // TODO: 여기서 새로운 위치 기준으로 마커 데이터를 API로 요청할 예정
+        // delegate?.mapPositionChanged(latitude: position.wgsCoord.latitude, longitude: position.wgsCoord.longitude, maxDistance: calculateMaxDistance(from: currentZoomLevel))
+    }
+    
+    /// - 줌 레벨에 따른 움직임 인식 임계값 계산
+    func getMovementThreshold(for zoomLevel: Int) -> Double {
+        switch zoomLevel {
+        case 0...5:   return 0.01    // 광역 뷰 - 큰 움직임만 감지 (약 1km)
+        case 6...8:   return 0.005   // 도시 뷰 - 중간 움직임 감지 (약 500m)
+        case 9...11:  return 0.002   // 구역 뷰 - 작은 움직임 감지 (약 200m)
+        case 12...14: return 0.001   // 상세 뷰 - 세밀한 움직임 감지 (약 100m)
+        default:      return 0.0005  // 최대 확대 - 매우 세밀한 움직임 감지 (약 50m)
+        }
     }
     
     /// - 줌 레벨로부터 최대 검색 거리 계산
