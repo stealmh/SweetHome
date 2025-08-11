@@ -11,6 +11,9 @@ import UIKit
 class EstateMapFilterButton: UIButton {
     
     // MARK: - Properties
+    /// - 버튼 탭 시 실행될 클로저
+    var buttonTapped: (() -> Void)?
+    
     /// - 버튼 선택 상태
     override var isSelected: Bool {
         didSet {
@@ -42,7 +45,7 @@ class EstateMapFilterButton: UIButton {
         updateConfigurationAppearance()
         
         /// - 터치 이벤트 추가
-        addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        addTarget(self, action: #selector(buttonTappedAction), for: .touchUpInside)
     }
     
     private func setupAppearance() {
@@ -119,9 +122,12 @@ class EstateMapFilterButton: UIButton {
     }
     
     // MARK: - Actions
-    @objc private func buttonTapped() {
+    @objc private func buttonTappedAction() {
         /// - 버튼 탭 시 선택 상태 토글
         isSelected.toggle()
+        
+        /// - 클로저 실행
+        buttonTapped?()
     }
     
     // MARK: - Public Methods
