@@ -69,9 +69,9 @@ class EstateMapFilterManager: NSObject {
     
     /// - 현재 필터 설정값들을 반환
     func getCurrentFilterValues() -> (area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?) {
-        let areaValues = areaRangeText != nil ? areaFilterSliderView.getCurrentValues() : nil
-        let priceMonthValues = priceMonthRangeText != nil ? priceMonthFilterSliderView.getCurrentValues() : nil
-        let priceValues = priceRangeText != nil ? priceFilterSliderView.getCurrentValues() : nil
+        let areaValues = (areaRangeText != nil && areaRangeText != "전체") ? areaFilterSliderView.getCurrentValues() : nil
+        let priceMonthValues = (priceMonthRangeText != nil && priceMonthRangeText != "전체") ? priceMonthFilterSliderView.getCurrentValues() : nil
+        let priceValues = (priceRangeText != nil && priceRangeText != "전체") ? priceFilterSliderView.getCurrentValues() : nil
         
         return (areaValues, priceMonthValues, priceValues)
     }
@@ -152,21 +152,21 @@ private extension EstateMapFilterManager {
             unit: "평"
         )
         
-        /// - 월세 선택 슬라이더 설정 (0~1000만원, 초기값: 전체 범위)
+        /// - 월세 선택 슬라이더 설정 (0~200만원, 초기값: 전체 범위)
         priceMonthFilterSliderView.configureSlider(
             minimumValue: 0,
-            maximumValue: 1000,
+            maximumValue: 200,
             lowerValue: 0,
-            upperValue: 1000,
+            upperValue: 200,
             unit: "만원"
         )
         
-        /// - 보증금 선택 슬라이더 설정 (0~100000만원 = 10억, 초기값: 전체 범위)
+        /// - 보증금 선택 슬라이더 설정 (0~10000만원 = 1억, 초기값: 전체 범위)
         priceFilterSliderView.configureSlider(
             minimumValue: 0,
-            maximumValue: 100000,
+            maximumValue: 10000,
             lowerValue: 0,
-            upperValue: 100000,
+            upperValue: 10000,
             unit: "만원"
         )
         
