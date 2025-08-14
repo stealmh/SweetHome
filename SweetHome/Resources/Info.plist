@@ -44,6 +44,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>사용자의 현재위치를 받아와 주변에 있는 매물을 보여주는데 사용됩니다.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>사용자의 현재위치를 받아와 주변에 있는 매물을 보여주는데 사용됩니다.</string>
 	<key>SESAC_KEY</key>
 	<string>$(SESAC_KEY)</string>
 	<key>UIAppFonts</key>
