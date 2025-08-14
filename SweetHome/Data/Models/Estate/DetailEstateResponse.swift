@@ -129,7 +129,7 @@ extension CommentResponse {
         return Comment(
             commentId: self.comment_id,
             content: self.content,
-            createdAt: Date(), // TODO: String을 Date로 파싱
+            createdAt: self.createdAt.toISO8601Date() ?? Date(), // TODO: String을 Date로 파싱
             creator: self.creator.toDomain,
             replies: self.replies?.map { $0.toDomain } ?? []
         )
