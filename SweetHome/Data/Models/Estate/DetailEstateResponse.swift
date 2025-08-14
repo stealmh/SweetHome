@@ -18,7 +18,7 @@ struct DetailEstateResponse: Decodable {
     let description: String
     let deposit: Int
     let monthly_rent: Int
-    let built_year: String
+    let built_year: String // 2020-01-04
     let maintenance_fee: Int
     let area: Float
     let parking_count: Int
@@ -32,26 +32,26 @@ struct DetailEstateResponse: Decodable {
     let is_safe_estate: Bool
     let is_recommended: Bool
     let comments: [CommentResponse]
-    let createdAt: String
-    let updatedAt: String
+    let created_at: String
+    let updated_at: String
 }
 
 struct EstateOptionsResponse: Decodable {
-    let refrigerator: Bool
-    let washer: Bool
-    let air_conditioner: Bool
-    let closet: Bool
-    let shoe_rack: Bool
-    let microwave: Bool
-    let sink: Bool
-    let tv: Bool
+    let refrigerator: Bool?
+    let washer: Bool?
+    let air_conditioner: Bool?
+    let closet: Bool?
+    let shoe_rack: Bool?
+    let microwave: Bool?
+    let sink: Bool?
+    let tv: Bool?
 }
 
 struct CreatorResponse: Decodable {
     let user_id: String
     let nick: String
     let introduction: String
-    let profileImage: String
+    let profileImage: String?
 }
 
 struct CommentResponse: Decodable {
@@ -92,8 +92,8 @@ extension DetailEstateResponse {
             isSafeEstate: self.is_safe_estate,
             isRecommended: self.is_recommended,
             comments: self.comments.map { $0.toDomain },
-            createdAt: Date(), // TODO: String을 Date로 파싱
-            updatedAt: Date()  // TODO: String을 Date로 파싱
+            createdAt: self.created_at.toISO8601Date() ?? Date(),
+            updatedAt: self.updated_at.toISO8601Date() ?? Date()
         )
     }
 }
@@ -101,14 +101,14 @@ extension DetailEstateResponse {
 extension EstateOptionsResponse {
     var toDomain: EstateOptions {
         return EstateOptions(
-            refrigerator: self.refrigerator,
-            washer: self.washer,
-            airConditioner: self.air_conditioner,
-            closet: self.closet,
-            shoeRack: self.shoe_rack,
-            microwave: self.microwave,
-            sink: self.sink,
-            tv: self.tv
+            refrigerator: self.refrigerator ?? false,
+            washer: self.washer ?? false,
+            airConditioner: self.air_conditioner ?? false,
+            closet: self.closet ?? false,
+            shoeRack: self.shoe_rack ?? false,
+            microwave: self.microwave ?? false,
+            sink: self.sink ?? false,
+            tv: self.tv ?? false
         )
     }
 }

@@ -50,8 +50,8 @@ struct EstateOptions: Hashable {
 struct Creator: Hashable {
     let userId: String
     let nick: String
-    let introduction: String
-    let profileImage: String
+    let introduction: String?
+    let profileImage: String?
 }
 
 struct Comment: Hashable {
