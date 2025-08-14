@@ -13,6 +13,7 @@ enum EstateEndpoint: TargetType {
     case hotEstates
     case topics
     case geoLocation(parameter: EstateGeoLocationRequest)
+    case detail(id: String)
 }
 
 extension EstateEndpoint {
@@ -28,12 +29,14 @@ extension EstateEndpoint {
             return "/estates/today-topic"
         case .geoLocation:
             return "/estates/geolocation"
+        case let .detail(id):
+            return "/estates/\(id)"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .todayEstates, .hotEstates, .topics, .geoLocation:
+        case .todayEstates, .hotEstates, .topics, .geoLocation, .detail:
             return .get
         }
     }
@@ -44,6 +47,8 @@ extension EstateEndpoint {
             return .requestPlain
         case let .geoLocation(parameter):
             return .requestParameters(parameters: parameter.toDictionary(), encoding: URLEncoding.default)
+        case let .detail(id):
+            return .requestPlain
         }
     }
     

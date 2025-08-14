@@ -430,15 +430,15 @@ extension HomeViewController {
         switch item {
         /// - 상단 배너 눌렀을 때
         case .estate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 최근 검색 매물 눌렀을 때
         case .recentEstate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate.toBaseEstate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 핫 매물 눌렀을 때
         case .hotEstate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 토픽 눌렀을 때
         case .topic(let topic):

@@ -9,10 +9,10 @@ import UIKit
 import SnapKit
 
 class EstateDetailViewController: BaseViewController {
-    private let estate: Estate
+    private let estateID: String
     
-    init(estate: Estate) {
-        self.estate = estate
+    init(_ id: String) {
+        self.estateID = id
         super.init(nibName: nil, bundle: nil)
     }
     
