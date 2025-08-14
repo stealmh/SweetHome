@@ -10,6 +10,7 @@ import CoreData
 import RxKakaoSDKAuth
 import RxKakaoSDKCommon
 import UserNotifications
+import KakaoMapsSDK
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -61,6 +62,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             fatalError("NATIVE_APP_KEY not found in Info.plist")
         }
         RxKakaoSDK.initSDK(appKey: appKey)
+        
+        // 카카오맵 SDK 초기화 (로그인용 앱키와 동일)
+        SDKInitializer.InitSDK(appKey: appKey)
     }
 
     // MARK: - 알림 설정

@@ -6,7 +6,7 @@
 //
 
 
-struct BaseGeolocationResponse: Decodable {
-    let longitude: Float
-    let latitude: Float
+struct BaseGeolocationResponse: Hashable, Decodable {
+    let longitude: Double
+    let latitude: Double
 }

@@ -82,16 +82,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.delegate = self
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
     override func viewDidLayoutSubviews() {
@@ -395,6 +386,7 @@ extension HomeViewController: HomeCollectionViewDataSourceDelegate {
     /// - 배너 Footer의 카테고리 항목 눌렀을 때
     func bannerEstateTypeTapped(_ estateType: BannerEstateType) {
         let detailVC = EstateMapViewController()
+        detailVC.estateType = estateType
         navigationController?.pushViewController(detailVC, animated: true)
     }
 }
