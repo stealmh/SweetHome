@@ -11,17 +11,19 @@ import Kingfisher
 extension UIImageView {
     
     /// 인증 헤더가 포함된 이미지 로딩
-    func setAuthenticatedImage(with url: URL?) {
+    func setAuthenticatedImage(with url: URL?, completion: (() -> Void)? = nil) {
         // 기본 이미지 고정
         let defaultImage = UIImage(systemName: "house.fill")
         
         guard let url else {
             self.image = defaultImage
+            completion?()
             return
         }
         
         guard let accessToken = AuthTokenManager.shared.accessToken else {
             self.image = defaultImage
+            completion?()
             return
         }
         
@@ -40,7 +42,19 @@ extension UIImageView {
             .cacheOriginalImage
         ]
         
-        self.kf.setImage(with: url, placeholder: defaultImage, options: options)
+        self.kf.setImage(with: url, placeholder: defaultImage, options: options) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let imageResult):
+                    print("✅ Kingfisher 이미지 로딩 성공: \(imageResult.image.size)")
+                    completion?()
+                case .failure(let error):
+                    print("❌ Kingfisher 이미지 로딩 실패: \(error.localizedDescription)")
+                    // 실패해도 기본 이미지가 설정되므로 콜백 호출
+                    completion?()
+                }
+            }
+        }
     }
     
     /// 상대경로를 완전한 URL로 변환하여 인증된 이미지 로딩
@@ -48,5 +62,15 @@ extension UIImageView {
         guard let relativePath else { return }
         let url = URL(string: APIConstants.baseURL + relativePath)
         setAuthenticatedImage(with: url)
+    }
+    
+    /// 상대경로를 완전한 URL로 변환하여 인증된 이미지 로딩 (completion 지원)
+    func setAuthenticatedImage(with relativePath: String?, completion: (() -> Void)? = nil) {
+        guard let relativePath else { 
+            completion?()
+            return 
+        }
+        let url = URL(string: APIConstants.baseURL + relativePath)
+        setAuthenticatedImage(with: url, completion: completion)
     }
 }
