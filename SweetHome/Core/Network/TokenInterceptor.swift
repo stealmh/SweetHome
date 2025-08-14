@@ -62,7 +62,7 @@ final class TokenInterceptor: RequestInterceptor {
             case 419:
                 /// - 액세스 토큰 만료 시 토큰 갱신을 시도한다
                 await handleTokenRefresh(completion: completion)
-            case 403, 418:
+            case 401, 403, 418:
                 /// - 리프레시 토큰 만료 시 로그인 화면으로 이동한다
                 await handleTokenExpired()
                 completion(.doNotRetryWithError(SHError.networkError(.refreshTokenExpired)))
