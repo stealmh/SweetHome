@@ -101,24 +101,3 @@ extension DetailEstate {
         return "\(area)m²" // TODO: 위치 정보 추가 시 "문래동 \(area)m²"
     }
 }
-
-extension Int {
-    /// 가격을 만원 단위로 포맷팅
-    var formattedPrice: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        
-        if self >= 10000 {
-            let billionPart = self / 10000
-            let remainingPart = self % 10000
-            if remainingPart == 0 {
-                return "\(formatter.string(from: NSNumber(value: billionPart)) ?? "\(billionPart)")억"
-            } else {
-                return "\(formatter.string(from: NSNumber(value: billionPart)) ?? "\(billionPart)")억 \(formatter.string(from: NSNumber(value: remainingPart)) ?? "\(remainingPart)")"
-            }
-        } else {
-            return formatter.string(from: NSNumber(value: self)) ?? "\(self)"
-        }
-    }
-}

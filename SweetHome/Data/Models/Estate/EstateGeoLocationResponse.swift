@@ -11,7 +11,7 @@ struct EstateGeoLocationResponse: Decodable {
     let data: [EstateGeoLocationDataResponse]
 }
 
-struct EstateGeoLocationDataResponse: Decodable {
+struct EstateGeoLocationDataResponse: Hashable, Decodable {
     let estate_id: String
     let category: String
     let title: String
