@@ -14,6 +14,8 @@ enum EstateEndpoint: TargetType {
     case topics
     case geoLocation(parameter: EstateGeoLocationRequest)
     case detail(id: String)
+    /// 매물 좋아요 / 좋아요 취소
+    case like(id: String, body: DetailEstateLikeStatus)
 }
 
 extension EstateEndpoint {
@@ -31,6 +33,8 @@ extension EstateEndpoint {
             return "/estates/geolocation"
         case let .detail(id):
             return "/estates/\(id)"
+        case let .like(id, _):
+            return "/estates/\(id)/like"
         }
     }
     
@@ -38,6 +42,8 @@ extension EstateEndpoint {
         switch self {
         case .todayEstates, .hotEstates, .topics, .geoLocation, .detail:
             return .get
+        case .like:
+            return .post
         }
     }
     
@@ -47,8 +53,10 @@ extension EstateEndpoint {
             return .requestPlain
         case let .geoLocation(parameter):
             return .requestParameters(parameters: parameter.toDictionary(), encoding: URLEncoding.default)
-        case let .detail(id):
+        case .detail:
             return .requestPlain
+        case let .like(_, model):
+            return .requestJSONEncodable(model)
         }
     }
     

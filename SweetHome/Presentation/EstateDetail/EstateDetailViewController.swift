@@ -12,6 +12,7 @@ import RxCocoa
 
 class EstateDetailViewController: BaseViewController {
     private let estateID: String
+    private let detailNavigationBar = EstateDetailNavigationBar()
     
     // MARK: - ViewModel
     private let viewModel = EstateDetailViewModel()
@@ -32,24 +33,25 @@ class EstateDetailViewController: BaseViewController {
     
     override func setupUI() {
         super.setupUI()
-        setupNavigationBar()
+        view.addSubviews(detailNavigationBar)
     }
     
     override func setupConstraints() {
-    }
-    
-    @objc func didTapBackButton() {
-        navigationController?.popViewController(animated: true)
+        detailNavigationBar.snp.makeConstraints {
+            $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
+            $0.height.equalTo(56)
+        }
     }
     
     // MARK: - ViewModel Binding
     override func bind() {
         let input = EstateDetailViewModel.Input(
-            viewDidLoad: .just((estateID))
+            viewDidLoad: .just((estateID)),
+            favoriteButtonTapped: detailNavigationBar.favoriteButton.rx.tap.asObservable(),
+            backButtonTapped: detailNavigationBar.backButton.rx.tap.asObservable()
         )
         
         let output = viewModel.transform(input: input)
-        
         /// - 로딩 상태 처리
         output.isLoading
             .drive(onNext: { [weak self] isLoading in
@@ -59,36 +61,28 @@ class EstateDetailViewController: BaseViewController {
                     print("✅ Estate detail loading finished")
                 }
             })
-            .disposed(by: viewModel.disposeBag)
-        
+            .disposed(by: disposeBag)
         /// - 매물 상세 정보 처리
         output.estateDetail
             .drive(onNext: { [weak self] detail in
                 guard let detail else { return }
-                print(detail)
+                self?.detailNavigationBar.configure(detail)
             })
-            .disposed(by: viewModel.disposeBag)
-        
+            .disposed(by: disposeBag)
+        /// - 뒤로가기 버튼 눌렀을 때
+        output.backButtonTappedResult
+            .drive(onNext: { [weak self] _ in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
         /// - 에러 처리
         output.error
             .drive(onNext: { [weak self] error in
                 self?.showAlert(for: error)
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
     }
 }
 
 extension EstateDetailViewController {
-    func setupNavigationBar() {
-        navigationItem.title = "매물 상세"
-        
-        let backButton = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
-            style: .plain,
-            target: self,
-            action: #selector(didTapBackButton)
-        )
-        backButton.tintColor = SHColor.GrayScale.gray_15
-        navigationItem.leftBarButtonItem = backButton
-    }
 }
