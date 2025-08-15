@@ -23,6 +23,8 @@ class EstateDetailViewModel: ViewModelable {
         let estateDetail: Driver<DetailEstate?>
         let backButtonTappedResult: Driver<Void>
         let error: Driver<SHError>
+        /// - 현재 이미지 개수 제공
+        let thumbnailsCount: Driver<Int>
     }
     
     // MARK: - Properties
@@ -123,11 +125,17 @@ class EstateDetailViewModel: ViewModelable {
         /// - 뒤로가기 버튼 눌렀을 때
         let backButtonTapped = input.backButtonTapped.asDriver(onErrorDriveWith: .empty())
         
+        /// - 이미지 개수 Driver
+        let thumbnailsCount = estateDetailRelay
+            .map { $0?.thumbnails.count ?? 0 }
+            .asDriver(onErrorJustReturn: 0)
+        
         return Output(
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
             estateDetail: estateDetailRelay.asDriver(onErrorDriveWith: .empty()),
             backButtonTappedResult: backButtonTapped,
-            error: errorRelay.asDriver(onErrorDriveWith: .empty())
+            error: errorRelay.asDriver(onErrorDriveWith: .empty()),
+            thumbnailsCount: thumbnailsCount
         )
     }
 }

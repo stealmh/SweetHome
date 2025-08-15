@@ -46,11 +46,9 @@ extension UIImageView {
             DispatchQueue.main.async {
                 switch result {
                 case .success(let imageResult):
-                    print("✅ Kingfisher 이미지 로딩 성공: \(imageResult.image.size)")
                     completion?()
                 case .failure(let error):
                     print("❌ Kingfisher 이미지 로딩 실패: \(error.localizedDescription)")
-                    // 실패해도 기본 이미지가 설정되므로 콜백 호출
                     completion?()
                 }
             }
