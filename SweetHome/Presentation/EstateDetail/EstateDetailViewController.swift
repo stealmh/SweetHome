@@ -10,7 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class EstateDetailViewController: BaseViewController, UICollectionViewDelegate {
+class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, EstateDetailCollectionViewLayoutDelegate {
     private let estateID: String
     private let detailNavigationBar = EstateDetailNavigationBar()
     
@@ -30,19 +30,17 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate {
     }
     
     private lazy var collectionView: UICollectionView = {
-        layoutManager = EstateDetailCollectionViewLayout()
+        layoutManager = EstateDetailCollectionViewLayout(delegate: self)
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layoutManager.createLayout())
-        /// - 수평 페이징 스크롤 활성화
-        cv.isPagingEnabled = true
+        cv.isPagingEnabled = false
         cv.showsHorizontalScrollIndicator = false
         cv.showsVerticalScrollIndicator = false
-        cv.contentInsetAdjustmentBehavior = .never
-        /// - 경계에서 바운스 효과 완전 제거 (하얀색 배경 방지)
         cv.bounces = false
         cv.alwaysBounceVertical = false
         cv.alwaysBounceHorizontal = false
         cv.isScrollEnabled = true
-        cv.register(EstateDetailImageCell.self, forCellWithReuseIdentifier: EstateDetailImageCell.identifier)
+        cv.register(EstateDetailBannerCell.self, forCellWithReuseIdentifier: EstateDetailBannerCell.identifier)
+        cv.register(EstateDetailBannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailBannerFooterView.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv
@@ -95,18 +93,18 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate {
         collectionView.snp.makeConstraints {
             $0.top.equalTo(detailNavigationBar.snp.bottom)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(250)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
-        /// - PageControl
+        /// - PageControl (배너 섹션 내 고정 위치)
         pageControl.snp.makeConstraints {
-            $0.bottom.equalTo(collectionView.snp.bottom).inset(16)
+            $0.top.equalTo(detailNavigationBar.snp.bottom).offset(250 - 22) // 배너 하단 - 22
             $0.centerX.equalToSuperview()
             $0.height.equalTo(6)
         }
-        /// - ImageCountTagView (우측 하단)
+        /// - ImageCountTagView (배너 섹션 내 고정 위치)
         imageCountTagView.snp.makeConstraints {
-            $0.trailing.equalTo(collectionView.snp.trailing).inset(16)
-            $0.bottom.equalTo(collectionView.snp.bottom).inset(16)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.top.equalTo(detailNavigationBar.snp.bottom).offset(250 - 40) // 배너 하단 - 40
         }
     }
     
@@ -134,7 +132,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate {
             .drive(onNext: { [weak self] detail in
                 guard let detail else { return }
                 self?.detailNavigationBar.configure(detail)
-                self?.setupBannerImages(detail.thumbnails)
+                self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
             })
             .disposed(by: disposeBag)
             
@@ -160,7 +158,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate {
 }
 
 extension EstateDetailViewController {
-    private func setupBannerImages(_ images: [String]) {
+    private func setupBannerSectionItem(_ images: [String], likeCount: Int = 0) {
         /// - PageControl 설정 (ViewModel에서 개수 관리)
         self.pageControl.numberOfPages = images.count
         self.pageControl.currentPage = 0
@@ -171,7 +169,7 @@ extension EstateDetailViewController {
             Item.image(imageUrl, uniqueID: "image_\(index)")
         }
         /// - DiffableDataSource 업데이트
-        dataSourceManager.updateSnapshot(bannerItems: bannerItems)
+        dataSourceManager.updateSnapshot(bannerItems: bannerItems, likeCount: likeCount)
     }
     
     @objc private func pageControlValueChanged() {
@@ -180,58 +178,27 @@ extension EstateDetailViewController {
         currentImageIndex = targetPage
         /// - 이미지 카운트 태그 업데이트 (1-based 인덱스)
         imageCountTagView.configure(currentIndex: targetPage + 1, totalCount: thumbnailsCount)
+        
+        /// - orthogonalScrollingBehavior 환경에서는 scrollToItem 사용
         collectionView.scrollToItem(
             at: IndexPath(item: targetPage, section: 0),
-            at: .left,
+            at: .centeredHorizontally,
             animated: true
         )
     }
     
-    private func updatePageControlFromScroll(currentPage: Int) {
-        /// - 스크롤 위치에 따른 PageControl 업데이트
-        guard currentPage >= 0 && currentPage < thumbnailsCount else { return }
-        pageControl.currentPage = currentPage
-        currentImageIndex = currentPage
-        /// - 이미지 카운트 태그 업데이트 (1-based 인덱스)
-        imageCountTagView.configure(currentIndex: currentPage + 1, totalCount: thumbnailsCount)
-    }
 }
 
-// MARK: - UIScrollViewDelegate
-extension EstateDetailViewController: UIScrollViewDelegate {
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        guard scrollView == collectionView else { return }
+// MARK: - EstateDetailCollectionViewLayoutDelegate
+extension EstateDetailViewController {
+    func bannerDidScroll(to page: Int, offset: CGPoint) {
+        guard page >= 0 && page < thumbnailsCount else { return }
         
-        let currentOffsetX = scrollView.contentOffset.x
-        let frameWidth = scrollView.frame.width
-        let contentWidth = scrollView.contentSize.width
-        let maxOffsetX = max(0, contentWidth - frameWidth)
-        let currentPage = Int(round(currentOffsetX / frameWidth))
-        
-        /// - 첫 번째 이미지에서 왼쪽으로 스크롤 방지 (하얀색 배경 차단)
-        if currentOffsetX < 0 {
-            scrollView.setContentOffset(CGPoint(x: 0, y: scrollView.contentOffset.y), animated: false)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.pageControl.currentPage = page
+            self.currentImageIndex = page
+            self.imageCountTagView.configure(currentIndex: page + 1, totalCount: self.thumbnailsCount)
         }
-        /// - 마지막 이미지에서 오른쪽으로 스크롤 방지 (하얀색 배경 차단)
-        if currentOffsetX > maxOffsetX {
-            scrollView.setContentOffset(CGPoint(x: maxOffsetX, y: scrollView.contentOffset.y), animated: false)
-        }
-        /// - 스크롤 위치에 따른 PageControl 실시간 업데이트
-        if currentPage >= 0 && currentPage < thumbnailsCount {
-            updatePageControlFromScroll(currentPage: currentPage)
-        }
-    }
-    
-    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        /// - 사용자 드래그 시작 시점 감지
-        guard scrollView == collectionView else { return }
-        let currentPage = Int(round(scrollView.contentOffset.x / scrollView.frame.width))
-    }
-    
-    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        /// - 사용자 드래그 종료 시점 감지
-        guard scrollView == collectionView else { return }
-        let currentPage = Int(round(scrollView.contentOffset.x / scrollView.frame.width))
     }
 }
-

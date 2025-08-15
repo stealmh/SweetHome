@@ -7,11 +7,20 @@
 
 import UIKit
 
+protocol EstateDetailCollectionViewLayoutDelegate: AnyObject {
+    func bannerDidScroll(to page: Int, offset: CGPoint)
+}
+
 class EstateDetailCollectionViewLayout {
+    weak var delegate: EstateDetailCollectionViewLayoutDelegate?
+    
+    init(delegate: EstateDetailCollectionViewLayoutDelegate? = nil) {
+        self.delegate = delegate
+    }
     func createLayout() -> UICollectionViewCompositionalLayout {
-        /// - Layout Configuration 설정 (수평 스크롤)
+        /// - Layout Configuration 설정
         let config = UICollectionViewCompositionalLayoutConfiguration()
-        config.scrollDirection = .horizontal
+        config.scrollDirection = .vertical
         
         let layout = UICollectionViewCompositionalLayout { sectionIndex, environment in
             switch EstateDetailViewController.Section.allCases[sectionIndex] {
@@ -39,9 +48,55 @@ class EstateDetailCollectionViewLayout {
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
+        /// - Banner 섹션은 수평 페이징으로 설정
+        section.orthogonalScrollingBehavior = .groupPaging
+        
+        /// - 스크롤 변화 감지
+        section.visibleItemsInvalidationHandler = { [weak self] visibleItems, point, environment in
+            guard let self = self else { return }
+            
+            // 현재 스크롤 offset (point는 현재 스크롤 위치)
+            let currentOffset = point
+            
+            // 가장 많이 보이는 아이템의 인덱스 찾기
+            let visibleRect = CGRect(origin: point, size: environment.container.contentSize)
+            var mostVisibleItem: NSCollectionLayoutVisibleItem?
+            var maxVisibleArea: CGFloat = 0
+            
+            for item in visibleItems {
+                let intersection = item.frame.intersection(visibleRect)
+                let visibleArea = intersection.width * intersection.height
+                
+                if visibleArea > maxVisibleArea {
+                    maxVisibleArea = visibleArea
+                    mostVisibleItem = item
+                }
+            }
+            
+            if let mostVisible = mostVisibleItem {
+                let currentIndex = mostVisible.indexPath.item
+                
+                // 페이지 인덱스와 offset 정보를 함께 전달
+                self.delegate?.bannerDidScroll(to: currentIndex, offset: currentOffset)
+            }
+        }
+        
         /// - 경계 넘김 방지를 위한 여백 제거
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         section.interGroupSpacing = 0
+        
+        /// - Footer
+        let footerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: footerSize,
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        footer.pinToVisibleBounds = false
+        section.boundarySupplementaryItems = [footer]
         
         return section
     }

@@ -1,5 +1,5 @@
 //
-//  EstateDetailImageCell.swift
+//  EstateDetailBannerCell.swift
 //  SweetHome
 //
 //  Created by 김민호 on 8/14/25.
@@ -8,8 +8,8 @@
 import UIKit
 import SnapKit
 
-class EstateDetailImageCell: UICollectionViewCell {
-    static let identifier = "EstateDetailImageCell"
+class EstateDetailBannerCell: UICollectionViewCell {
+    static let identifier = "EstateDetailBannerCell"
     
     // MARK: - UI Components
     private let imageView: UIImageView = {
@@ -42,7 +42,6 @@ class EstateDetailImageCell: UICollectionViewCell {
     }
     
     func configure(with imageUrl: String) {
-        /// - 인증된 이미지 로드 (매물 상세 이미지)
         imageView.setAuthenticatedImage(with: imageUrl)
     }
 }
