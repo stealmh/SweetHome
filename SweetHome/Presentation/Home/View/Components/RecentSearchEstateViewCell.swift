@@ -104,12 +104,12 @@ class RecentSearchEstateViewCell: UICollectionViewCell {
         }
     }
     
-    func configure(with estate: DetailEstate) {
+    func configure(with estate: Estate) {
         thumbnailImageView.setAuthenticatedImage(with: estate.thumbnails.first!)
         estateTypeLabel.text = estate.category
         rentPriceLabel.text = estate.rentDisplayText
         //TODO: 위치 정보 추가해서 넣기
-        locationAndSizeLabel.text = "문래동 \(estate.locationAndAreaText)"
+        locationAndSizeLabel.text = "문래동 \(estate.area)m²"
         recommendTagView.isHidden = !estate.isRecommended
         
         // 추천 태그 표시 여부에 따라 estateTypeLabel 위치 조정

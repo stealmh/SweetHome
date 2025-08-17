@@ -24,7 +24,7 @@ class HomeViewModel: ViewModelable {
         let todayEstates: Driver<[Estate]>
         let error: Driver<SHError>
         let autoScrollTrigger: Driver<Void>
-        let recentSearchEstates: Driver<[DetailEstate]>
+        let recentSearchEstates: Driver<[Estate]>
         let hotEstates: Driver<[Estate]>
         let topics: Driver<[EstateTopic]>
     }
@@ -122,7 +122,7 @@ class HomeViewModel: ViewModelable {
             .disposed(by: disposeBag)
         
         let recentSearchEstates = input.onAppear
-            .map { _ in DetailEstate.mockData }
+            .map { _ in MockEstateData.hotEstates }
             .asDriver(onErrorJustReturn: [])
         
         return Output(
