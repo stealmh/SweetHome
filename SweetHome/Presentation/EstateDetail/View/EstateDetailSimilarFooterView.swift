@@ -27,6 +27,12 @@ class EstateDetailSimilarFooterView: UICollectionReusableView {
         return v
     }()
     
+    private let separatorLine: UIView = {
+        let v = UIView()
+        v.backgroundColor = SHColor.GrayScale.gray_30
+        return v
+    }()
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -40,7 +46,7 @@ class EstateDetailSimilarFooterView: UICollectionReusableView {
     }
     
     private func setupUI() {
-        addSubviews(iconImageView, titleLabel)
+        addSubviews(iconImageView, titleLabel, separatorLine)
     }
     
     private func setupConstraints() {
@@ -52,8 +58,15 @@ class EstateDetailSimilarFooterView: UICollectionReusableView {
         
         titleLabel.snp.makeConstraints {
             $0.leading.equalTo(iconImageView.snp.trailing).offset(4)
-            $0.top.equalToSuperview().offset(6)
+            $0.centerY.equalTo(iconImageView)
             $0.trailing.equalToSuperview()
+        }
+        
+        separatorLine.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+            $0.bottom.equalToSuperview().inset(5)
+            $0.height.equalTo(1)
         }
     }
 }

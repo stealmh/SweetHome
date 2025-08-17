@@ -9,6 +9,12 @@ import UIKit
 import SnapKit
 
 class EstateDetailBottomView: UIView {
+    private let separatorView: UIView = {
+        let v = UIView()
+        v.backgroundColor = SHColor.GrayScale.gray_30
+        return v
+    }()
+    
     let favoriteButton: UIButton = {
         let v = UIButton()
         v.tintColor = SHColor.GrayScale.gray_60
@@ -39,13 +45,18 @@ class EstateDetailBottomView: UIView {
     }
     
     private func setupUI() {
-        addSubviews(favoriteButton, reservationButton)
+        addSubviews(separatorView, favoriteButton, reservationButton)
     }
     
     private func setupConstraints() {
+        separatorView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1)
+        }
+        
         favoriteButton.snp.makeConstraints {
             $0.width.height.equalTo(32)
-            $0.top.equalToSuperview().offset(20)
+            $0.top.equalTo(separatorView.snp.bottom).offset(20)
             $0.leading.equalTo(28)
         }
         

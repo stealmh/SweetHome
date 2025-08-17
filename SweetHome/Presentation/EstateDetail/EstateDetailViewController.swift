@@ -59,6 +59,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailBrokerCell.self, forCellWithReuseIdentifier: EstateDetailBrokerCell.identifier)
         cv.register(RecentSearchEstateViewCell.self, forCellWithReuseIdentifier: RecentSearchEstateViewCell.identifier)
         cv.register(EstateDetailSimilarFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailSimilarFooterView.identifier)
+        cv.register(EstateDetailSeparatorFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailSeparatorFooterView.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv

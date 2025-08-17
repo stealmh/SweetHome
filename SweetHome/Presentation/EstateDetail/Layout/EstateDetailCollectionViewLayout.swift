@@ -127,7 +127,20 @@ class EstateDetailCollectionViewLayout {
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 20, bottom: 0, trailing: 20)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 16, leading: 20, bottom: 16, trailing: 20)
+        
+        /// - Footer 추가
+        let footerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(10)
+        )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: footerSize,
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        
+        section.boundarySupplementaryItems = [footer]
         
         return section
     }
@@ -163,14 +176,13 @@ class EstateDetailCollectionViewLayout {
         
         /// - Footer 추가 (컨텐츠 크기에 맞춤)
         let footerSize = NSCollectionLayoutSize(
-            widthDimension: .estimated(150), // 최소 너비, 컨텐츠에 맞게 자동 조정
-            heightDimension: .absolute(32)
+            widthDimension: .fractionalWidth(1.0), // 전체 너비 (separator가 superview width)
+            heightDimension: .absolute(32 + 16 + 5 + 5) // container(32) + gap(16) + top(5) + bottom(5)
         )
         let footer = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: footerSize,
             elementKind: UICollectionView.elementKindSectionFooter,
-            alignment: .bottomLeading,
-            absoluteOffset: CGPoint(x: 0, y: 0)
+            alignment: .bottom
         )
         
         section.boundarySupplementaryItems = [header, footer]
@@ -207,7 +219,18 @@ class EstateDetailCollectionViewLayout {
             alignment: .top
         )
         
-        section.boundarySupplementaryItems = [header]
+        /// - Footer 추가
+        let footerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(10)
+        )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: footerSize,
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        
+        section.boundarySupplementaryItems = [header, footer]
         
         return section
     }
@@ -229,7 +252,7 @@ class EstateDetailCollectionViewLayout {
         let section = NSCollectionLayoutSection(group: group)
         section.orthogonalScrollingBehavior = .continuous
         section.interGroupSpacing = 8
-        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 8, trailing: 20)
         
         /// - Header 추가
         let headerSize = NSCollectionLayoutSize(
@@ -245,7 +268,7 @@ class EstateDetailCollectionViewLayout {
         /// - Footer 추가
         let footerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(24)
+            heightDimension: .absolute(24 + 16 + 5 + 5)
         )
         let footer = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: footerSize,
@@ -269,7 +292,7 @@ class EstateDetailCollectionViewLayout {
         /// - 그룹 크기 설정
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .absolute(76)
+            heightDimension: .absolute(76 + 51)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         

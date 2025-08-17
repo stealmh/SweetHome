@@ -99,6 +99,15 @@ class EstateDetailCollectionViewDataSource {
                 footer.configure(with: likeCount)
                 return footer
                 
+            } else if section == .topInfo {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSeparatorFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSeparatorFooterView
+                
+                return footer
+                
             } else if section == .options {
                 let footer = collectionView.dequeueReusableSupplementaryView(
                     ofKind: kind,
@@ -107,6 +116,15 @@ class EstateDetailCollectionViewDataSource {
                 ) as! EstateDetailOptionFooterView
                 
                 footer.configure(parkingCount: parkingCount)
+                return footer
+                
+            } else if section == .description {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSeparatorFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSeparatorFooterView
+                
                 return footer
                 
             } else if section == .similar {
