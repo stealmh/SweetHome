@@ -26,7 +26,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     
     enum Item: Hashable {
         case estate(Estate, uniqueID: String)
-        case recentEstate(DetailEstate, uniqueID: String)
+        case recentEstate(Estate, uniqueID: String)
         case hotEstate(Estate, uniqueID: String)
         case emptyRecentSearch
         case topic(EstateTopic)
@@ -69,7 +69,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     private var estates: [Estate] = []
     private var infiniteArray: [Estate] = []
     private var currentAutoScrollIndex = 1
-    private var recentEstates: [DetailEstate] = []
+    private var recentEstates: [Estate] = []
     private var hotEstates: [Estate] = []
     private var topics: [EstateTopic] = []
     private var isInitialLayoutSet = false
@@ -430,15 +430,15 @@ extension HomeViewController {
         switch item {
         /// - 상단 배너 눌렀을 때
         case .estate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 최근 검색 매물 눌렀을 때
         case .recentEstate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate.toBaseEstate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 핫 매물 눌렀을 때
         case .hotEstate(let estate, _):
-            let detailVC = EstateDetailViewController(estate: estate)
+            let detailVC = EstateDetailViewController(estate.id)
             navigationController?.pushViewController(detailVC, animated: true)
         /// - 토픽 눌렀을 때
         case .topic(let topic):

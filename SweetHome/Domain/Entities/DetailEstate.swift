@@ -50,8 +50,8 @@ struct EstateOptions: Hashable {
 struct Creator: Hashable {
     let userId: String
     let nick: String
-    let introduction: String
-    let profileImage: String
+    let introduction: String?
+    let profileImage: String?
 }
 
 struct Comment: Hashable {
@@ -87,6 +87,11 @@ extension DetailEstate {
         )
     }
     
+    /// 전세,월세 구분
+    var rentTypeText: String {
+        return monthlyRent == 0 ? "전세" : "월세"
+    }
+    
     /// 월세 표시용 문자열
     var rentDisplayText: String {
         if monthlyRent == 0 {
@@ -99,5 +104,31 @@ extension DetailEstate {
     /// 위치와 면적 표시용 문자열
     var locationAndAreaText: String {
         return "\(area)m²" // TODO: 위치 정보 추가 시 "문래동 \(area)m²"
+    }
+    
+    /// updatedAt 기준으로 며칠 전인지 반환
+    var daysAgoText: String {
+        let now = Date()
+        let calendar = Calendar.current
+        let daysDifference = calendar.dateComponents([.day], from: updatedAt, to: now).day ?? 0
+        
+        if daysDifference == 0 {
+            return "오늘"
+        } else if daysDifference == 1 {
+            return "1일 전"
+        } else {
+            return "\(daysDifference)일 전"
+        }
+    }
+    
+    /// 관리비 포맷팅
+    var formattedMaintenanceFee: String {
+        if maintenanceFee == 0 { return "없음" }
+        
+        let manWon = Double(maintenanceFee) / 10000.0
+        
+        if manWon == floor(manWon) { return "\(Int(manWon))만원" }
+        
+        return String(format: "%.1f만원", manWon)
     }
 }

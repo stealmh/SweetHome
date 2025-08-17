@@ -116,10 +116,8 @@ class HotEstateViewCell: UICollectionViewCell {
         rentPriceLabel.text = estate.rentDisplayText
         locationAndSizeLabel.text = "\(estate.area)m²" // TODO: 위치 정보 추가
         
-        // 랜덤한 시청자 수 (1-10명)
-        let watchCount = Int.random(in: 1...10)
         watchTagView.configure(
-            text: "\(watchCount)명이 함께 보는중",
+            text: "\(estate.likeCount == 0 ? 1 : estate.likeCount)명이 함께 보는중",
             backgroundColor: SHColor.GrayScale.gray_90.withAlphaComponent(0.7),
             textColor: SHColor.GrayScale.gray_0
         )

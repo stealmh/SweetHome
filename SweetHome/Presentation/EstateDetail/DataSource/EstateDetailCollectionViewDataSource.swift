@@ -1,0 +1,283 @@
+//
+//  EstateDetailCollectionViewDataSource.swift
+//  SweetHome
+//
+//  Created by 김민호 on 8/14/25.
+//
+
+import UIKit
+
+class EstateDetailCollectionViewDataSource {
+    
+    private var dataSource: UICollectionViewDiffableDataSource<EstateDetailViewController.Section, EstateDetailViewController.Item>!
+    private var likeCount: Int = 0
+    private var parkingCount: Int = 0
+    
+    // MARK: - Button Action Callbacks
+    var onBrokerCallButtonTapped: (() -> Void)?
+    var onBrokerChatButtonTapped: (() -> Void)?
+    var onSimilarCellTapped: ((Estate) -> Void)?
+    
+    init(collectionView: UICollectionView) {
+        setupDataSource(collectionView: collectionView)
+    }
+    
+    private func setupDataSource(collectionView: UICollectionView) {
+        dataSource = UICollectionViewDiffableDataSource<EstateDetailViewController.Section, EstateDetailViewController.Item>(
+            collectionView: collectionView
+        ) { [weak self] collectionView, indexPath, item in
+            return self?.cellProvider(collectionView: collectionView, indexPath: indexPath, item: item)
+        }
+        
+        /// - Footer 설정
+        dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
+            return self?.supplementaryViewProvider(collectionView: collectionView, kind: kind, indexPath: indexPath)
+        }
+    }
+    
+    private func cellProvider(collectionView: UICollectionView, indexPath: IndexPath, item: EstateDetailViewController.Item) -> UICollectionViewCell? {
+        switch item {
+        case .image(let imageUrl, _):
+            /// - 매물 이미지 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailBannerCell.identifier, for: indexPath) as! EstateDetailBannerCell
+            cell.configure(with: imageUrl)
+            return cell
+        case .topInfo(let detail):
+            /// - 매물 상세 정보 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailTopCell.identifier, for: indexPath) as! EstateDetailTopCell
+            cell.configure(detail)
+            return cell
+        case .options(let options):
+            /// - 매물 옵션 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailOptionCell.identifier, for: indexPath) as! EstateDetailOptionCell
+            cell.configure(with: options)
+            return cell
+        case .description(let description):
+            /// - 매물 설명 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailDescriptionCell.identifier, for: indexPath) as! EstateDetailDescriptionCell
+            cell.configure(description: description)
+            return cell
+        case .similarEstate(let estate):
+            /// - 유사한 매물 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSearchEstateViewCell.identifier, for: indexPath) as! RecentSearchEstateViewCell
+            cell.configure(with: estate)
+            return cell
+        case .broker(let detail):
+            /// - 중개사 정보 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailBrokerCell.identifier, for: indexPath) as! EstateDetailBrokerCell
+            cell.configure(with: detail.creator)
+            cell.onCallButtonTapped = { [weak self] in
+                self?.onBrokerCallButtonTapped?()
+            }
+            cell.onChatButtonTapped = { [weak self] in
+                self?.onBrokerChatButtonTapped?()
+            }
+            return cell
+        }
+    }
+    
+    private func supplementaryViewProvider(collectionView: UICollectionView, kind: String, indexPath: IndexPath) -> UICollectionReusableView? {
+        switch kind {
+        case UICollectionView.elementKindSectionHeader:
+            let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: EstateSectionHeaderView.identifier,
+                for: indexPath
+            ) as! EstateSectionHeaderView
+            
+            let section = EstateDetailViewController.Section.allCases[indexPath.section]
+            if section == .options {
+                header.configure(title: "옵션 정보", hideViewAll: true)
+            } else if section == .description {
+                header.configure(title: "상세 설명", hideViewAll: true)
+            } else if section == .similar {
+                header.configure(title: "유사한 매물", hideViewAll: true)
+            } else if section == .broker {
+                header.configure(title: "중개사 정보", hideViewAll: true)
+            }
+            
+            return header
+        case UICollectionView.elementKindSectionFooter:
+            let section = EstateDetailViewController.Section.allCases[indexPath.section]
+            
+            if section == .banner {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailBannerFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailBannerFooterView
+                
+                footer.configure(with: likeCount)
+                return footer
+                
+            } else if section == .topInfo {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSeparatorFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSeparatorFooterView
+                
+                return footer
+                
+            } else if section == .options {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailOptionFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailOptionFooterView
+                
+                footer.configure(parkingCount: parkingCount)
+                return footer
+                
+            } else if section == .description {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSeparatorFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSeparatorFooterView
+                
+                return footer
+                
+            } else if section == .similar {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSimilarFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSimilarFooterView
+                
+                return footer
+            }
+            
+            return nil
+        default:
+            return nil
+        }
+    }
+    
+    func updateSnapshot(bannerItems: [EstateDetailViewController.Item], likeCount: Int = 0) {
+        /// - likeCount 저장
+        self.likeCount = likeCount
+        
+        /// - DiffableDataSource 스냅샷 생성 및 업데이트
+        var snapshot = NSDiffableDataSourceSnapshot<EstateDetailViewController.Section, EstateDetailViewController.Item>()
+        snapshot.appendSections(EstateDetailViewController.Section.allCases)
+        
+        /// - Banner 섹션에 이미지 아이템들 추가
+        snapshot.appendItems(bannerItems, toSection: .banner)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateTopInfoSnapshot(topInfoItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.topInfo) {
+            snapshot.appendSections([.topInfo])
+        }
+        
+        /// - topInfo 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .topInfo)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - topInfo 섹션에 새 아이템 추가
+        snapshot.appendItems([topInfoItem], toSection: .topInfo)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateOptionsSnapshot(optionsItem: EstateDetailViewController.Item, parkingCount: Int = 0) {
+        /// - parkingCount 저장
+        self.parkingCount = parkingCount
+        
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.options) {
+            snapshot.appendSections([.options])
+        }
+        
+        /// - options 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .options)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - options 섹션에 새 아이템 추가
+        snapshot.appendItems([optionsItem], toSection: .options)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateDescriptionSnapshot(descriptionItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.description) {
+            snapshot.appendSections([.description])
+        }
+        
+        /// - description 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .description)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - description 섹션에 새 아이템 추가
+        snapshot.appendItems([descriptionItem], toSection: .description)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateBrokerSnapshot(brokerItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.broker) {
+            snapshot.appendSections([.broker])
+        }
+        
+        /// - broker 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .broker)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - broker 섹션에 새 아이템 추가
+        snapshot.appendItems([brokerItem], toSection: .broker)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateSimilarSnapshot(similarItems: [EstateDetailViewController.Item]) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.similar) {
+            snapshot.appendSections([.similar])
+        }
+        
+        /// - similar 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .similar)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - similar 섹션에 새 아이템들 추가
+        snapshot.appendItems(similarItems, toSection: .similar)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func getItem(for indexPath: IndexPath) -> EstateDetailViewController.Item? {
+        return dataSource.itemIdentifier(for: indexPath)
+    }
+    
+    // MARK: - Cell Selection Handling
+    func handleCellSelection(at indexPath: IndexPath) {
+        guard let item = getItem(for: indexPath) else { return }
+        
+        switch item {
+        case .similarEstate(let estate):
+            onSimilarCellTapped?(estate)
+        default:
+            break
+        }
+    }
+}

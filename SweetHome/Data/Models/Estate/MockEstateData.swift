@@ -326,8 +326,8 @@ extension DetailEstateResponse {
                     ]
                 )
             ],
-            createdAt: "9999-10-19T03:05:03.422Z",
-            updatedAt: "9999-10-20T04:10:10.123Z"
+            created_at: "9999-10-19T03:05:03.422Z",
+            updated_at: "9999-10-20T04:10:10.123Z"
         )
     ]
 }

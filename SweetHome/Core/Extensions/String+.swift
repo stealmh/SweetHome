@@ -71,4 +71,10 @@ extension String {
         
         return nil
     }
+    /// - "2025-05-13T14:53:43.177Z" 형식을 Date로 반환
+    func toISO8601Date() -> Date? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: self)
+    }
 }
