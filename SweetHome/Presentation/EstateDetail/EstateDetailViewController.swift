@@ -25,12 +25,14 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         case banner
         case topInfo
         case options
+        case description
     }
     
     enum Item: Hashable {
         case image(String, uniqueID: String)
         case topInfo(DetailEstate)
         case options(EstateOptions)
+        case description(String)
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -49,6 +51,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailOptionFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailOptionFooterView.identifier)
         cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
         cv.register(EstateDetailOptionCell.self, forCellWithReuseIdentifier: EstateDetailOptionCell.identifier)
+        cv.register(EstateDetailDescriptionCell.self, forCellWithReuseIdentifier: EstateDetailDescriptionCell.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv
@@ -143,6 +146,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
                 self?.setupTopInfoSection(detail)
                 self?.setupOptionsSection(detail.options, parkingCount: detail.parkingCount)
+                self?.setupDescriptionSection(detail.description)
             })
             .disposed(by: disposeBag)
             
@@ -190,6 +194,11 @@ extension EstateDetailViewController {
     private func setupOptionsSection(_ options: EstateOptions, parkingCount: Int) {
         let optionsItem = Item.options(options)
         dataSourceManager.updateOptionsSnapshot(optionsItem: optionsItem, parkingCount: parkingCount)
+    }
+    
+    private func setupDescriptionSection(_ description: String) {
+        let descriptionItem = Item.description(description)
+        dataSourceManager.updateDescriptionSnapshot(descriptionItem: descriptionItem)
     }
     
     @objc private func pageControlValueChanged() {

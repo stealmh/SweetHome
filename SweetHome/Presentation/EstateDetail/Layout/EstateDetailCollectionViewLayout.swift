@@ -30,6 +30,8 @@ class EstateDetailCollectionViewLayout {
                 return self.createTopInfoSection()
             case .options:
                 return self.createOptionsSection()
+            case .description:
+                return self.createDescriptionSection()
             }
         }
         layout.configuration = config
@@ -168,6 +170,40 @@ class EstateDetailCollectionViewLayout {
         )
         
         section.boundarySupplementaryItems = [header, footer]
+        
+        return section
+    }
+    
+    private func createDescriptionSection() -> NSCollectionLayoutSection {
+        /// - Description 섹션의 아이템 크기 설정
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(100)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        /// - 그룹 크기 설정
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(100)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 16, trailing: 20)
+        
+        /// - Header 추가
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        section.boundarySupplementaryItems = [header]
         
         return section
     }

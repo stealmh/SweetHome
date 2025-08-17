@@ -47,6 +47,11 @@ class EstateDetailCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailOptionCell.identifier, for: indexPath) as! EstateDetailOptionCell
             cell.configure(with: options)
             return cell
+        case .description(let description):
+            /// - 매물 설명 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailDescriptionCell.identifier, for: indexPath) as! EstateDetailDescriptionCell
+            cell.configure(description: description)
+            return cell
         }
     }
     
@@ -59,9 +64,11 @@ class EstateDetailCollectionViewDataSource {
                 for: indexPath
             ) as! EstateSectionHeaderView
             
-            /// - Options 섹션의 Header인 경우 "옵션 정보" 텍스트 설정
-            if EstateDetailViewController.Section.allCases[indexPath.section] == .options {
+            let section = EstateDetailViewController.Section.allCases[indexPath.section]
+            if section == .options {
                 header.configure(title: "옵션 정보", hideViewAll: true)
+            } else if section == .description {
+                header.configure(title: "상세 설명", hideViewAll: true)
             }
             
             return header
@@ -136,6 +143,20 @@ class EstateDetailCollectionViewDataSource {
         
         /// - options 섹션에 새 아이템 추가
         snapshot.appendItems([optionsItem], toSection: .options)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateDescriptionSnapshot(descriptionItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - description 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .description)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - description 섹션에 새 아이템 추가
+        snapshot.appendItems([descriptionItem], toSection: .description)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     
