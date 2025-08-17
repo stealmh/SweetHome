@@ -27,6 +27,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         case options
         case description
         case similar
+        case broker
     }
     
     enum Item: Hashable {
@@ -34,6 +35,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         case topInfo(DetailEstate)
         case options(EstateOptions)
         case description(String)
+        case broker(DetailEstate)
         case similarEstate(Estate)
     }
     
@@ -54,6 +56,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
         cv.register(EstateDetailOptionCell.self, forCellWithReuseIdentifier: EstateDetailOptionCell.identifier)
         cv.register(EstateDetailDescriptionCell.self, forCellWithReuseIdentifier: EstateDetailDescriptionCell.identifier)
+        cv.register(EstateDetailBrokerCell.self, forCellWithReuseIdentifier: EstateDetailBrokerCell.identifier)
         cv.register(RecentSearchEstateViewCell.self, forCellWithReuseIdentifier: RecentSearchEstateViewCell.identifier)
         cv.register(EstateDetailSimilarFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailSimilarFooterView.identifier)
         
@@ -160,6 +163,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.setupTopInfoSection(detail)
                 self?.setupOptionsSection(detail.options, parkingCount: detail.parkingCount)
                 self?.setupDescriptionSection(detail.description)
+                self?.setupBrokerSection(detail)
             })
             .disposed(by: disposeBag)
             
@@ -219,6 +223,11 @@ extension EstateDetailViewController {
     private func setupDescriptionSection(_ description: String) {
         let descriptionItem = Item.description(description)
         dataSourceManager.updateDescriptionSnapshot(descriptionItem: descriptionItem)
+    }
+    
+    private func setupBrokerSection(_ detail: DetailEstate) {
+        let brokerItem = Item.broker(detail)
+        dataSourceManager.updateBrokerSnapshot(brokerItem: brokerItem)
     }
     
     private func setupSimilarSection(_ estates: [Estate]) {

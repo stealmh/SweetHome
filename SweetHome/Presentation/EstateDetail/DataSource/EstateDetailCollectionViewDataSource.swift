@@ -57,6 +57,11 @@ class EstateDetailCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSearchEstateViewCell.identifier, for: indexPath) as! RecentSearchEstateViewCell
             cell.configure(with: estate)
             return cell
+        case .broker(let detail):
+            /// - 중개사 정보 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailBrokerCell.identifier, for: indexPath) as! EstateDetailBrokerCell
+            cell.configure(with: detail.creator)
+            return cell
         }
     }
     
@@ -76,6 +81,8 @@ class EstateDetailCollectionViewDataSource {
                 header.configure(title: "상세 설명", hideViewAll: true)
             } else if section == .similar {
                 header.configure(title: "유사한 매물", hideViewAll: true)
+            } else if section == .broker {
+                header.configure(title: "중개사 정보", hideViewAll: true)
             }
             
             return header
@@ -188,6 +195,25 @@ class EstateDetailCollectionViewDataSource {
         
         /// - description 섹션에 새 아이템 추가
         snapshot.appendItems([descriptionItem], toSection: .description)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateBrokerSnapshot(brokerItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.broker) {
+            snapshot.appendSections([.broker])
+        }
+        
+        /// - broker 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .broker)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - broker 섹션에 새 아이템 추가
+        snapshot.appendItems([brokerItem], toSection: .broker)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     

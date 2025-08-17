@@ -34,6 +34,8 @@ class EstateDetailCollectionViewLayout {
                 return self.createDescriptionSection()
             case .similar:
                 return self.createSimilarSection()
+            case .broker:
+                return self.createBrokerSection()
             }
         }
         layout.configuration = config
@@ -209,7 +211,7 @@ class EstateDetailCollectionViewLayout {
         
         return section
     }
-    
+        
     private func createSimilarSection() -> NSCollectionLayoutSection {
         /// - HomeCollectionViewLayout의 recentSearchEstate와 동일한 레이아웃
         let itemSize = NSCollectionLayoutSize(
@@ -252,6 +254,40 @@ class EstateDetailCollectionViewLayout {
         )
         
         section.boundarySupplementaryItems = [header, footer]
+        
+        return section
+    }
+    
+    private func createBrokerSection() -> NSCollectionLayoutSection {
+        /// - Broker 섹션의 아이템 크기 설정
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(76) // 프로필 이미지 60 + padding 16
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        /// - 그룹 크기 설정
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(76)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 16, trailing: 20)
+        
+        /// - Header 추가
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        section.boundarySupplementaryItems = [header]
         
         return section
     }
