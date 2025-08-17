@@ -23,10 +23,12 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     
     enum Section: Int, CaseIterable {
         case banner
+        case topInfo
     }
     
     enum Item: Hashable {
         case image(String, uniqueID: String)
+        case topInfo(DetailEstate)
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -41,6 +43,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.isScrollEnabled = true
         cv.register(EstateDetailBannerCell.self, forCellWithReuseIdentifier: EstateDetailBannerCell.identifier)
         cv.register(EstateDetailBannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailBannerFooterView.identifier)
+        cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv
@@ -133,6 +136,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 guard let detail else { return }
                 self?.detailNavigationBar.configure(detail)
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
+                self?.setupTopInfoSection(detail)
             })
             .disposed(by: disposeBag)
             
@@ -170,6 +174,11 @@ extension EstateDetailViewController {
         }
         /// - DiffableDataSource 업데이트
         dataSourceManager.updateSnapshot(bannerItems: bannerItems, likeCount: likeCount)
+    }
+    
+    private func setupTopInfoSection(_ detail: DetailEstate) {
+        let topInfoItem = Item.topInfo(detail)
+        dataSourceManager.updateTopInfoSnapshot(topInfoItem: topInfoItem)
     }
     
     @objc private func pageControlValueChanged() {

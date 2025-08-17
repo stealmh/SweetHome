@@ -26,6 +26,8 @@ class EstateDetailCollectionViewLayout {
             switch EstateDetailViewController.Section.allCases[sectionIndex] {
             case .banner:
                 return self.createBannerSection()
+            case .topInfo:
+                return self.createTopInfoSection()
             }
         }
         layout.configuration = config
@@ -97,6 +99,27 @@ class EstateDetailCollectionViewLayout {
         )
         footer.pinToVisibleBounds = false
         section.boundarySupplementaryItems = [footer]
+        
+        return section
+    }
+    
+    private func createTopInfoSection() -> NSCollectionLayoutSection {
+        /// - TopInfo 섹션의 아이템 크기 설정
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(150)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        /// - 그룹 크기 설정
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(150)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         
         return section
     }

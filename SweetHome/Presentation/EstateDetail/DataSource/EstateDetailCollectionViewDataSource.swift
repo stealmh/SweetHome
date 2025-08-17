@@ -36,6 +36,11 @@ class EstateDetailCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailBannerCell.identifier, for: indexPath) as! EstateDetailBannerCell
             cell.configure(with: imageUrl)
             return cell
+        case .topInfo(let detail):
+            /// - 매물 상세 정보 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailTopCell.identifier, for: indexPath) as! EstateDetailTopCell
+            cell.configure(detail)
+            return cell
         }
     }
     
@@ -69,6 +74,20 @@ class EstateDetailCollectionViewDataSource {
         
         /// - Banner 섹션에 이미지 아이템들 추가
         snapshot.appendItems(bannerItems, toSection: .banner)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateTopInfoSnapshot(topInfoItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - topInfo 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .topInfo)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - topInfo 섹션에 새 아이템 추가
+        snapshot.appendItems([topInfoItem], toSection: .topInfo)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     
