@@ -68,13 +68,13 @@ class EstateDetailTopCell: UICollectionViewCell {
     
     func setupConstraints() {
         topTagView.snp.makeConstraints {
-            $0.top.equalTo(contentView).offset(16)
-            $0.leading.equalTo(contentView).offset(20)
+            $0.top.equalTo(contentView)
+            $0.leading.equalTo(contentView)
         }
         
         agoLabel.snp.makeConstraints {
             $0.top.equalTo(topTagView).offset(4)
-            $0.trailing.equalTo(contentView).inset(20)
+            $0.trailing.equalTo(contentView)
         }
         
         locationLabel.snp.makeConstraints {
