@@ -32,6 +32,8 @@ class EstateDetailCollectionViewLayout {
                 return self.createOptionsSection()
             case .description:
                 return self.createDescriptionSection()
+            case .similar:
+                return self.createSimilarSection()
             }
         }
         layout.configuration = config
@@ -204,6 +206,52 @@ class EstateDetailCollectionViewLayout {
         )
         
         section.boundarySupplementaryItems = [header]
+        
+        return section
+    }
+    
+    private func createSimilarSection() -> NSCollectionLayoutSection {
+        /// - HomeCollectionViewLayout의 recentSearchEstate와 동일한 레이아웃
+        let itemSize = NSCollectionLayoutSize(
+            widthDimension: .absolute(190),
+            heightDimension: .absolute(88)
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(
+            widthDimension: .absolute(190),
+            heightDimension: .absolute(88)
+        )
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.orthogonalScrollingBehavior = .continuous
+        section.interGroupSpacing = 8
+        section.contentInsets = NSDirectionalEdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20)
+        
+        /// - Header 추가
+        let headerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(32)
+        )
+        let header = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        
+        /// - Footer 추가
+        let footerSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .absolute(24)
+        )
+        let footer = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: footerSize,
+            elementKind: UICollectionView.elementKindSectionFooter,
+            alignment: .bottom
+        )
+        
+        section.boundarySupplementaryItems = [header, footer]
         
         return section
     }

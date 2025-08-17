@@ -26,6 +26,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         case topInfo
         case options
         case description
+        case similar
     }
     
     enum Item: Hashable {
@@ -33,6 +34,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         case topInfo(DetailEstate)
         case options(EstateOptions)
         case description(String)
+        case similarEstate(Estate)
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -52,6 +54,8 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
         cv.register(EstateDetailOptionCell.self, forCellWithReuseIdentifier: EstateDetailOptionCell.identifier)
         cv.register(EstateDetailDescriptionCell.self, forCellWithReuseIdentifier: EstateDetailDescriptionCell.identifier)
+        cv.register(RecentSearchEstateViewCell.self, forCellWithReuseIdentifier: RecentSearchEstateViewCell.identifier)
+        cv.register(EstateDetailSimilarFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailSimilarFooterView.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv
@@ -150,6 +154,13 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
             })
             .disposed(by: disposeBag)
             
+        /// - 유사한 매물 정보 처리
+        output.similarEstates
+            .drive(onNext: { [weak self] estates in
+                self?.setupSimilarSection(estates)
+            })
+            .disposed(by: disposeBag)
+            
         /// - 이미지 개수 정보 처리
         output.thumbnailsCount
             .drive(onNext: { [weak self] count in
@@ -199,6 +210,11 @@ extension EstateDetailViewController {
     private func setupDescriptionSection(_ description: String) {
         let descriptionItem = Item.description(description)
         dataSourceManager.updateDescriptionSnapshot(descriptionItem: descriptionItem)
+    }
+    
+    private func setupSimilarSection(_ estates: [Estate]) {
+        let similarItems = estates.map { Item.similarEstate($0) }
+        dataSourceManager.updateSimilarSnapshot(similarItems: similarItems)
     }
     
     @objc private func pageControlValueChanged() {

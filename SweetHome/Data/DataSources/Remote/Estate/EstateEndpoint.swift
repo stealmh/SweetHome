@@ -16,6 +16,8 @@ enum EstateEndpoint: TargetType {
     case detail(id: String)
     /// 매물 좋아요 / 좋아요 취소
     case like(id: String, body: DetailEstateLikeStatus)
+    /// 유사한 매물 목록
+    case similarEstates
 }
 
 extension EstateEndpoint {
@@ -35,12 +37,14 @@ extension EstateEndpoint {
             return "/estates/\(id)"
         case let .like(id, _):
             return "/estates/\(id)/like"
+        case .similarEstates:
+            return "/estates/similar-estates"
         }
     }
     
     var method: HTTPMethod {
         switch self {
-        case .todayEstates, .hotEstates, .topics, .geoLocation, .detail:
+        case .todayEstates, .hotEstates, .topics, .geoLocation, .detail, .similarEstates:
             return .get
         case .like:
             return .post
@@ -49,12 +53,10 @@ extension EstateEndpoint {
     
     var task: HTTPTask {
         switch self {
-        case .todayEstates, .hotEstates, .topics:
+        case .todayEstates, .hotEstates, .topics, .detail, .similarEstates:
             return .requestPlain
         case let .geoLocation(parameter):
             return .requestParameters(parameters: parameter.toDictionary(), encoding: URLEncoding.default)
-        case .detail:
-            return .requestPlain
         case let .like(_, model):
             return .requestJSONEncodable(model)
         }

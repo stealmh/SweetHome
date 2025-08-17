@@ -52,6 +52,11 @@ class EstateDetailCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailDescriptionCell.identifier, for: indexPath) as! EstateDetailDescriptionCell
             cell.configure(description: description)
             return cell
+        case .similarEstate(let estate):
+            /// - 유사한 매물 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: RecentSearchEstateViewCell.identifier, for: indexPath) as! RecentSearchEstateViewCell
+            cell.configure(with: estate)
+            return cell
         }
     }
     
@@ -69,6 +74,8 @@ class EstateDetailCollectionViewDataSource {
                 header.configure(title: "옵션 정보", hideViewAll: true)
             } else if section == .description {
                 header.configure(title: "상세 설명", hideViewAll: true)
+            } else if section == .similar {
+                header.configure(title: "유사한 매물", hideViewAll: true)
             }
             
             return header
@@ -94,6 +101,15 @@ class EstateDetailCollectionViewDataSource {
                 
                 footer.configure(parkingCount: parkingCount)
                 return footer
+                
+            } else if section == .similar {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailSimilarFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailSimilarFooterView
+                
+                return footer
             }
             
             return nil
@@ -118,6 +134,11 @@ class EstateDetailCollectionViewDataSource {
     func updateTopInfoSnapshot(topInfoItem: EstateDetailViewController.Item) {
         var snapshot = dataSource.snapshot()
         
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.topInfo) {
+            snapshot.appendSections([.topInfo])
+        }
+        
         /// - topInfo 섹션의 기존 아이템들 제거
         let existingItems = snapshot.itemIdentifiers(inSection: .topInfo)
         if !existingItems.isEmpty {
@@ -135,6 +156,11 @@ class EstateDetailCollectionViewDataSource {
         
         var snapshot = dataSource.snapshot()
         
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.options) {
+            snapshot.appendSections([.options])
+        }
+        
         /// - options 섹션의 기존 아이템들 제거
         let existingItems = snapshot.itemIdentifiers(inSection: .options)
         if !existingItems.isEmpty {
@@ -149,6 +175,11 @@ class EstateDetailCollectionViewDataSource {
     func updateDescriptionSnapshot(descriptionItem: EstateDetailViewController.Item) {
         var snapshot = dataSource.snapshot()
         
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.description) {
+            snapshot.appendSections([.description])
+        }
+        
         /// - description 섹션의 기존 아이템들 제거
         let existingItems = snapshot.itemIdentifiers(inSection: .description)
         if !existingItems.isEmpty {
@@ -157,6 +188,25 @@ class EstateDetailCollectionViewDataSource {
         
         /// - description 섹션에 새 아이템 추가
         snapshot.appendItems([descriptionItem], toSection: .description)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateSimilarSnapshot(similarItems: [EstateDetailViewController.Item]) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - 섹션이 없으면 추가
+        if !snapshot.sectionIdentifiers.contains(.similar) {
+            snapshot.appendSections([.similar])
+        }
+        
+        /// - similar 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .similar)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - similar 섹션에 새 아이템들 추가
+        snapshot.appendItems(similarItems, toSection: .similar)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     

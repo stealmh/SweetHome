@@ -25,11 +25,14 @@ class EstateDetailViewModel: ViewModelable {
         let error: Driver<SHError>
         /// - 현재 이미지 개수 제공
         let thumbnailsCount: Driver<Int>
+        /// - 유사한 매물 목록
+        let similarEstates: Driver<[Estate]>
     }
     
     // MARK: - Properties
     private let apiClient: ApiClient
     private let estateDetailRelay = BehaviorSubject<DetailEstate?>(value: nil)
+    private let similarEstatesRelay = BehaviorSubject<[Estate]>(value: [])
     
     // MARK: - Initialization
     init(apiClient: ApiClient = ApiClient.shared) {
@@ -59,6 +62,8 @@ class EstateDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { [weak self] detail in
                 self?.estateDetailRelay.onNext(detail.toDomain)
+                // 유사한 매물 로드
+                self?.loadSimilarEstates(errorRelay: errorRelay)
             }, onError: { error in
                 isLoadingRelay.onNext(false)
                 errorRelay.onNext(SHError.from(error))
@@ -135,7 +140,26 @@ class EstateDetailViewModel: ViewModelable {
             estateDetail: estateDetailRelay.asDriver(onErrorDriveWith: .empty()),
             backButtonTappedResult: backButtonTapped,
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
-            thumbnailsCount: thumbnailsCount
+            thumbnailsCount: thumbnailsCount,
+            similarEstates: similarEstatesRelay.asDriver(onErrorJustReturn: [])
         )
+    }
+    
+    // MARK: - Private Methods
+    private func loadSimilarEstates(errorRelay: PublishSubject<SHError>) {
+        apiClient
+            .requestObservable(EstateEndpoint.similarEstates)
+            .map { (response: BaseEstateResponse) -> [Estate] in
+                return response.data.map { $0.toDomain }
+            }
+            .catch { error -> Observable<[Estate]> in
+                print("Similar estates error: \(error.localizedDescription)")
+                errorRelay.onNext(SHError.from(error))
+                return Observable.just([])
+            }
+            .subscribe(onNext: { [weak self] estates in
+                self?.similarEstatesRelay.onNext(estates)
+            })
+            .disposed(by: disposeBag)
     }
 }
