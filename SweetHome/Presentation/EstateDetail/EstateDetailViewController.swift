@@ -46,6 +46,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailBannerCell.self, forCellWithReuseIdentifier: EstateDetailBannerCell.identifier)
         cv.register(EstateDetailBannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailBannerFooterView.identifier)
         cv.register(EstateSectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: EstateSectionHeaderView.identifier)
+        cv.register(EstateDetailOptionFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailOptionFooterView.identifier)
         cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
         cv.register(EstateDetailOptionCell.self, forCellWithReuseIdentifier: EstateDetailOptionCell.identifier)
         
@@ -141,7 +142,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.detailNavigationBar.configure(detail)
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
                 self?.setupTopInfoSection(detail)
-                self?.setupOptionsSection(detail.options)
+                self?.setupOptionsSection(detail.options, parkingCount: detail.parkingCount)
             })
             .disposed(by: disposeBag)
             
@@ -186,9 +187,9 @@ extension EstateDetailViewController {
         dataSourceManager.updateTopInfoSnapshot(topInfoItem: topInfoItem)
     }
     
-    private func setupOptionsSection(_ options: EstateOptions) {
+    private func setupOptionsSection(_ options: EstateOptions, parkingCount: Int) {
         let optionsItem = Item.options(options)
-        dataSourceManager.updateOptionsSnapshot(optionsItem: optionsItem)
+        dataSourceManager.updateOptionsSnapshot(optionsItem: optionsItem, parkingCount: parkingCount)
     }
     
     @objc private func pageControlValueChanged() {

@@ -11,6 +11,7 @@ class EstateDetailCollectionViewDataSource {
     
     private var dataSource: UICollectionViewDiffableDataSource<EstateDetailViewController.Section, EstateDetailViewController.Item>!
     private var likeCount: Int = 0
+    private var parkingCount: Int = 0
     
     init(collectionView: UICollectionView) {
         setupDataSource(collectionView: collectionView)
@@ -65,18 +66,30 @@ class EstateDetailCollectionViewDataSource {
             
             return header
         case UICollectionView.elementKindSectionFooter:
-            let footer = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: EstateDetailBannerFooterView.identifier,
-                for: indexPath
-            ) as! EstateDetailBannerFooterView
+            let section = EstateDetailViewController.Section.allCases[indexPath.section]
             
-            /// - Banner 섹션의 Footer인 경우 likeCount 텍스트 설정
-            if EstateDetailViewController.Section.allCases[indexPath.section] == .banner {
+            if section == .banner {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailBannerFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailBannerFooterView
+                
                 footer.configure(with: likeCount)
+                return footer
+                
+            } else if section == .options {
+                let footer = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: EstateDetailOptionFooterView.identifier,
+                    for: indexPath
+                ) as! EstateDetailOptionFooterView
+                
+                footer.configure(parkingCount: parkingCount)
+                return footer
             }
             
-            return footer
+            return nil
         default:
             return nil
         }
@@ -109,7 +122,10 @@ class EstateDetailCollectionViewDataSource {
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     
-    func updateOptionsSnapshot(optionsItem: EstateDetailViewController.Item) {
+    func updateOptionsSnapshot(optionsItem: EstateDetailViewController.Item, parkingCount: Int = 0) {
+        /// - parkingCount 저장
+        self.parkingCount = parkingCount
+        
         var snapshot = dataSource.snapshot()
         
         /// - options 섹션의 기존 아이템들 제거
