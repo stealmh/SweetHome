@@ -26,7 +26,7 @@ class EstateDetailNavigationBar: UIView {
     
     let favoriteButton: UIButton = {
         let v = UIButton()
-        v.setImage(SHAsset.Icon.list, for: .normal)
+        v.setImage(SHAsset.Icon.likeEmpty, for: .normal)
         v.tintColor = SHColor.GrayScale.gray_75
         return v
     }()

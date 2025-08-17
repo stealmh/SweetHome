@@ -76,9 +76,14 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     /// - 현재 이미지 인덱스 표시 태그
     private let imageCountTagView = ImageCountTagView()
     
+    /// - 하단 뷰
+    private let bottomView = EstateDetailBottomView()
+    
     private var currentImageIndex = 0
     /// - ViewModel에서 제공하는 이미지 개수
     private var thumbnailsCount = 0
+    /// - 초기 로드 여부
+    private var isInitialLoad = true
 
     
     init(_ id: String) {
@@ -104,7 +109,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     
     override func setupUI() {
         super.setupUI()
-        view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView)
+        view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView, bottomView)
         pageControl.addTarget(self, action: #selector(pageControlValueChanged), for: .valueChanged)
         collectionView.delegate = self
         setupScrollObserver()
@@ -116,11 +121,16 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
             $0.top.leading.trailing.equalTo(view.safeAreaLayoutGuide)
             $0.height.equalTo(56)
         }
+        /// - BottomView
+        bottomView.snp.makeConstraints {
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.height.equalTo(94)
+        }
         /// - CollectionView
         collectionView.snp.makeConstraints {
             $0.top.equalTo(detailNavigationBar.snp.bottom)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+            $0.bottom.equalTo(bottomView.snp.top)
         }
         /// - PageControl (배너 섹션 위에 overlay)
         pageControl.snp.makeConstraints {
@@ -139,7 +149,10 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     override func bind() {
         let input = EstateDetailViewModel.Input(
             viewDidLoad: .just((estateID)),
-            favoriteButtonTapped: detailNavigationBar.favoriteButton.rx.tap.asObservable(),
+            favoriteButtonTapped: Observable.merge(
+                detailNavigationBar.favoriteButton.rx.tap.asObservable(),
+                bottomView.favoriteButton.rx.tap.asObservable()
+            ),
             backButtonTapped: detailNavigationBar.backButton.rx.tap.asObservable()
         )
         
@@ -154,16 +167,29 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 }
             })
             .disposed(by: disposeBag)
-        /// - 매물 상세 정보 처리
+        /// - 매물 상세 정보 처리 (초기 로드)
         output.estateDetail
+            .filter { _ in self.isInitialLoad }
             .drive(onNext: { [weak self] detail in
                 guard let detail else { return }
                 self?.detailNavigationBar.configure(detail)
+                self?.bottomView.configure(detail.isLiked)
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
                 self?.setupTopInfoSection(detail)
                 self?.setupOptionsSection(detail.options, parkingCount: detail.parkingCount)
                 self?.setupDescriptionSection(detail.description)
                 self?.setupBrokerSection(detail)
+                self?.isInitialLoad = false
+            })
+            .disposed(by: disposeBag)
+            
+        /// - 좋아요 상태 변경만 처리
+        output.estateDetail
+            .filter { _ in !self.isInitialLoad }
+            .drive(onNext: { [weak self] detail in
+                guard let detail else { return }
+                self?.detailNavigationBar.configure(detail)
+                self?.bottomView.configure(detail.isLiked)
             })
             .disposed(by: disposeBag)
             
