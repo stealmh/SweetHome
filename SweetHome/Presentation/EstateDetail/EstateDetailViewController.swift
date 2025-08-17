@@ -91,6 +91,14 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         super.viewDidLoad()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        tabBarController?.tabBar.isHidden = true
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        tabBarController?.tabBar.isHidden = false
+    }
+    
     override func setupUI() {
         super.setupUI()
         view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView)
