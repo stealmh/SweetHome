@@ -11,6 +11,10 @@ import SnapKit
 class EstateDetailBrokerCell: UICollectionViewCell {
     static let identifier = "EstateDetailBrokerCell"
     
+    // MARK: - Button Actions
+    var onCallButtonTapped: (() -> Void)?
+    var onChatButtonTapped: (() -> Void)?
+    
     private let profileImageView: UIImageView = {
         let v = UIImageView()
         return v
@@ -104,12 +108,12 @@ class EstateDetailBrokerCell: UICollectionViewCell {
         }
         
         // 버튼 액션 설정
-        brokerCallButton.onTapped = {
-            print("전화")
+        brokerCallButton.onTapped = { [weak self] in
+            self?.onCallButtonTapped?()
         }
         
-        brokerChatButton.onTapped = {
-            print("채팅")
+        brokerChatButton.onTapped = { [weak self] in
+            self?.onChatButtonTapped?()
         }
     }
 }

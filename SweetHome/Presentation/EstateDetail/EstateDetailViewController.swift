@@ -62,6 +62,15 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.register(EstateDetailSeparatorFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailSeparatorFooterView.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
+        dataSourceManager.onBrokerCallButtonTapped = { [weak self] in
+            self?.brokerCallButtonTappedSubject.onNext(())
+        }
+        dataSourceManager.onBrokerChatButtonTapped = { [weak self] in
+            self?.brokerChatButtonTappedSubject.onNext(())
+        }
+        dataSourceManager.onSimilarCellTapped = { [weak self] estate in
+            self?.similarCellTappedSubject.onNext(estate)
+        }
         return cv
     }()
     
@@ -85,6 +94,12 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     private var thumbnailsCount = 0
     /// - 초기 로드 여부
     private var isInitialLoad = true
+    
+    /// - Broker Button Actions
+    private let brokerCallButtonTappedSubject = PublishSubject<Void>()
+    private let brokerChatButtonTappedSubject = PublishSubject<Void>()
+    /// - Similar Cell Actions
+    private let similarCellTappedSubject = PublishSubject<Estate>()
 
     
     init(_ id: String) {
@@ -154,7 +169,11 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 detailNavigationBar.favoriteButton.rx.tap.asObservable(),
                 bottomView.favoriteButton.rx.tap.asObservable()
             ),
-            backButtonTapped: detailNavigationBar.backButton.rx.tap.asObservable()
+            backButtonTapped: detailNavigationBar.backButton.rx.tap.asObservable(),
+            reservationButtonTapped: bottomView.reservationButton.rx.tap.asObservable(),
+            brokerCallButtonTapped: brokerCallButtonTappedSubject.asObservable(),
+            brokerChatButtonTapped: brokerChatButtonTappedSubject.asObservable(),
+            similarCellTapped: similarCellTappedSubject.asObservable()
         )
         
         let output = viewModel.transform(input: input)
@@ -213,6 +232,39 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.navigationController?.popViewController(animated: true)
             })
             .disposed(by: disposeBag)
+        
+        /// - 예약하기 버튼 눌렀을 때
+        output.reservationButtonTappedResult
+            .drive(onNext: { [weak self] _ in
+                // TODO: 예약하기 화면으로 이동
+                print("예약하기 화면 이동")
+            })
+            .disposed(by: disposeBag)
+        
+        /// - 중개사 전화 버튼 눌렀을 때
+        output.brokerCallButtonTappedResult
+            .drive(onNext: { [weak self] _ in
+                // TODO: 전화 앱 열기
+                print("전화 앱 열기")
+            })
+            .disposed(by: disposeBag)
+        
+        /// - 중개사 채팅 버튼 눌렀을 때
+        output.brokerChatButtonTappedResult
+            .drive(onNext: { [weak self] _ in
+                // TODO: 채팅 화면으로 이동
+                print("채팅 화면 이동")
+            })
+            .disposed(by: disposeBag)
+        
+        /// - 유사한 매물 셀 눌렀을 때
+        output.similarCellTappedResult
+            .drive(onNext: { [weak self] estate in
+                // TODO: 유사한 매물 상세 화면으로 이동
+                print("유사한 매물 상세 화면 이동: \(estate.title)")
+            })
+            .disposed(by: disposeBag)
+        
         /// - 에러 처리
         output.error
             .drive(onNext: { [weak self] error in
@@ -320,6 +372,13 @@ extension EstateDetailViewController {
         imageCountTagView.isHidden = imageCountTagShouldHide
     }
     
+}
+
+// MARK: - UICollectionViewDelegate
+extension EstateDetailViewController {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        dataSourceManager.handleCellSelection(at: indexPath)
+    }
 }
 
 // MARK: - EstateDetailCollectionViewLayoutDelegate

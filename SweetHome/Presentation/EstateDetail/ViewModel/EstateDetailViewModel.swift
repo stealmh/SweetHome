@@ -16,12 +16,20 @@ class EstateDetailViewModel: ViewModelable {
         let viewDidLoad: Observable<String> // estateID
         let favoriteButtonTapped: Observable<Void>
         let backButtonTapped: Observable<Void>
+        let reservationButtonTapped: Observable<Void>
+        let brokerCallButtonTapped: Observable<Void>
+        let brokerChatButtonTapped: Observable<Void>
+        let similarCellTapped: Observable<Estate>
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
         let isLoading: Driver<Bool>
         let estateDetail: Driver<DetailEstate?>
         let backButtonTappedResult: Driver<Void>
+        let reservationButtonTappedResult: Driver<Void>
+        let brokerCallButtonTappedResult: Driver<Void>
+        let brokerChatButtonTappedResult: Driver<Void>
+        let similarCellTappedResult: Driver<Estate>
         let error: Driver<SHError>
         /// - 현재 이미지 개수 제공
         let thumbnailsCount: Driver<Int>
@@ -130,6 +138,38 @@ class EstateDetailViewModel: ViewModelable {
         /// - 뒤로가기 버튼 눌렀을 때
         let backButtonTapped = input.backButtonTapped.asDriver(onErrorDriveWith: .empty())
         
+        /// - 예약하기 버튼 눌렀을 때
+        let reservationButtonTapped = input.reservationButtonTapped
+            .do(onNext: { _ in
+                // TODO: 예약하기 기능 구현
+                print("예약하기 버튼 탭됨")
+            })
+            .asDriver(onErrorDriveWith: .empty())
+        
+        /// - 중개사 전화 버튼 눌렀을 때
+        let brokerCallButtonTapped = input.brokerCallButtonTapped
+            .do(onNext: { _ in
+                // TODO: 전화 기능 구현
+                print("중개사 전화 버튼 탭됨")
+            })
+            .asDriver(onErrorDriveWith: .empty())
+        
+        /// - 중개사 채팅 버튼 눌렀을 때
+        let brokerChatButtonTapped = input.brokerChatButtonTapped
+            .do(onNext: { _ in
+                // TODO: 채팅 기능 구현
+                print("중개사 채팅 버튼 탭됨")
+            })
+            .asDriver(onErrorDriveWith: .empty())
+        
+        /// - 유사한 매물 셀 눌렀을 때
+        let similarCellTapped = input.similarCellTapped
+            .do(onNext: { estate in
+                // TODO: 유사한 매물 상세 화면으로 이동
+                print("유사한 매물 셀 탭됨: \(estate.title)")
+            })
+            .asDriver(onErrorDriveWith: .empty())
+        
         /// - 이미지 개수 Driver
         let thumbnailsCount = estateDetailRelay
             .map { $0?.thumbnails.count ?? 0 }
@@ -139,6 +179,10 @@ class EstateDetailViewModel: ViewModelable {
             isLoading: isLoadingRelay.asDriver(onErrorDriveWith: .empty()),
             estateDetail: estateDetailRelay.asDriver(onErrorDriveWith: .empty()),
             backButtonTappedResult: backButtonTapped,
+            reservationButtonTappedResult: reservationButtonTapped,
+            brokerCallButtonTappedResult: brokerCallButtonTapped,
+            brokerChatButtonTappedResult: brokerChatButtonTapped,
+            similarCellTappedResult: similarCellTapped,
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
             thumbnailsCount: thumbnailsCount,
             similarEstates: similarEstatesRelay.asDriver(onErrorJustReturn: [])

@@ -13,6 +13,11 @@ class EstateDetailCollectionViewDataSource {
     private var likeCount: Int = 0
     private var parkingCount: Int = 0
     
+    // MARK: - Button Action Callbacks
+    var onBrokerCallButtonTapped: (() -> Void)?
+    var onBrokerChatButtonTapped: (() -> Void)?
+    var onSimilarCellTapped: ((Estate) -> Void)?
+    
     init(collectionView: UICollectionView) {
         setupDataSource(collectionView: collectionView)
     }
@@ -61,6 +66,12 @@ class EstateDetailCollectionViewDataSource {
             /// - 중개사 정보 셀 구성
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailBrokerCell.identifier, for: indexPath) as! EstateDetailBrokerCell
             cell.configure(with: detail.creator)
+            cell.onCallButtonTapped = { [weak self] in
+                self?.onBrokerCallButtonTapped?()
+            }
+            cell.onChatButtonTapped = { [weak self] in
+                self?.onBrokerChatButtonTapped?()
+            }
             return cell
         }
     }
@@ -256,5 +267,17 @@ class EstateDetailCollectionViewDataSource {
     
     func getItem(for indexPath: IndexPath) -> EstateDetailViewController.Item? {
         return dataSource.itemIdentifier(for: indexPath)
+    }
+    
+    // MARK: - Cell Selection Handling
+    func handleCellSelection(at indexPath: IndexPath) {
+        guard let item = getItem(for: indexPath) else { return }
+        
+        switch item {
+        case .similarEstate(let estate):
+            onSimilarCellTapped?(estate)
+        default:
+            break
+        }
     }
 }
