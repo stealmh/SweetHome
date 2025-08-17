@@ -96,6 +96,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView)
         pageControl.addTarget(self, action: #selector(pageControlValueChanged), for: .valueChanged)
         collectionView.delegate = self
+        setupScrollObserver()
     }
     
     override func setupConstraints() {
@@ -110,16 +111,16 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
-        /// - PageControl (배너 섹션 내 고정 위치)
+        /// - PageControl (배너 섹션 위에 overlay)
         pageControl.snp.makeConstraints {
-            $0.top.equalTo(detailNavigationBar.snp.bottom).offset(250 - 22) // 배너 하단 - 22
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(56 + 250 - 22) // NavigationBar + 배너 하단 - 22
             $0.centerX.equalToSuperview()
             $0.height.equalTo(6)
         }
-        /// - ImageCountTagView (배너 섹션 내 고정 위치)
+        /// - ImageCountTagView (배너 섹션 위에 overlay)
         imageCountTagView.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
-            $0.top.equalTo(detailNavigationBar.snp.bottom).offset(250 - 40) // 배너 하단 - 40
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(56 + 250 - 40) // NavigationBar + 배너 하단 - 40
         }
     }
     
@@ -230,6 +231,49 @@ extension EstateDetailViewController {
             at: .centeredHorizontally,
             animated: true
         )
+    }
+    
+    /// - 스크롤 추적을 위한 Observer 설정
+    private func setupScrollObserver() {
+        collectionView.rx.contentOffset
+            .subscribe(onNext: { [weak self] offset in
+                self?.updateOverlayPositions(for: offset.y)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    /// - 스크롤에 따른 pageControl과 imageCountTagView 위치 업데이트
+    private func updateOverlayPositions(for scrollY: CGFloat) {
+        let bannerHeight: CGFloat = 250
+        let navigationBarHeight: CGFloat = 56
+        
+        /// - pageControl과 imageCountTagView의 초기 위치 (safeArea 기준)
+        let pageControlInitialY = navigationBarHeight + bannerHeight - 22
+        let imageCountTagInitialY = navigationBarHeight + bannerHeight - 40
+        
+        /// - 스크롤에 따른 새로운 위치 계산
+        let pageControlNewY = pageControlInitialY - scrollY
+        let imageCountTagNewY = imageCountTagInitialY - scrollY
+        
+        /// - NavigationBar 아래로 내려가지 않도록 제한
+        let pageControlFinalY = max(pageControlNewY, navigationBarHeight + 10)
+        let imageCountTagFinalY = max(imageCountTagNewY, navigationBarHeight + 10)
+        
+        /// - 즉각적으로 위치 업데이트
+        pageControl.snp.updateConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(pageControlFinalY)
+        }
+        
+        imageCountTagView.snp.updateConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(imageCountTagFinalY)
+        }
+        
+        /// - 원래 위치에서 벗어나기 시작하면 숨기기
+        let pageControlShouldHide = pageControlNewY < navigationBarHeight + 10
+        let imageCountTagShouldHide = imageCountTagNewY < navigationBarHeight + 10
+        
+        pageControl.isHidden = pageControlShouldHide
+        imageCountTagView.isHidden = imageCountTagShouldHide
     }
     
 }
