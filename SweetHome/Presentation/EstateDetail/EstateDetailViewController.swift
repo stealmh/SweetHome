@@ -24,11 +24,13 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     enum Section: Int, CaseIterable {
         case banner
         case topInfo
+        case options
     }
     
     enum Item: Hashable {
         case image(String, uniqueID: String)
         case topInfo(DetailEstate)
+        case options(EstateOptions)
     }
     
     private lazy var collectionView: UICollectionView = {
@@ -43,7 +45,9 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         cv.isScrollEnabled = true
         cv.register(EstateDetailBannerCell.self, forCellWithReuseIdentifier: EstateDetailBannerCell.identifier)
         cv.register(EstateDetailBannerFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: EstateDetailBannerFooterView.identifier)
+        cv.register(EstateSectionHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: EstateSectionHeaderView.identifier)
         cv.register(EstateDetailTopCell.self, forCellWithReuseIdentifier: EstateDetailTopCell.identifier)
+        cv.register(EstateDetailOptionCell.self, forCellWithReuseIdentifier: EstateDetailOptionCell.identifier)
         
         dataSourceManager = EstateDetailCollectionViewDataSource(collectionView: cv)
         return cv
@@ -137,6 +141,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.detailNavigationBar.configure(detail)
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
                 self?.setupTopInfoSection(detail)
+                self?.setupOptionsSection(detail.options)
             })
             .disposed(by: disposeBag)
             
@@ -179,6 +184,11 @@ extension EstateDetailViewController {
     private func setupTopInfoSection(_ detail: DetailEstate) {
         let topInfoItem = Item.topInfo(detail)
         dataSourceManager.updateTopInfoSnapshot(topInfoItem: topInfoItem)
+    }
+    
+    private func setupOptionsSection(_ options: EstateOptions) {
+        let optionsItem = Item.options(options)
+        dataSourceManager.updateOptionsSnapshot(optionsItem: optionsItem)
     }
     
     @objc private func pageControlValueChanged() {

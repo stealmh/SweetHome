@@ -41,11 +41,29 @@ class EstateDetailCollectionViewDataSource {
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailTopCell.identifier, for: indexPath) as! EstateDetailTopCell
             cell.configure(detail)
             return cell
+        case .options(let options):
+            /// - 매물 옵션 셀 구성
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: EstateDetailOptionCell.identifier, for: indexPath) as! EstateDetailOptionCell
+            cell.configure(with: options)
+            return cell
         }
     }
     
     private func supplementaryViewProvider(collectionView: UICollectionView, kind: String, indexPath: IndexPath) -> UICollectionReusableView? {
         switch kind {
+        case UICollectionView.elementKindSectionHeader:
+            let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: EstateSectionHeaderView.identifier,
+                for: indexPath
+            ) as! EstateSectionHeaderView
+            
+            /// - Options 섹션의 Header인 경우 "옵션 정보" 텍스트 설정
+            if EstateDetailViewController.Section.allCases[indexPath.section] == .options {
+                header.configure(title: "옵션 정보", hideViewAll: true)
+            }
+            
+            return header
         case UICollectionView.elementKindSectionFooter:
             let footer = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
@@ -88,6 +106,20 @@ class EstateDetailCollectionViewDataSource {
         
         /// - topInfo 섹션에 새 아이템 추가
         snapshot.appendItems([topInfoItem], toSection: .topInfo)
+        dataSource.apply(snapshot, animatingDifferences: false)
+    }
+    
+    func updateOptionsSnapshot(optionsItem: EstateDetailViewController.Item) {
+        var snapshot = dataSource.snapshot()
+        
+        /// - options 섹션의 기존 아이템들 제거
+        let existingItems = snapshot.itemIdentifiers(inSection: .options)
+        if !existingItems.isEmpty {
+            snapshot.deleteItems(existingItems)
+        }
+        
+        /// - options 섹션에 새 아이템 추가
+        snapshot.appendItems([optionsItem], toSection: .options)
         dataSource.apply(snapshot, animatingDifferences: false)
     }
     
