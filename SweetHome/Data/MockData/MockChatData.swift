@@ -78,7 +78,7 @@ struct MockChatData {
             lastChat: LastChat(
                 chatId: "66386735e7696bd61fd5ef16",
                 roomId: "66387304d5418c5e1e141864",
-                content: "내일 방문 가능하신가요?",
+                content: "내일 방문 가능하신가요? 고구려의 흥망성쇠 대한독립만세인가요? 8월15일은 광복80주년을 맞는 해 인가요??",
                 createdAt: Date().addingTimeInterval(-3600),
                 updatedAt: Date().addingTimeInterval(-3600),
                 sender: ChatSender(

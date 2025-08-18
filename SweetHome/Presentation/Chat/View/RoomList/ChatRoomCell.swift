@@ -12,7 +12,11 @@ class ChatRoomCell: UICollectionViewCell {
     private let profileImageView: UIImageView = {
         let v = UIImageView()
         v.contentMode = .scaleToFill
-        v.layer.cornerRadius = 10
+        v.layer.cornerRadius = 16
+        v.layer.borderWidth = 1
+        v.layer.borderColor = SHColor.GrayScale.gray_30.cgColor
+        v.clipsToBounds = true
+        v.tintColor = .black
         return v
     }()
     
@@ -29,13 +33,17 @@ class ChatRoomCell: UICollectionViewCell {
     
     private let messageLabel: UILabel = {
         let v = UILabel()
-        v.setFont(.pretendard(.medium), size: .body1)
+        v.setFont(.pretendard(.medium), size: .body2)
+        v.textColor = SHColor.GrayScale.gray_60
+        v.numberOfLines = 2
         return v
     }()
     
     private let dateLabel: UILabel = {
         let v = UILabel()
-        v.setFont(.pretendard(.medium), size: .body1)
+        v.setFont(.pretendard(.medium), size: .body3)
+        v.textColor = SHColor.GrayScale.gray_60
+        v.textAlignment = .right
         return v
     }()
     
@@ -48,14 +56,12 @@ class ChatRoomCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
         setupUI()
         setupConstraints()
     }
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        
         setupUI()
         setupConstraints()
     }
@@ -69,28 +75,30 @@ private extension ChatRoomCell {
     func setupConstraints() {
         profileImageView.snp.makeConstraints {
             $0.top.leading.equalToSuperview()
-            $0.width.height.equalTo(40)
+            $0.width.height.equalTo(56)
         }
         
         userNameLabel.snp.makeConstraints {
             $0.top.equalToSuperview()
-            $0.leading.equalTo(profileImageView.snp.trailing).offset(4)
+            $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
         }
         
         pinImageView.snp.makeConstraints {
             $0.top.equalToSuperview()
-            $0.leading.equalTo(userNameLabel.snp.trailing).offset(4)
+            $0.leading.equalTo(userNameLabel.snp.trailing).offset(8)
             $0.width.height.equalTo(10)
+        }
+        
+        dateLabel.snp.makeConstraints {
+            $0.top.bottom.equalTo(profileImageView)
+            $0.trailing.equalToSuperview()
+            $0.width.greaterThanOrEqualTo(40)
         }
         
         messageLabel.snp.makeConstraints {
             $0.top.equalTo(userNameLabel.snp.bottom).offset(4)
             $0.leading.equalTo(userNameLabel)
-            $0.trailing.equalTo(dateLabel.snp.leading).inset(10)
-        }
-        
-        dateLabel.snp.makeConstraints {
-            $0.top.trailing.bottom.equalToSuperview()
+            $0.trailing.equalTo(dateLabel.snp.leading).offset(-8)
         }
     }
 }
