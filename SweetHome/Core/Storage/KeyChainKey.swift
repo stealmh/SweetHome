@@ -10,4 +10,5 @@ enum KeyChainKey: String, CaseIterable {
     case accessToken
     case refreshToken
     case deviceToken
+    case fcmToken
 }

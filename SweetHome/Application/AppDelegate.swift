@@ -11,6 +11,8 @@ import RxKakaoSDKAuth
 import RxKakaoSDKCommon
 import UserNotifications
 import KakaoMapsSDK
+import FirebaseCore
+import FirebaseMessaging
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -22,9 +24,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         Task {
-            await configureUserNotifications()
+            _ = await NotificationManager.shared.requestNotificationPermission()
         }
         configureKakaoSDK()
+        FirebaseApp.configure()
         return true
     }
 
@@ -46,7 +49,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        storeDeviceTokenIfNeeded(deviceToken)
+        NotificationManager.shared.setAPNsToken(deviceToken)
     }
 
     func application(
@@ -66,56 +69,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // 카카오맵 SDK 초기화 (로그인용 앱키와 동일)
         SDKInitializer.InitSDK(appKey: appKey)
     }
-
-    // MARK: - 알림 설정
-    private func configureUserNotifications() async {
-        UNUserNotificationCenter.current().delegate = self
-        
-        do {
-            let granted = try await UNUserNotificationCenter.current()
-                .requestAuthorization(options: [.alert, .badge, .sound])
-            
-            /// - 권한 거부 시 조기 리턴
-            guard granted else { return }
-            
-            await MainActor.run {
-                UIApplication.shared.registerForRemoteNotifications()
-            }
-        } catch {
-            print("권한 설정 중 오류")
-        }
-    }
-
-    private func storeDeviceTokenIfNeeded(_ deviceToken: Data) {
-        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        KeyChainManager.shared.save(.deviceToken, value: tokenString)
-    }
-
-//MARK: - Core Data
-    lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "SweetHome")
-        container.loadPersistentStores { _, error in
-            if let error = error as NSError? {
-                fatalError("CoreData Load Error: \(error), \(error.userInfo)")
-            }
-        }
-        return container
-    }()
-
-//MARK: - Core Data 저장
-    func saveContext() {
-        let context = persistentContainer.viewContext
-        if context.hasChanges {
-            do {
-                try context.save()
-            } catch {
-                let error = error as NSError
-                fatalError("CoreData Save Error: \(error), \(error.userInfo)")
-            }
-        }
-    }
 }
 
-//MARK: - UNUserNotificationCenterDelegate
-extension AppDelegate: UNUserNotificationCenterDelegate {
-}
