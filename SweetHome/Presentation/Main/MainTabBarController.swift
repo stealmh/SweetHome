@@ -25,7 +25,6 @@ class MainTabBarController: UITabBarController {
             selectedImage: SHAsset.TabBar.homeFill?.resized(to: 28)
         )
         
-        //TODO: InterestVC 구현
         /// - 관심매물
         let searchVC = HomeViewController()
         let searchNavController = UINavigationController(rootViewController: searchVC)
@@ -35,9 +34,8 @@ class MainTabBarController: UITabBarController {
             selectedImage: SHAsset.TabBar.interestFill?.resized(to: 28)
         )
         
-        //TODO: ChatVC 구현
         /// - 채팅
-        let favoritesVC = HomeViewController()
+        let favoritesVC = ChatViewController()
         let favoritesNavController = UINavigationController(rootViewController: favoritesVC)
         favoritesNavController.tabBarItem = UITabBarItem(
             title: "채팅",
