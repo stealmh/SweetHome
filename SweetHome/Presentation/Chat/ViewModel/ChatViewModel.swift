@@ -11,6 +11,8 @@ import RxCocoa
 
 class ChatViewModel: ViewModelable {
     let disposeBag = DisposeBag()
+    private let apiClient = ApiClient()
+    private let socketRepository = ChatSocketRepository()
     
     struct Input {
         let onAppear: Observable<Void>
@@ -33,9 +35,16 @@ class ChatViewModel: ViewModelable {
         let chatRoomsRelay = BehaviorSubject<[ChatRoom]>(value: [])
         let errorRelay = PublishSubject<SHError>()
         
+        /// - 채팅방 목록 조회
         input.onAppear
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
-            .map { _ in MockChatData.chatRooms }
+            .flatMapLatest { [weak self] _ -> Observable<[ChatRoom]> in
+                guard let self else { return .empty() }
+                return self.apiClient.requestObservable(ChatEndpoint.listRead)
+                    .map { (response: ChatRoomListResponse) in
+                        return response.data.map { $0.toDomain() }
+                    }
+            }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { chatRooms in
                 chatRoomsRelay.onNext(chatRooms)

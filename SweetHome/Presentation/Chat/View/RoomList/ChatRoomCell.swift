@@ -106,11 +106,11 @@ private extension ChatRoomCell {
 extension ChatRoomCell {
     func configure(with chatRoom: ChatRoom) {
         userNameLabel.text = chatRoom.participants.first?.nickname
-        messageLabel.text = chatRoom.lastChat.content
+        messageLabel.text = chatRoom.lastChat?.content
         
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd"
-        dateLabel.text = formatter.string(from: chatRoom.lastChat.createdAt)
+        dateLabel.text = formatter.string(from: chatRoom.lastChat?.createdAt ?? Date())
         profileImageView.setAuthenticatedImage(with: chatRoom.participants[0].profileImageURL)
     }
 }

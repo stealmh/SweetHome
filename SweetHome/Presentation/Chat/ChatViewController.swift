@@ -65,6 +65,13 @@ class ChatViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
+        output.error
+            .drive(onNext: { [weak self] error in
+                print("에러 발생: \(error.localizedDescription)")
+                // TODO: 에러 화면 또는 알럿 표시
+            })
+            .disposed(by: disposeBag)
+        
         output.presentSearch
             .drive(onNext: { [weak self] _ in
                 // TODO: 검색 화면 present
