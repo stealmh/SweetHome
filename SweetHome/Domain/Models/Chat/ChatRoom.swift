@@ -13,6 +13,7 @@ struct ChatRoom: Hashable {
     let updatedAt: Date
     let participants: [Participant]
     let lastChat: LastChat?
+    let unreadCount: Int
 }
 
 extension ChatRoomResponse {
@@ -24,7 +25,8 @@ extension ChatRoomResponse {
             createdAt: formatter.date(from: createdAt) ?? Date(),
             updatedAt: formatter.date(from: updatedAt) ?? Date(),
             participants: participants.map { $0.toDomain() },
-            lastChat: lastChat?.toDomain() ?? createDefaultLastChat()
+            lastChat: lastChat?.toDomain() ?? createDefaultLastChat(),
+            unreadCount: 0
         )
     }
     
@@ -55,7 +57,8 @@ extension ChatRoomListDataResponse {
             createdAt: formatter.date(from: createdAt) ?? Date(),
             updatedAt: formatter.date(from: updatedAt) ?? Date(),
             participants: participants.map { $0.toDomain() },
-            lastChat: lastChat?.toDomain()
+            lastChat: lastChat?.toDomain(),
+            unreadCount: 0
         )
     }
 }

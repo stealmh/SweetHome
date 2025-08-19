@@ -42,7 +42,8 @@ extension ChatRoomEntity {
             createdAt: createdAt,
             updatedAt: updatedAt,
             participants: participants.map { $0.toDomain() },
-            lastChat: lastChat
+            lastChat: lastChat,
+            unreadCount: unreadCount
         )
     }
 }

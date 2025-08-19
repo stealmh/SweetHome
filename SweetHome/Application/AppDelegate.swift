@@ -59,6 +59,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
+    // 백그라운드에서 푸시 알림 수신 시 호출
+    func application(
+        _ application: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+        fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+    ) {
+        print("백그라운드 푸시 알림 수신: \(userInfo)")
+        
+        // 채팅 메시지 푸시 알림인지 확인
+        if let roomId = userInfo["room_id"] as? String {
+            NotificationManager.shared.handleBackgroundChatNotification(userInfo)
+            completionHandler(.newData)
+        } else {
+            completionHandler(.noData)
+        }
+    }
+    
     // MARK: - SDK 설정
     private func configureKakaoSDK() {
         guard let appKey = Bundle.main.object(forInfoDictionaryKey: "NATIVE_APP_KEY") as? String else {

@@ -8,11 +8,13 @@
 import Foundation
 import RxSwift
 import RxCocoa
+import RealmSwift
 
 class ChatViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     private let apiClient = ApiClient()
     private let socketRepository = ChatSocketRepository()
+    private let chatRoomsRelay = BehaviorSubject<[ChatRoom]>(value: [])
     
     struct Input {
         let onAppear: Observable<Void>
@@ -28,11 +30,12 @@ class ChatViewModel: ViewModelable {
         let presentSettings: Driver<Void>
     }
     
-    init() {}
+    init() {
+        observeUnreadCountUpdates()
+    }
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let chatRoomsRelay = BehaviorSubject<[ChatRoom]>(value: [])
         let errorRelay = PublishSubject<SHError>()
         
         /// - 채팅방 목록 조회
@@ -46,8 +49,8 @@ class ChatViewModel: ViewModelable {
                     }
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
-            .subscribe(onNext: { chatRooms in
-                chatRoomsRelay.onNext(chatRooms)
+            .subscribe(onNext: { [weak self] chatRooms in
+                self?.updateChatRoomsWithUnreadCounts(chatRooms)
             }, onError: { error in
                 isLoadingRelay.onNext(false)
                 errorRelay.onNext(SHError.from(error))
@@ -61,5 +64,56 @@ class ChatViewModel: ViewModelable {
             presentSearch: input.searchButtonTapped.asDriver(onErrorDriveWith: .empty()),
             presentSettings: input.settingsButtonTapped.asDriver(onErrorDriveWith: .empty())
         )
+    }
+    
+    // MARK: - Private Methods
+    
+    private func observeUnreadCountUpdates() {
+        // 새 메시지 수신 시 안읽음 카운트 업데이트 감지
+        NotificationCenter.default.rx
+            .notification(.Chat.newMessageReceived)
+            .subscribe(onNext: { [weak self] notification in
+                self?.refreshChatRoomsFromRealm()
+            })
+            .disposed(by: disposeBag)
+        
+        // 앱 포그라운드 진입 시 동기화
+        NotificationCenter.default.rx
+            .notification(.Chat.syncUnreadCounts)
+            .subscribe(onNext: { [weak self] notification in
+                self?.refreshChatRoomsFromRealm()
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func updateChatRoomsWithUnreadCounts(_ chatRooms: [ChatRoom]) {
+        do {
+            let realm = try Realm()
+            
+            let updatedChatRooms = chatRooms.map { chatRoom in
+                if let entity = realm.object(ofType: ChatRoomEntity.self, forPrimaryKey: chatRoom.roomId) {
+                    return ChatRoom(
+                        roomId: chatRoom.roomId,
+                        createdAt: chatRoom.createdAt,
+                        updatedAt: chatRoom.updatedAt,
+                        participants: chatRoom.participants,
+                        lastChat: chatRoom.lastChat,
+                        unreadCount: entity.unreadCount
+                    )
+                } else {
+                    return chatRoom
+                }
+            }
+            
+            chatRoomsRelay.onNext(updatedChatRooms)
+        } catch {
+            print("Realm 조회 실패: \(error)")
+            chatRoomsRelay.onNext(chatRooms)
+        }
+    }
+    
+    private func refreshChatRoomsFromRealm() {
+        guard let currentChatRooms = try? chatRoomsRelay.value() else { return }
+        updateChatRoomsWithUnreadCounts(currentChatRooms)
     }
 }

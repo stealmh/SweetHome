@@ -51,6 +51,9 @@ class ChatRoomCell: UICollectionViewCell {
     
     private let messageCountLabel: UILabel = {
         let v = UILabel()
+        v.setFont(.pretendard(.bold), size: .caption1)
+        v.textColor = .white
+        v.textAlignment = .center
         return v
     }()
     
@@ -69,7 +72,12 @@ class ChatRoomCell: UICollectionViewCell {
 
 private extension ChatRoomCell {
     func setupUI() {
-        addSubviews(profileImageView, userNameLabel, messageLabel, pinImageView, dateLabel)
+        messageCountContainerView.backgroundColor = .systemRed
+        messageCountContainerView.layer.cornerRadius = 10
+        messageCountContainerView.clipsToBounds = true
+        messageCountContainerView.isHidden = true
+        messageCountContainerView.addSubview(messageCountLabel)
+        addSubviews(profileImageView, userNameLabel, messageLabel, pinImageView, dateLabel, messageCountContainerView)
     }
     
     func setupConstraints() {
@@ -100,6 +108,16 @@ private extension ChatRoomCell {
             $0.leading.equalTo(userNameLabel)
             $0.trailing.equalTo(dateLabel.snp.leading).offset(-8)
         }
+        
+        messageCountContainerView.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.bottom.equalTo(profileImageView.snp.bottom)
+            $0.width.height.equalTo(20)
+        }
+        
+        messageCountLabel.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
     }
 }
 
@@ -112,5 +130,16 @@ extension ChatRoomCell {
         formatter.dateFormat = "MM/dd"
         dateLabel.text = formatter.string(from: chatRoom.lastChat?.createdAt ?? Date())
         profileImageView.setAuthenticatedImage(with: chatRoom.participants[0].profileImageURL)
+        
+        configureUnreadCount(chatRoom.unreadCount)
+    }
+    
+    private func configureUnreadCount(_ count: Int) {
+        if count > 0 {
+            messageCountContainerView.isHidden = false
+            messageCountLabel.text = count > 99 ? "99+" : "\(count)"
+        } else {
+            messageCountContainerView.isHidden = true
+        }
     }
 }

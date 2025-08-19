@@ -85,6 +85,22 @@ class ChatViewController: BaseViewController {
                 print("설정 버튼 탭됨")
             })
             .disposed(by: disposeBag)
+        
+        /// - 채팅방 셀 선택 시 읽음 처리
+        collectionView.rx.itemSelected
+            .withLatestFrom(output.chatRooms.asObservable()) { indexPath, chatRooms in
+                return (indexPath, chatRooms)
+            }
+            .subscribe(onNext: { [weak self] indexPath, chatRooms in
+                guard indexPath.row < chatRooms.count else { return }
+                
+                let selectedRoom = chatRooms[indexPath.row]
+                NotificationManager.shared.markRoomAsRead(selectedRoom.roomId)
+                
+                // TODO: 채팅방 화면으로 이동
+                print("채팅방 선택: \(selectedRoom.roomId)")
+            })
+            .disposed(by: disposeBag)
     }
 }
 

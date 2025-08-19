@@ -8,6 +8,7 @@
 import UIKit
 import UserNotifications
 import FirebaseMessaging
+import RealmSwift
 
 class NotificationManager: NSObject {
     
@@ -125,15 +126,136 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     
     // 채팅 알림 처리
     private func handleChatNotification(_ data: ChatNotificationData) {
-        // 현재 채팅방에 있지 않은 경우에만 처리
-        let socketRepository = ChatSocketRepository()
+        // 현재 해당 채팅방에 접속해 있는지 확인
+        let isInTargetRoom = ChatSocketManager.shared.joinedRoomIds.contains(data.roomId)
+        
+        if isInTargetRoom {
+            // 소켓으로 이미 메시지를 받았으므로 푸시 알림 처리하지 않음
+            print("소켓으로 메시지 수신 중이므로 푸시 알림 무시: \(data.roomId)")
+            return
+        }
+        
+        // 채팅방에 없는 경우에만 푸시 알림 처리
+        updateUnreadCount(for: data.roomId)
         
         // 새 메시지로 인한 읽지 않은 개수 업데이트
         NotificationCenter.default.post(
-            name: NSNotification.Name("NewChatMessageReceived"),
+            name: .Chat.newMessageReceived,
             object: nil,
             userInfo: ["roomId": data.roomId]
         )
+    }
+    
+    /// - 안읽음 메시지 카운트 업데이트
+    private func updateUnreadCount(for roomId: String) {
+        do {
+            let realm = try Realm()
+            
+            if let chatRoom = realm.object(ofType: ChatRoomEntity.self, forPrimaryKey: roomId) {
+                try realm.write {
+                    chatRoom.unreadCount += 1
+                }
+            }
+        } catch {
+            print("Realm 업데이트 실패: \(error)")
+        }
+    }
+    /// - 채팅방의 메세지를 읽음 처리함(채팅방 진입 시 호출)
+    func markRoomAsRead(_ roomId: String) {
+        do {
+            let realm = try Realm()
+            
+            if let chatRoom = realm.object(ofType: ChatRoomEntity.self, forPrimaryKey: roomId) {
+                try realm.write {
+                    chatRoom.unreadCount = 0
+                    
+                    // 해당 방의 모든 메시지를 읽음으로 처리
+                    let unreadMessages = realm.objects(ChatMessageEntity.self)
+                        .filter("roomId == %@ AND isRead == false", roomId)
+                    unreadMessages.forEach { $0.isRead = true }
+                }
+                
+                // 앱 배지 카운트 업데이트
+                updateAppBadgeCount()
+            }
+        } catch {
+            print("읽음 처리 실패: \(error)")
+        }
+    }
+    /// - 백그라운드에서 채팅 알림 처리
+    func handleBackgroundChatNotification(_ userInfo: [AnyHashable: Any]) {
+        guard let chatData = parseChatNotification(userInfo) else { return }
+        
+        print("백그라운드에서 채팅 알림 처리: \(chatData.roomId)")
+        
+        // 백그라운드에서도 Realm 업데이트 가능
+        updateUnreadCountInBackground(for: chatData.roomId)
+        
+        // 앱 배지 카운트 업데이트
+        updateAppBadgeCount()
+    }
+    
+    /// - 백그라운드에서 안읽음 카운트 업데이트
+    private func updateUnreadCountInBackground(for roomId: String) {
+        do {
+            let realm = try Realm()
+            
+            // 채팅방이 없으면 새로 생성
+            let chatRoom: ChatRoomEntity
+            if let existingRoom = realm.object(ofType: ChatRoomEntity.self, forPrimaryKey: roomId) {
+                chatRoom = existingRoom
+            } else {
+                chatRoom = ChatRoomEntity()
+                chatRoom.roomId = roomId
+                chatRoom.createdAt = Date()
+                chatRoom.updatedAt = Date()
+            }
+            
+            try realm.write {
+                chatRoom.unreadCount += 1
+                chatRoom.updatedAt = Date()
+                realm.add(chatRoom, update: .modified)
+            }
+            
+            print("백그라운드에서 안읽음 카운트 업데이트 완료: \(roomId), 카운트: \(chatRoom.unreadCount)")
+        } catch {
+            print("백그라운드 Realm 업데이트 실패: \(error)")
+        }
+    }
+    
+    /// - 앱이 포그라운드로 돌아올 때 안읽음 카운트 동기화
+    func syncUnreadCountsOnForeground() {
+        print("앱 포그라운드 진입 - 안읽음 카운트 동기화 시작")
+        
+        // ChatViewModel에 동기화 신호 전송
+        NotificationCenter.default.post(
+            name: .Chat.syncUnreadCounts,
+            object: nil
+        )
+        
+        // 앱 배지 카운트 업데이트
+        updateAppBadgeCount()
+    }
+    
+    // 앱 배지 카운트 업데이트
+    private func updateAppBadgeCount() {
+        do {
+            let realm = try Realm()
+            let totalUnreadCount: Int = realm.objects(ChatRoomEntity.self)
+                .sum(ofProperty: "unreadCount")
+            
+            DispatchQueue.main.async {
+                UNUserNotificationCenter.current().setBadgeCount(totalUnreadCount) { error in
+                    if let error = error {
+                        print("배지 카운트 설정 실패: \(error)")
+                    } else {
+                        print("배지 카운트 업데이트: \(totalUnreadCount)")
+                    }
+                }
+            }
+        } catch {
+            print("배지 카운트 계산 실패: \(error)")
+        }
     }
     
     // 채팅방으로 네비게이션
@@ -141,7 +263,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         // SceneDelegate 또는 현재 활성 Scene을 통해 채팅방으로 이동
         DispatchQueue.main.async {
             NotificationCenter.default.post(
-                name: NSNotification.Name("NavigateToChat"),
+                name: .Chat.navigateToChat,
                 object: nil,
                 userInfo: ["roomId": roomId]
             )
