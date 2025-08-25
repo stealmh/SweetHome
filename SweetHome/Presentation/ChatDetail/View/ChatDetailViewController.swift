@@ -26,46 +26,16 @@ class ChatDetailViewController: BaseViewController {
         return cv
     }()
     
-    private let inputContainerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .systemBackground
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOpacity = 0.1
-        view.layer.shadowOffset = CGSize(width: 0, height: -2)
-        view.layer.shadowRadius = 4
-        return view
-    }()
-    
-    private let messageTextView: UITextView = {
-        let textView = UITextView()
-        textView.font = .systemFont(ofSize: 16)
-        textView.backgroundColor = .systemGray6
-        textView.layer.cornerRadius = 20
-        textView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        textView.isScrollEnabled = false
-        textView.showsVerticalScrollIndicator = false
-        return textView
-    }()
-    
-    private let sendButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("전송", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .systemBlue
-        button.layer.cornerRadius = 20
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        return button
-    }()
+    private let chatInputView = ChatDetailInputView()
     
     private lazy var layoutManager = ChatDetailCollectionViewLayout()
     private lazy var dataSourceManager = ChatDetailCollectionViewDataSource(collectionView: collectionView)
     
-    private var inputContainerBottomConstraint: Constraint!
+    private var chatInputViewBottomConstraint: Constraint!
     
     init(roomId: String) {
         self.roomId = roomId
         super.init(nibName: nil, bundle: nil)
-        print("ChatDetailViewController: init called with roomId: \(roomId)")
     }
     
     required init?(coder: NSCoder) {
@@ -94,8 +64,7 @@ class ChatDetailViewController: BaseViewController {
         view.backgroundColor = .systemBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
         
-        view.addSubviews(navigationBar, collectionView, inputContainerView)
-        inputContainerView.addSubviews(messageTextView, sendButton)
+        view.addSubviews(navigationBar, collectionView, chatInputView)
     }
     
     override func setupConstraints() {
@@ -108,35 +77,19 @@ class ChatDetailViewController: BaseViewController {
         collectionView.snp.makeConstraints {
             $0.top.equalTo(navigationBar.snp.bottom)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(inputContainerView.snp.top)
+            $0.bottom.equalTo(chatInputView.snp.top)
         }
         
-        inputContainerView.snp.makeConstraints {
+        chatInputView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
             $0.height.greaterThanOrEqualTo(80)
-            inputContainerBottomConstraint = $0.bottom.equalTo(view.safeAreaLayoutGuide).constraint
-        }
-        
-        messageTextView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(16)
-            $0.leading.equalToSuperview().offset(16)
-            $0.bottom.equalToSuperview().offset(-16)
-            $0.height.greaterThanOrEqualTo(40)
-            $0.height.lessThanOrEqualTo(120)
-        }
-        
-        sendButton.snp.makeConstraints {
-            $0.leading.equalTo(messageTextView.snp.trailing).offset(12)
-            $0.trailing.equalToSuperview().offset(-16)
-            $0.bottom.equalTo(messageTextView.snp.bottom)
-            $0.width.equalTo(60)
-            $0.height.equalTo(40)
+            chatInputViewBottomConstraint = $0.bottom.equalTo(view.safeAreaLayoutGuide).constraint
         }
     }
     
     override func bind() {
-        let sendMessageText = sendButton.rx.tap
-            .withLatestFrom(messageTextView.rx.text.orEmpty)
+        let sendMessageText = chatInputView.sendButton.rx.tap
+            .withLatestFrom(chatInputView.messageTextView.rx.text.orEmpty)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             .share()
         
@@ -161,7 +114,7 @@ class ChatDetailViewController: BaseViewController {
         
         output.messageSent
             .drive(onNext: { [weak self] _ in
-                self?.messageTextView.text = ""
+                self?.chatInputView.clearText()
             })
             .disposed(by: disposeBag)
         
@@ -206,7 +159,7 @@ class ChatDetailViewController: BaseViewController {
             return
         }
         
-        inputContainerBottomConstraint.update(offset: -keyboardFrame.height + view.safeAreaInsets.bottom)
+        chatInputViewBottomConstraint.update(offset: -keyboardFrame.height + view.safeAreaInsets.bottom)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
@@ -218,7 +171,7 @@ class ChatDetailViewController: BaseViewController {
             return
         }
         
-        inputContainerBottomConstraint.update(offset: 0)
+        chatInputViewBottomConstraint.update(offset: 0)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
