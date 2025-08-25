@@ -18,7 +18,7 @@ struct LastChat: Hashable {
 }
 
 extension LastChatResponse {
-    func toDomain() -> LastChat? {
+    func toDomain() -> LastChat {
         let formatter = ISO8601DateFormatter()
         
         return LastChat(
