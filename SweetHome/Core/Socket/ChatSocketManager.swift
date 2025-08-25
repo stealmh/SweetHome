@@ -42,15 +42,17 @@ extension ChatSocketManager {
             return
         }
         
+        let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
+        
         manager = SocketManager(socketURL: url, config: [
-            .log(false),
+            .log(true),
             .compress,
             .reconnects(true),
             .reconnectAttempts(5),
             .reconnectWait(2),
             .forceWebsockets(true),
             .extraHeaders(
-                ["SeSacKey": APIConstants.sesacKey, "Authorization": KeyChainManager.shared.read(.accessToken) ?? ""]
+                ["SeSacKey": APIConstants.sesacKey, "Authorization": accessToken]
             )])
     }
     
@@ -61,7 +63,7 @@ extension ChatSocketManager {
             return existingSocket
         }
         
-        guard let manager = manager else { return nil }
+        guard let manager else { return nil }
         
         let socket = manager.socket(forNamespace: namespace)
         namespaceSockets[namespace] = socket
@@ -89,9 +91,8 @@ extension ChatSocketManager {
 extension ChatSocketManager {
     func joinRoom(roomId: String) {
         guard let userId = currentUserId, !userId.isEmpty else { return }
-        guard !joinedRooms.contains(roomId) else { return }
+        guard !joinedRooms.contains(roomId) else {return }
         guard let socket = getNamespaceSocket(roomId: roomId) else { return }
-        
         connectionStatusSubject.onNext(.connecting)
         
         socket.on(clientEvent: .connect) { [weak self] _, _ in
