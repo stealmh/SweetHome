@@ -27,15 +27,15 @@ extension UserEndpoint {
     var path: String {
         switch self {
         case .emailValidation:
-            return "/users/validation/email"
+            return "/v1/users/validation/email"
         case .emailRegister:
-            return "/users/join"
+            return "/v1/users/join"
         case .emailLogin:
-            return "/users/login"
+            return "/v1/users/login"
         case .kakaoLogin:
-            return "/users/login/kakao"
+            return "/v1/users/login/kakao"
         case .appleLogin:
-            return "/users/login/apple"
+            return "/v1/users/login/apple"
         }
     }
     

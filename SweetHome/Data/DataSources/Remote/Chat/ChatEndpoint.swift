@@ -25,13 +25,13 @@ extension ChatEndpoint {
     var path: String {
         switch self {
         case .create_or_read:
-            return "/chats"
+            return "/v1/chats"
         case .listRead:
-            return "/chats"
-        case let .sendMessage(id):
-            return "/chats/\(id)"
+            return "/v1/chats"
+        case let .sendMessage(id, _):
+            return "/v1/chats/\(id)"
         case let .messageRead(id):
-            return "/chats/\(id)"
+            return "/v1/chats/\(id)"
         }
     }
     

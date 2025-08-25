@@ -58,7 +58,7 @@ extension UIImageView {
     /// 상대경로를 완전한 URL로 변환하여 인증된 이미지 로딩
     func setAuthenticatedImage(with relativePath: String?) {
         guard let relativePath else { return }
-        let url = URL(string: APIConstants.baseURL + relativePath)
+        let url = URL(string: APIConstants.baseURL + "/v1" + relativePath)
         setAuthenticatedImage(with: url)
     }
     
