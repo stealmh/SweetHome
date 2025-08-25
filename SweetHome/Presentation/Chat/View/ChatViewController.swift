@@ -86,7 +86,7 @@ class ChatViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
-        /// - 채팅방 셀 선택 시 읽음 처리
+        /// - 채팅방 셀 선택 시 읽음 처리 및 상세 화면 이동
         collectionView.rx.itemSelected
             .withLatestFrom(output.chatRooms.asObservable()) { indexPath, chatRooms in
                 return (indexPath, chatRooms)
@@ -97,8 +97,8 @@ class ChatViewController: BaseViewController {
                 let selectedRoom = chatRooms[indexPath.row]
                 NotificationManager.shared.markRoomAsRead(selectedRoom.roomId)
                 
-                // TODO: 채팅방 화면으로 이동
-                print("채팅방 선택: \(selectedRoom.roomId)")
+                let chatDetailVC = ChatDetailViewController(roomId: selectedRoom.roomId)
+                self?.navigationController?.pushViewController(chatDetailVC, animated: true)
             })
             .disposed(by: disposeBag)
     }
