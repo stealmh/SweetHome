@@ -23,7 +23,6 @@ class ChatDetailViewController: BaseViewController {
         cv.backgroundColor = .systemBackground
         cv.register(ChatMessageCell.self, forCellWithReuseIdentifier: "ChatMessageCell")
         cv.keyboardDismissMode = .onDrag
-        cv.refreshControl = refreshControl
         return cv
     }()
     
@@ -139,7 +138,6 @@ class ChatDetailViewController: BaseViewController {
             onAppear: .just(()).asObservable(),
             roomId: roomId,
             sendMessage: sendMessageText,
-            refreshTrigger: refreshControl.rx.controlEvent(.valueChanged).asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         

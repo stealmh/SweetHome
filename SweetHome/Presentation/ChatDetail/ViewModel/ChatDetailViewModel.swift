@@ -12,24 +12,17 @@ import RxCocoa
 class ChatDetailViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     private let apiClient = ApiClient()
-    private let socketManager: ChatSocketManager = {
-        print("ChatDetailViewModel: Accessing ChatSocketManager.shared")
-        return ChatSocketManager.shared
-    }()
+    private let socketManager: ChatSocketManager = { return ChatSocketManager.shared }()
     private let chatMessagesRelay = BehaviorSubject<[LastChat]>(value: [])
     
     init() {
-        print("ChatDetailViewModel: init called")
-        // socketManager에 명시적으로 접근하여 초기화 강제
         _ = socketManager
-        print("ChatDetailViewModel: socketManager accessed in init")
     }
     
     struct Input {
         let onAppear: Observable<Void>
         let roomId: String
         let sendMessage: Observable<String>
-        let refreshTrigger: Observable<Void>
         let viewWillDisappear: Observable<Void>
     }
     
@@ -42,24 +35,18 @@ class ChatDetailViewModel: ViewModelable {
     }
     
     func transform(input: Input) -> Output {
-        print("ChatDetailViewModel: transform called for roomId: \(input.roomId)")
-        // socketManager에 접근하여 초기화 확인
-        print("ChatDetailViewModel: socketManager status check - \(socketManager)")
         
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
         let errorRelay = PublishSubject<SHError>()
         let messageSentRelay = PublishSubject<Void>()
         
-        setupSocketConnection(roomId: input.roomId, 
-                            onAppear: input.onAppear,
-                            viewWillDisappear: input.viewWillDisappear)
-        
-        let loadMessages = Observable.merge(
-            input.onAppear,
-            input.refreshTrigger
+        setupSocketConnection(
+            roomId: input.roomId,
+            onAppear: input.onAppear,
+            viewWillDisappear: input.viewWillDisappear
         )
         
-        loadMessages
+        input.onAppear
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<[LastChat]> in
                 guard let self else { return .empty() }
@@ -90,7 +77,6 @@ class ChatDetailViewModel: ViewModelable {
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { [weak self] sentMessage in
-                // HTTP 응답으로 받은 메시지를 즉시 UI에 반영 (낙관적 업데이트)
                 guard let currentMessages = try? self?.chatMessagesRelay.value() else { return }
                 let updatedMessages = currentMessages + [sentMessage]
                 self?.chatMessagesRelay.onNext(updatedMessages)
@@ -105,7 +91,6 @@ class ChatDetailViewModel: ViewModelable {
         socketManager.messageReceived
             .filter { $0.room_id == input.roomId }
             .subscribe(onNext: { [weak self] socketMessage in
-                // 소켓으로 받은 메시지를 LastChatResponse로 처리
                 self?.handleNewSocketMessage(socketMessage)
             })
             .disposed(by: disposeBag)
@@ -113,7 +98,7 @@ class ChatDetailViewModel: ViewModelable {
         socketManager.error
             .subscribe(onNext: { error in
                 //TODO: ERROR TYPE 명시
-//                errorRelay.onNext(SHError.from(error))
+                //                errorRelay.onNext(SHError.from(error))
             })
             .disposed(by: disposeBag)
         
@@ -128,18 +113,10 @@ class ChatDetailViewModel: ViewModelable {
     
     private func setupSocketConnection(roomId: String, onAppear: Observable<Void>, viewWillDisappear: Observable<Void>) {
         let userId = KeyChainManager.shared.read(.userID) ?? ""
-        print("ChatDetailViewModel: setupSocketConnection called with roomId: \(roomId), userId: '\(userId)'")
-        print("ChatDetailViewModel: KeyChain userID exists: \(!userId.isEmpty)")
-        
-        // userId가 비어있으면 에러 처리
-        guard !userId.isEmpty else {
-            print("ChatDetailViewModel: userID not found in KeyChain")
-            return
-        }
+        guard !userId.isEmpty else { return }
         
         onAppear
             .subscribe(onNext: { [weak self] _ in
-                print("ChatDetailViewModel: onAppear triggered, accessing socketManager")
                 self?.socketManager.connect(userId: userId)
                 self?.socketManager.joinRoom(roomId: roomId)
             })
@@ -154,11 +131,7 @@ class ChatDetailViewModel: ViewModelable {
     
     private func handleNewSocketMessage(_ response: LastChatResponse) {
         guard let currentMessages = try? chatMessagesRelay.value() else { return }
-        
-        // LastChatResponse를 LastChat 도메인 모델로 변환
         let newMessage = response.toDomain()
-        
-        // 중복 메시지 방지 - chatId로 확인
         let isDuplicate = currentMessages.contains { $0.chatId == newMessage.chatId }
         guard !isDuplicate else { return }
         
