@@ -67,20 +67,17 @@ class ChatDetailViewModel: ViewModelable {
         input.sendMessage
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
-            .flatMapLatest { [weak self] message -> Observable<LastChat> in
+            .flatMapLatest { [weak self] message -> Observable<Void> in
                 guard let self else { return .empty() }
                 let sendChat = SendChat(content: message, files: nil)
                 return self.apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: input.roomId, model: sendChat))
-                    .map { (response: LastChatResponse) in
-                        return response.toDomain()
+                    .map { (_: LastChatResponse) in
+                        // HTTP 응답은 성공 여부만 확인하고, UI 업데이트는 소켓으로만 처리
+                        return ()
                     }
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
-            .subscribe(onNext: { [weak self] sentMessage in
-                guard let currentMessages = try? self?.chatMessagesRelay.value() else { return }
-                let updatedMessages = currentMessages + [sentMessage]
-                self?.chatMessagesRelay.onNext(updatedMessages)
-                
+            .subscribe(onNext: { _ in
                 messageSentRelay.onNext(())
             }, onError: { error in
                 isLoadingRelay.onNext(false)
