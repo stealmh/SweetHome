@@ -219,6 +219,7 @@ private extension LoginViewModel {
         // 토큰 저장
         keychainManager.save(.accessToken, value: response.accessToken)
         keychainManager.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.userID, value: response.user_id)
         keychainManager.save(.lastLoginStatus, value: "email")
         
         // 메인 화면으로 이동
@@ -315,6 +316,7 @@ private extension LoginViewModel {
         // 토큰 저장
         keychainManager.save(.accessToken, value: response.accessToken)
         keychainManager.save(.refreshToken, value: response.refreshToken)
+        keychainManager.save(.userID, value: response.user_id)
         keychainManager.save(.lastLoginStatus, value: loginType)
         
         // 메인 화면으로 이동
