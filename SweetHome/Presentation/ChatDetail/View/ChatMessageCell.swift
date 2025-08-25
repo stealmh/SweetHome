@@ -76,7 +76,15 @@ final class ChatMessageCell: UICollectionViewCell {
         isMyMessage = message.sender.userId == currentUserId
         
         messageLabel.text = message.content
-        senderLabel.text = message.sender.nickname
+        
+        /// - 내가 보낸 메시지 이름 미표시
+        if isMyMessage {
+            senderLabel.text = ""
+            senderLabel.isHidden = true
+        } else {
+            senderLabel.text = message.sender.nickname
+            senderLabel.isHidden = false
+        }
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -92,6 +100,10 @@ final class ChatMessageCell: UICollectionViewCell {
             senderLabel.textColor = .white.withAlphaComponent(0.8)
             timeLabel.textColor = .white.withAlphaComponent(0.7)
             
+            messageLabel.snp.remakeConstraints {
+                $0.top.leading.trailing.equalToSuperview().inset(12)
+            }
+            
             messageView.snp.remakeConstraints {
                 $0.top.bottom.equalToSuperview().inset(4)
                 $0.trailing.equalToSuperview().inset(16)
@@ -102,6 +114,11 @@ final class ChatMessageCell: UICollectionViewCell {
             messageLabel.textColor = .label
             senderLabel.textColor = .systemGray2
             timeLabel.textColor = .systemGray
+            
+            messageLabel.snp.remakeConstraints {
+                $0.top.equalTo(senderLabel.snp.bottom).offset(4)
+                $0.leading.trailing.equalToSuperview().inset(12)
+            }
             
             messageView.snp.remakeConstraints {
                 $0.top.bottom.equalToSuperview().inset(4)
