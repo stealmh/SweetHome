@@ -35,9 +35,9 @@ final class ChatDetailCollectionViewLayout {
         section.interGroupSpacing = 8
         section.contentInsets = NSDirectionalEdgeInsets(
             top: 16,
-            leading: 16,
-            bottom: 16,
-            trailing: 16
+            leading: 0,
+            bottom: 0,
+            trailing: 0
         )
         
         return section

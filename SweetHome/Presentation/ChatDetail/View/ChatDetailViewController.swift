@@ -82,7 +82,7 @@ class ChatDetailViewController: BaseViewController {
         
         chatInputView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview()
-            $0.height.greaterThanOrEqualTo(80)
+            $0.height.greaterThanOrEqualTo(48)
             chatInputViewBottomConstraint = $0.bottom.equalTo(view.safeAreaLayoutGuide).constraint
         }
     }
@@ -160,6 +160,7 @@ class ChatDetailViewController: BaseViewController {
         }
         
         chatInputViewBottomConstraint.update(offset: -keyboardFrame.height + view.safeAreaInsets.bottom)
+        chatInputView.updateForKeyboardState(isKeyboardVisible: true)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
@@ -172,6 +173,7 @@ class ChatDetailViewController: BaseViewController {
         }
         
         chatInputViewBottomConstraint.update(offset: 0)
+        chatInputView.updateForKeyboardState(isKeyboardVisible: false)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()

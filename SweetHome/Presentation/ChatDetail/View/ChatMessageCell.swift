@@ -106,7 +106,7 @@ final class ChatMessageCell: UICollectionViewCell {
             
             messageView.snp.remakeConstraints {
                 $0.top.bottom.equalToSuperview().inset(4)
-                $0.trailing.equalToSuperview().inset(16)
+                $0.trailing.equalToSuperview().inset(8)
                 $0.width.lessThanOrEqualTo(280)
             }
         } else {
@@ -122,7 +122,7 @@ final class ChatMessageCell: UICollectionViewCell {
             
             messageView.snp.remakeConstraints {
                 $0.top.bottom.equalToSuperview().inset(4)
-                $0.leading.equalToSuperview().inset(16)
+                $0.leading.equalToSuperview().inset(8)
                 $0.width.lessThanOrEqualTo(280)
             }
         }
