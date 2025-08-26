@@ -67,7 +67,13 @@ class LoginViewModel: ViewModelable {
                 
                 isLoadingRelay.onNext(true)
                 
-                let requestModel = EmailLoginRequest(email: email, password: password, deviceToken: nil)
+                let deviceToken = KeyChainManager.shared.read(.deviceToken) ?? ""
+                
+                let requestModel = EmailLoginRequest(
+                    email: email,
+                    password: password,
+                    deviceToken: nil
+                )
                 
                 return self.performEmailLogin(
                     requestModel: requestModel,
@@ -88,7 +94,12 @@ class LoginViewModel: ViewModelable {
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
                 guard let self else { return Observable.empty() }
 
-                let requestModel = KakaoLoginRequest(oauthToken: socialLoginResponse.idToken, deviceToken: nil)
+                let deviceToken = KeyChainManager.shared.read(.deviceToken) ?? ""
+                
+                let requestModel = KakaoLoginRequest(
+                    oauthToken: socialLoginResponse.idToken,
+                    deviceToken: deviceToken
+                )
                 
                 return self.performKakaoLogin(
                     requestModel: requestModel,
@@ -118,10 +129,11 @@ class LoginViewModel: ViewModelable {
                 guard let self = self else { return Observable.empty() }
                 
                 print("🔥 애플 로그인 성공, 서버 인증 시작")
+                let deviceToken = KeyChainManager.shared.read(.deviceToken) ?? ""
                 
                 let requestModel = AppleLoginRequest(
                     idToken: socialLoginResponse.idToken,
-                    deviceToken: nil,
+                    deviceToken: deviceToken,
                     nick: socialLoginResponse.name ?? ""
                 )
                 
