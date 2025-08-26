@@ -16,6 +16,9 @@ class ChatSocketManager {
     // MARK: - Properties
     private let disposeBag = DisposeBag()
     private var manager: SocketManager?
+    private let tokenManager = TokenManager()
+    private var isRefreshingToken = false
+    private var pendingReconnections: [String] = []
     
     // MARK: - Subjects
     private let connectionStatusSubject = BehaviorSubject<SocketConnectionStatus>(value: .disconnected)
@@ -124,8 +127,7 @@ extension ChatSocketManager {
         
         socket.on(clientEvent: .error) { [weak self] data, _ in
             let errorMessage = data.first as? String ?? "Unknown error"
-            self?.connectionStatusSubject.onNext(.error(errorMessage))
-            self?.errorSubject.onNext(errorMessage)
+            self?.handleSocketError(errorMessage, roomId: roomId)
         }
         
         socket.on("chat") { [weak self] data, _ in
@@ -153,6 +155,85 @@ extension ChatSocketManager {
         } catch {
             errorSubject.onNext("Failed to parse chat message: \(error.localizedDescription)")
         }
+    }
+    
+    private func handleSocketError(_ errorMessage: String, roomId: String) {
+        connectionStatusSubject.onNext(.error(errorMessage))
+        errorSubject.onNext(errorMessage)
+        
+        if isAuthenticationError(errorMessage) && !isRefreshingToken {
+            handleTokenExpiration(roomId: roomId)
+        }
+    }
+    
+    private func isAuthenticationError(_ error: String) -> Bool {
+        let authErrorKeywords = ["401", "403", "unauthorized", "authentication", "token", "expired"]
+        let lowercaseError = error.lowercased()
+        return authErrorKeywords.contains { lowercaseError.contains($0) }
+    }
+    
+    private func handleTokenExpiration(roomId: String) {
+        isRefreshingToken = true
+        pendingReconnections.append(roomId)
+        
+        Task {
+            let canRefresh = await tokenManager.startRefresh()
+            guard canRefresh else {
+                await handleTokenRefreshFailure()
+                return
+            }
+            
+            do {
+                try await refreshAccessToken()
+                await handleTokenRefreshSuccess()
+            } catch {
+                await handleTokenRefreshFailure()
+            }
+        }
+    }
+    
+    @MainActor
+    private func handleTokenRefreshSuccess() {
+        let completions = tokenManager.finishRefresh(success: true)
+        isRefreshingToken = false
+        
+        for completion in completions {
+            completion(true)
+        }
+        
+        reconnectPendingRooms()
+        pendingReconnections.removeAll()
+    }
+    
+    @MainActor
+    private func handleTokenRefreshFailure() {
+        let completions = tokenManager.finishRefresh(success: false)
+        isRefreshingToken = false
+        
+        for completion in completions {
+            completion(false)
+        }
+        
+        connectionStatusSubject.onNext(.error("Token refresh failed. Please login again."))
+        pendingReconnections.removeAll()
+    }
+    
+    private func reconnectPendingRooms() {
+        guard let userId = currentUserId else { return }
+        
+        let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
+        setupSocketManager(with: accessToken)
+        
+        for roomId in pendingReconnections {
+            joinRoom(roomId: roomId)
+        }
+    }
+    
+    private func refreshAccessToken() async throws {
+        // TODO: Implement token refresh API call
+        // This should make an API call to refresh the access token
+        // For now, we'll assume the token is handled elsewhere
+        throw NSError(domain: "TokenRefresh", code: -1, userInfo: [NSLocalizedDescriptionKey: "Token refresh not implemented"])
     }
 }
 
