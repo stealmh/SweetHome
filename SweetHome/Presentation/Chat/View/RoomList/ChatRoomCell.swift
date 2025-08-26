@@ -11,7 +11,7 @@ import SnapKit
 class ChatRoomCell: UICollectionViewCell {
     private let profileImageView: UIImageView = {
         let v = UIImageView()
-        v.contentMode = .scaleToFill
+        v.contentMode = .scaleAspectFit
         v.layer.cornerRadius = 16
         v.layer.borderWidth = 1
         v.layer.borderColor = SHColor.GrayScale.gray_30.cgColor
@@ -87,7 +87,7 @@ private extension ChatRoomCell {
         }
         
         userNameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview()
+            $0.top.equalToSuperview().offset(4)
             $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
         }
         
@@ -123,13 +123,16 @@ private extension ChatRoomCell {
 
 extension ChatRoomCell {
     func configure(with chatRoom: ChatRoom) {
-        userNameLabel.text = chatRoom.participants.first?.nickname
+        let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
+        let otherParticipant = chatRoom.participants.first { $0.userId != currentUserId }
+        
+        userNameLabel.text = otherParticipant?.nickname
         messageLabel.text = chatRoom.lastChat?.content
         
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd"
         dateLabel.text = formatter.string(from: chatRoom.lastChat?.createdAt ?? Date())
-        profileImageView.setAuthenticatedImage(with: chatRoom.participants[0].profileImageURL)
+        profileImageView.setAuthenticatedImage(with: otherParticipant?.profileImageURL ?? "")
         
         configureUnreadCount(chatRoom.unreadCount)
     }
