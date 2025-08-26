@@ -39,8 +39,7 @@ final class ChatDetailCollectionViewDataSource {
         snapshot.appendSections([.messages])
         snapshot.appendItems(messages, toSection: .messages)
         
-        dataSource.apply(snapshot, animatingDifferences: true) { [weak self] in
-            // 스크롤을 맨 아래로 이동
+        dataSource.apply(snapshot, animatingDifferences: false) { [weak self] in
             self?.scrollToBottom()
         }
     }
@@ -50,6 +49,6 @@ final class ChatDetailCollectionViewDataSource {
         guard numberOfItems > 0 else { return }
         
         let lastIndexPath = IndexPath(item: numberOfItems - 1, section: 0)
-        collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: true)
+        collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: false)
     }
 }
