@@ -49,6 +49,8 @@ final class ChatDetailCollectionViewDataSource {
         guard numberOfItems > 0 else { return }
         
         let lastIndexPath = IndexPath(item: numberOfItems - 1, section: 0)
-        collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: false)
+        DispatchQueue.main.async {
+            self.collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: false)
+        }
     }
 }
