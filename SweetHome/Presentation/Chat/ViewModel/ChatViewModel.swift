@@ -8,12 +8,12 @@
 import Foundation
 import RxSwift
 import RxCocoa
-import RealmSwift
 
 class ChatViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     private let apiClient = ApiClient()
     private let socketRepository = ChatSocketRepository()
+    private let localRepository = ChatCoreDataRepository()
     private let chatRoomsRelay = BehaviorSubject<[ChatRoom]>(value: [])
     
     struct Input {
@@ -73,7 +73,7 @@ class ChatViewModel: ViewModelable {
         NotificationCenter.default.rx
             .notification(.Chat.newMessageReceived)
             .subscribe(onNext: { [weak self] notification in
-                self?.refreshChatRoomsFromRealm()
+                self?.refreshChatRoomsFromCoreData()
             })
             .disposed(by: disposeBag)
         
@@ -81,38 +81,42 @@ class ChatViewModel: ViewModelable {
         NotificationCenter.default.rx
             .notification(.Chat.syncUnreadCounts)
             .subscribe(onNext: { [weak self] notification in
-                self?.refreshChatRoomsFromRealm()
+                self?.refreshChatRoomsFromCoreData()
             })
             .disposed(by: disposeBag)
     }
     
     private func updateChatRoomsWithUnreadCounts(_ chatRooms: [ChatRoom]) {
-        do {
-            let realm = try Realm()
-            
-            let updatedChatRooms = chatRooms.map { chatRoom in
-                if let entity = realm.object(ofType: ChatRoomEntity.self, forPrimaryKey: chatRoom.roomId) {
-                    return ChatRoom(
-                        roomId: chatRoom.roomId,
-                        createdAt: chatRoom.createdAt,
-                        updatedAt: chatRoom.updatedAt,
-                        participants: chatRoom.participants,
-                        lastChat: chatRoom.lastChat,
-                        unreadCount: entity.unreadCount
-                    )
-                } else {
-                    return chatRoom
+        localRepository.fetchChatRooms()
+            .subscribe(onNext: { [weak self] localChatRooms in
+                let updatedChatRooms = chatRooms.map { chatRoom in
+                    if let localRoom = localChatRooms.first(where: { $0.roomId == chatRoom.roomId }) {
+                        return ChatRoom(
+                            roomId: chatRoom.roomId,
+                            createdAt: chatRoom.createdAt,
+                            updatedAt: chatRoom.updatedAt,
+                            participants: chatRoom.participants,
+                            lastChat: chatRoom.lastChat,
+                            unreadCount: localRoom.unreadCount
+                        )
+                    } else {
+                        // 로컬에 없으면 저장
+                        self?.localRepository.saveChatRoom(chatRoom)
+                            .subscribe()
+                            .disposed(by: self?.disposeBag ?? DisposeBag())
+                        return chatRoom
+                    }
                 }
-            }
-            
-            chatRoomsRelay.onNext(updatedChatRooms)
-        } catch {
-            print("Realm 조회 실패: \(error)")
-            chatRoomsRelay.onNext(chatRooms)
-        }
+                
+                self?.chatRoomsRelay.onNext(updatedChatRooms)
+            }, onError: { [weak self] error in
+                print("CoreData 조회 실패: \(error)")
+                self?.chatRoomsRelay.onNext(chatRooms)
+            })
+            .disposed(by: disposeBag)
     }
     
-    private func refreshChatRoomsFromRealm() {
+    private func refreshChatRoomsFromCoreData() {
         guard let currentChatRooms = try? chatRoomsRelay.value() else { return }
         updateChatRoomsWithUnreadCounts(currentChatRooms)
     }

@@ -13,6 +13,7 @@ class ChatDetailViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     private let apiClient = ApiClient()
     private let socketManager: ChatSocketManager = { return ChatSocketManager.shared }()
+    private let localRepository = ChatCoreDataRepository()
     private let chatMessagesRelay = BehaviorSubject<[LastChat]>(value: [])
     private let otherUserNameRelay = BehaviorSubject<String?>(value: nil)
     
@@ -52,12 +53,20 @@ class ChatDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<[LastChat]> in
                 guard let self else { return .empty() }
-                return self.apiClient.requestObservable(ChatEndpoint.messageRead(room_id: input.roomId))
-                    .map { (response: ChatDetailResponse) in
-                        return response.data.compactMap { $0.toDomain() }
-                    }
+                return self.loadChatMessagesWithIncrementalSync(roomId: input.roomId)
             }
-            .do(onNext: { _ in isLoadingRelay.onNext(false) })
+            .do(onNext: { [weak self] messages in 
+                isLoadingRelay.onNext(false)
+                // 채팅방 진입 시 모든 메시지를 읽음 처리
+                if let lastMessage = messages.last {
+                    self?.localRepository.markMessagesAsRead(for: input.roomId, upTo: lastMessage.chatId)
+                        .subscribe()
+                        .disposed(by: self?.disposeBag ?? DisposeBag())
+                    
+                    // NotificationManager에도 알림
+                    NotificationManager.shared.markRoomAsRead(input.roomId)
+                }
+            })
             .subscribe(onNext: { [weak self] messages in
                 self?.chatMessagesRelay.onNext(messages)
                 self?.updateOtherUserName(from: messages)
@@ -131,23 +140,23 @@ class ChatDetailViewModel: ViewModelable {
     }
     
     private func handleNewSocketMessage(_ response: LastChatResponse) {
-        guard let currentMessages = try? chatMessagesRelay.value() else { return }
         let newMessage = response.toDomain()
-        let isDuplicate = currentMessages.contains { $0.chatId == newMessage.chatId }
-        guard !isDuplicate else { return }
         
-        let updatedMessages = currentMessages + [newMessage]
-        chatMessagesRelay.onNext(updatedMessages)
+        localRepository.saveChatMessage(newMessage)
+            .flatMap { [weak self] _ -> Observable<[LastChat]> in
+                guard let self else { return .empty() }
+                return self.localRepository.fetchChatMessages(for: newMessage.roomId)
+            }
+            .subscribe(onNext: { [weak self] updateMessages in
+                self?.chatMessagesRelay.onNext(updateMessages)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func refreshMessages(roomId: String) {
-        apiClient.requestObservable(ChatEndpoint.messageRead(room_id: roomId))
-            .map { (response: ChatDetailResponse) in
-                return response.data.compactMap { $0.toDomain() }
-            }
-            .subscribe(onNext: { [weak self] messages in
-                self?.chatMessagesRelay.onNext(messages)
-            })
+        // refreshMessages는 더 이상 사용하지 않음 (증분 동기화로 대체)
+        performIncrementalSync(roomId: roomId)
+            .subscribe()
             .disposed(by: disposeBag)
     }
     
@@ -155,5 +164,57 @@ class ChatDetailViewModel: ViewModelable {
         let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
         let otherUserMessage = messages.first { $0.sender.userId != currentUserId }
         otherUserNameRelay.onNext(otherUserMessage?.sender.nickname)
+    }
+    
+    // MARK: - 증분 동기화 로직
+    
+    /// 로컬 데이터 우선 로드 → 서버와 증분 동기화
+    private func loadChatMessagesWithIncrementalSync(roomId: String) -> Observable<[LastChat]> {
+        return localRepository.fetchChatMessages(for: roomId)
+            .do(onNext: { [weak self] localMessages in
+                // 백그라운드에서 증분 동기화 항상 수행
+                self?.performIncrementalSync(roomId: roomId)
+                    .subscribe()
+                    .disposed(by: self?.disposeBag ?? DisposeBag())
+            })
+    }
+    
+    /// 증분 동기화 수행 (마지막 메시지 날짜 이후 메시지만 가져오기)
+    private func performIncrementalSync(roomId: String) -> Observable<Void> {
+        return localRepository.getLastMessageDate(for: roomId)
+            .flatMap { [weak self] lastMessageDate -> Observable<Void> in
+                guard let self else { return .empty() }
+                
+                let nextDateString: String? = lastMessageDate.flatMap { data in
+                    let formatter = ISO8601DateFormatter()
+                    formatter.timeZone = TimeZone(identifier: "UTC")
+                    return formatter.string(from: data)
+                }
+
+                
+                // 마지막 메시지 날짜 이후 메시지 요청
+                return self.apiClient.requestObservable(ChatEndpoint.messageRead(room_id: roomId, next: nextDateString))
+                    .map { (response: ChatDetailResponse) in
+                        response.data.compactMap { $0.toDomain() }
+                    }
+                    .flatMap { newMessages -> Observable<Void> in
+                        guard !newMessages.isEmpty else { return .just(()) }
+                        
+                        // 새 메시지들 로컬 저장
+                        return self.localRepository.saveChatMessages(newMessages)
+                            .flatMap { _ -> Observable<[LastChat]> in
+                                self.localRepository.fetchChatMessages(for: roomId)
+                            }
+                            .do(onNext: { [weak self] updatedMessages in
+                                self?.chatMessagesRelay.onNext(updatedMessages)
+                            })
+                            .map { _ in () }
+                    }
+                    .catch { error in
+                        // 에러가 발생해도 계속 진행
+                        print("증분 동기화 실패: \(error)")
+                        return .just(())
+                    }
+            }
     }
 }

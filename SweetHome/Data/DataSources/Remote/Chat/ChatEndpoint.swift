@@ -16,7 +16,7 @@ enum ChatEndpoint: TargetType {
     /// - 채팅 보내기
     case sendMessage(room_id: String, model: SendChat)
     /// - 채팅내역 목록 조회
-    case messageRead(room_id: String)
+    case messageRead(room_id: String, next: String?)
 }
 
 extension ChatEndpoint {
@@ -30,7 +30,7 @@ extension ChatEndpoint {
             return "/v1/chats"
         case let .sendMessage(id, _):
             return "/v1/chats/\(id)"
-        case let .messageRead(id):
+        case let .messageRead(id, _):
             return "/v1/chats/\(id)"
         }
     }
@@ -52,8 +52,13 @@ extension ChatEndpoint {
             return .requestPlain
         case let .sendMessage(_, model):
             return .requestJSONEncodable(model)
-        case .messageRead:
-            return .requestPlain
+        case let .messageRead(_, next):
+            if let next = next {
+                let parameters = ["next": next]
+                return .requestParameters(parameters: parameters, encoding: URLEncoding.queryString)
+            } else {
+                return .requestPlain
+            }
         }
     }
     

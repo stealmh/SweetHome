@@ -29,20 +29,16 @@ class ChatSocketManager {
     private var namespaceSockets: [String: SocketIOClient] = [:]
     
     // MARK: - Initialization
-    private init() {
-        setupSocketManager()
-    }
+    private init() {}
 }
 
 // MARK: - Socket Setup
 extension ChatSocketManager {
-    private func setupSocketManager() {
+    private func setupSocketManager(with accessToken: String) {
         guard let url = URL(string: baseURL) else {
             connectionStatusSubject.onNext(.error("Invalid server URL: \(baseURL)"))
             return
         }
-        
-        let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
         
         manager = SocketManager(socketURL: url, config: [
             .log(true),
@@ -76,6 +72,9 @@ extension ChatSocketManager {
 extension ChatSocketManager {
     func connect(userId: String) {
         currentUserId = userId
+        
+        let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
+        setupSocketManager(with: accessToken)
     }
     
     func disconnect() {
