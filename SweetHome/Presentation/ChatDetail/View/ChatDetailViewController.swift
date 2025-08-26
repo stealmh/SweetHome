@@ -44,7 +44,6 @@ class ChatDetailViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupKeyboardObserver()
     }
     
     private let viewWillDisappearSubject = PublishSubject<Void>()
@@ -142,9 +141,7 @@ class ChatDetailViewController: BaseViewController {
                 self?.navigationController?.popViewController(animated: true)
             })
             .disposed(by: disposeBag)
-    }
-    
-    private func setupKeyboardObserver() {
+        
         NotificationCenter.default.rx
             .notification(UIResponder.keyboardWillShowNotification)
             .subscribe(onNext: { [weak self] notification in
@@ -159,35 +156,48 @@ class ChatDetailViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
     }
-    
-    private func keyboardWillShow(_ notification: Notification) {
+}
+//MARK: - Private Method
+private extension ChatDetailViewController {
+    func keyboardWillShow(_ notification: Notification) {
         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
               let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
             return
         }
         
-        chatInputViewBottomConstraint.update(offset: -keyboardFrame.height + view.safeAreaInsets.bottom)
-        chatInputView.updateForKeyboardState(isKeyboardVisible: true)
+        /// - 키보드의 높이 - bottom Safe Area + message Input bottom Padding
+        let keyboardHeight = keyboardFrame.height - view.safeAreaInsets.bottom + 8
+        chatInputViewBottomConstraint.update(offset: -keyboardHeight)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
+            self.scrollToBottom(animated: false)
         }
     }
     
-    private func keyboardWillHide(_ notification: Notification) {
+    func keyboardWillHide(_ notification: Notification) {
         guard let duration = notification.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double else {
             return
         }
         
         chatInputViewBottomConstraint.update(offset: 0)
-        chatInputView.updateForKeyboardState(isKeyboardVisible: false)
         
         UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
+            self.scrollToBottom(animated: false)
         }
     }
     
-    private func updateConnectionStatus(_ status: SocketConnectionStatus) {
+    func scrollToBottom(animated: Bool) {
+        guard collectionView.numberOfSections > 0 else { return }
+        let lastSection = collectionView.numberOfSections - 1
+        let lastItem = collectionView.numberOfItems(inSection: lastSection) - 1
+        guard lastItem >= 0 else { return }
+        let indexPath = IndexPath(item: lastItem, section: lastSection)
+        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: animated)
+    }
+    
+    func updateConnectionStatus(_ status: SocketConnectionStatus) {
         switch status {
         case .connected:
             print("소켓 연결됨")

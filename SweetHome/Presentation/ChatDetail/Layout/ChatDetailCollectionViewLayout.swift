@@ -36,7 +36,7 @@ final class ChatDetailCollectionViewLayout {
         section.contentInsets = NSDirectionalEdgeInsets(
             top: 16,
             leading: 0,
-            bottom: 0,
+            bottom: 4,
             trailing: 0
         )
         
