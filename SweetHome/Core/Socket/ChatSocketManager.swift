@@ -9,6 +9,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 import SocketIO
+import Alamofire
 
 class ChatSocketManager {
     static let shared = ChatSocketManager()
@@ -193,12 +194,12 @@ extension ChatSocketManager {
     }
     
     @MainActor
-    private func handleTokenRefreshSuccess() {
-        let completions = tokenManager.finishRefresh(success: true)
+    private func handleTokenRefreshSuccess() async {
+        let completions = await tokenManager.finishRefresh(success: true)
         isRefreshingToken = false
         
         for completion in completions {
-            completion(true)
+            completion(.retry)
         }
         
         reconnectPendingRooms()
@@ -206,12 +207,13 @@ extension ChatSocketManager {
     }
     
     @MainActor
-    private func handleTokenRefreshFailure() {
-        let completions = tokenManager.finishRefresh(success: false)
+    private func handleTokenRefreshFailure() async {
+        let completions = await tokenManager.finishRefresh(success: false)
         isRefreshingToken = false
         
+        let tokenError = SHError.networkError(.refreshTokenExpired)
         for completion in completions {
-            completion(false)
+            completion(.doNotRetryWithError(tokenError))
         }
         
         connectionStatusSubject.onNext(.error("Token refresh failed. Please login again."))
