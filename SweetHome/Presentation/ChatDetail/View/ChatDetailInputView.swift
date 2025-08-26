@@ -31,6 +31,8 @@ final class ChatDetailInputView: UIView {
         return button
     }()
     
+    private var messageTextViewBottomConstraint: Constraint!
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -42,27 +44,43 @@ final class ChatDetailInputView: UIView {
     }
     
     private func setupUI() {
-        backgroundColor = .systemBackground
+        backgroundColor = .white
+        addSubviews(messageTextView, sendButton)
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        addTopShadow()
+    }
+    
+    private func addTopShadow() {
+        let shadowPath = UIBezierPath()
+        shadowPath.move(to: CGPoint(x: 0, y: 0))
+        shadowPath.addLine(to: CGPoint(x: bounds.width, y: 0))
+        shadowPath.addLine(to: CGPoint(x: bounds.width, y: -2))
+        shadowPath.addLine(to: CGPoint(x: 0, y: -2))
+        shadowPath.close()
+        
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOpacity = 0.1
         layer.shadowOffset = CGSize(width: 0, height: -2)
         layer.shadowRadius = 4
-        
-        addSubviews(messageTextView, sendButton)
+        layer.shadowPath = shadowPath.cgPath
+        layer.masksToBounds = false
     }
     
     private func setupConstraints() {
         messageTextView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(16)
-            $0.leading.equalToSuperview().offset(16)
-            $0.bottom.equalToSuperview().offset(-16)
+            $0.top.equalToSuperview().offset(8)
+            $0.leading.equalToSuperview().offset(8)
+            messageTextViewBottomConstraint = $0.bottom.equalToSuperview().constraint
             $0.height.greaterThanOrEqualTo(40)
-            $0.height.lessThanOrEqualTo(120)
+            $0.height.lessThanOrEqualTo(100)
         }
         
         sendButton.snp.makeConstraints {
-            $0.leading.equalTo(messageTextView.snp.trailing).offset(12)
-            $0.trailing.equalToSuperview().offset(-16)
+            $0.leading.equalTo(messageTextView.snp.trailing).offset(8)
+            $0.trailing.equalToSuperview().inset(8)
             $0.bottom.equalTo(messageTextView.snp.bottom)
             $0.width.equalTo(60)
             $0.height.equalTo(40)
@@ -72,5 +90,14 @@ final class ChatDetailInputView: UIView {
     // MARK: - Public Methods
     func clearText() {
         messageTextView.text = ""
+    }
+    
+    func updateForKeyboardState(isKeyboardVisible: Bool) {
+        let bottomInset: CGFloat = isKeyboardVisible ? 8 : 0
+        messageTextViewBottomConstraint.update(inset: bottomInset)
+        
+        UIView.animate(withDuration: 0.3) {
+            self.layoutIfNeeded()
+        }
     }
 }
