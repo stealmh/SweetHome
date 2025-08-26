@@ -21,7 +21,7 @@ extension LastChat {
         entity.senderNickname = sender.nickname
         entity.senderIntroduction = sender.introduction
         entity.senderProfileImageURL = sender.profileImageURL
-        entity.attachedFiles = attachedFiles
+        entity.attachedFiles = attachedFiles as NSArray
         entity.messageType = "text" // 기본값
         entity.isRead = false // 기본값
         return entity
@@ -43,7 +43,7 @@ extension SweetHome.CDChatMessage {
                 introduction: senderIntroduction,
                 profileImageURL: senderProfileImageURL
             ),
-            attachedFiles: attachedFiles ?? []
+            attachedFiles: (attachedFiles as? [String]) ?? []
         )
     }
 }
