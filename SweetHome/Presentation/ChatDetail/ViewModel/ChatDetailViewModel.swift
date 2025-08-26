@@ -14,6 +14,7 @@ class ChatDetailViewModel: ViewModelable {
     private let apiClient = ApiClient()
     private let socketManager: ChatSocketManager = { return ChatSocketManager.shared }()
     private let chatMessagesRelay = BehaviorSubject<[LastChat]>(value: [])
+    private let otherUserNameRelay = BehaviorSubject<String?>(value: nil)
     
     init() {
         _ = socketManager
@@ -32,6 +33,7 @@ class ChatDetailViewModel: ViewModelable {
         let error: Driver<SHError>
         let messageSent: Driver<Void>
         let socketConnectionStatus: Driver<SocketConnectionStatus>
+        let otherUserName: Driver<String?>
     }
     
     func transform(input: Input) -> Output {
@@ -58,6 +60,7 @@ class ChatDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { [weak self] messages in
                 self?.chatMessagesRelay.onNext(messages)
+                self?.updateOtherUserName(from: messages)
             }, onError: { error in
                 isLoadingRelay.onNext(false)
                 errorRelay.onNext(SHError.from(error))
@@ -104,7 +107,8 @@ class ChatDetailViewModel: ViewModelable {
             chatMessages: chatMessagesRelay.asDriver(onErrorDriveWith: .empty()),
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
             messageSent: messageSentRelay.asDriver(onErrorDriveWith: .empty()),
-            socketConnectionStatus: socketManager.connectionStatus.asDriver(onErrorDriveWith: .empty())
+            socketConnectionStatus: socketManager.connectionStatus.asDriver(onErrorDriveWith: .empty()),
+            otherUserName: otherUserNameRelay.asDriver(onErrorDriveWith: .empty())
         )
     }
     
@@ -145,5 +149,11 @@ class ChatDetailViewModel: ViewModelable {
                 self?.chatMessagesRelay.onNext(messages)
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func updateOtherUserName(from messages: [LastChat]) {
+        let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
+        let otherUserMessage = messages.first { $0.sender.userId != currentUserId }
+        otherUserNameRelay.onNext(otherUserMessage?.sender.nickname)
     }
 }

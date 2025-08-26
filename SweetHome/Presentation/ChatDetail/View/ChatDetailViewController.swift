@@ -130,6 +130,13 @@ class ChatDetailViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
         
+        output.otherUserName
+            .compactMap { $0 }
+            .drive(onNext: { [weak self] name in
+                self?.navigationBar.configure(name: name)
+            })
+            .disposed(by: disposeBag)
+        
         navigationBar.backButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.navigationController?.popViewController(animated: true)

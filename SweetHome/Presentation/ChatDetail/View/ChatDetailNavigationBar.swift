@@ -58,8 +58,7 @@ private extension ChatDetailNavigationBar {
 }
 
 extension ChatDetailNavigationBar {
-    func configure(_ item: ChatSender) {
-        /// - 타이틀 업데이트
-        userNameLabel.text = item.nickname
+    func configure(name: String) {
+        userNameLabel.text = name
     }
 }
