@@ -97,7 +97,7 @@ class ChatViewModel: ViewModelable {
                             updatedAt: chatRoom.updatedAt,
                             participants: chatRoom.participants,
                             lastChat: chatRoom.lastChat,
-                            lastPushMessage: chatRoom.lastPushMessage,
+                            lastPushMessage: localRoom.lastPushMessage, // 로컬의 lastPushMessage 사용
                             unreadCount: localRoom.unreadCount
                         )
                     } else {

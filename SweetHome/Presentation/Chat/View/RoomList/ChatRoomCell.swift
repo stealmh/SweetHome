@@ -127,7 +127,13 @@ extension ChatRoomCell {
         let otherParticipant = chatRoom.participants.first { $0.userId != currentUserId }
         
         userNameLabel.text = otherParticipant?.nickname
-        messageLabel.text = chatRoom.lastChat?.content
+        
+        // lastPushMessage가 있으면 우선 표시, 없으면 lastChat 표시
+        if let lastPushMessage = chatRoom.lastPushMessage, !lastPushMessage.isEmpty {
+            messageLabel.text = lastPushMessage
+        } else {
+            messageLabel.text = chatRoom.lastChat?.content
+        }
         
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd"
