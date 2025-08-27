@@ -42,10 +42,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     func sceneWillResignActive(_ scene: UIScene) {}
 
-    func sceneWillEnterForeground(_ scene: UIScene) {}
-
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        (UIApplication.shared.delegate as? AppDelegate)?.saveContext()
+    func sceneWillEnterForeground(_ scene: UIScene) {
+        // 앱이 포그라운드로 돌아올 때 안읽음 카운트 동기화
+        NotificationManager.shared.syncUnreadCountsOnForeground()
     }
     
     // MARK: - Token Expiration Handling

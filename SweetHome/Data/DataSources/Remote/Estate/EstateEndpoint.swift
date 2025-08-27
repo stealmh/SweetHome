@@ -26,19 +26,19 @@ extension EstateEndpoint {
     var path: String {
         switch self {
         case .todayEstates:
-            return "/estates/today-estates"
+            return "/v1/estates/today-estates"
         case .hotEstates:
-            return "/estates/hot-estates"
+            return "/v1/estates/hot-estates"
         case .topics:
-            return "/estates/today-topic"
+            return "/v1/estates/today-topic"
         case .geoLocation:
-            return "/estates/geolocation"
+            return "/v1/estates/geolocation"
         case let .detail(id):
-            return "/estates/\(id)"
+            return "/v1/estates/\(id)"
         case let .like(id, _):
-            return "/estates/\(id)/like"
+            return "/v1/estates/\(id)/like"
         case .similarEstates:
-            return "/estates/similar-estates"
+            return "/v1/estates/similar-estates"
         }
     }
     

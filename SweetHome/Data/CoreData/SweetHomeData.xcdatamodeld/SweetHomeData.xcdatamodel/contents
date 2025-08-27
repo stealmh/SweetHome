@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22522" systemVersion="23F79" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="CDChatMessage" representedClassName="CDChatMessage" syncable="YES" codeGenerationType="class">
+        <attribute name="attachedFiles" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromDataTransformer"/>
+        <attribute name="chatId" optional="NO" attributeType="String"/>
+        <attribute name="content" optional="NO" attributeType="String"/>
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="isRead" optional="NO" attributeType="Boolean" defaultValue="NO" usesScalarValueType="YES"/>
+        <attribute name="messageType" optional="NO" attributeType="String" defaultValue="text"/>
+        <attribute name="roomId" optional="NO" attributeType="String"/>
+        <attribute name="senderId" optional="NO" attributeType="String"/>
+        <attribute name="senderIntroduction" optional="YES" attributeType="String"/>
+        <attribute name="senderNickname" optional="NO" attributeType="String"/>
+        <attribute name="senderProfileImageURL" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="chatRoom" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CDChatRoom" inverseName="messages" inverseEntity="CDChatRoom"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="chatId"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="CDChatRoom" representedClassName="CDChatRoom" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastChatId" optional="YES" attributeType="String"/>
+        <attribute name="lastPushMessage" optional="YES" attributeType="String"/>
+        <attribute name="lastPushMessageDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastReadChatId" optional="YES" attributeType="String"/>
+        <attribute name="roomId" optional="NO" attributeType="String"/>
+        <attribute name="unreadCount" optional="NO" attributeType="Integer 32" defaultValue="0" usesScalarValueType="YES"/>
+        <attribute name="updatedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="messages" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CDChatMessage" inverseName="chatRoom" inverseEntity="CDChatMessage"/>
+        <relationship name="participants" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="CDParticipant" inverseName="chatRoom" inverseEntity="CDParticipant"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="roomId"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="CDParticipant" representedClassName="CDParticipant" syncable="YES" codeGenerationType="class">
+        <attribute name="introduction" optional="YES" attributeType="String"/>
+        <attribute name="nickname" optional="NO" attributeType="String"/>
+        <attribute name="profileImageURL" optional="YES" attributeType="String"/>
+        <attribute name="userId" optional="NO" attributeType="String"/>
+        <relationship name="chatRoom" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="CDChatRoom" inverseName="participants" inverseEntity="CDParticipant"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="userId"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+</model>

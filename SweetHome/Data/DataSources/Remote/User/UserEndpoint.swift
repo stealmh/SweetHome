@@ -19,6 +19,8 @@ enum UserEndpoint: TargetType {
     case kakaoLogin(KakaoLoginRequest)
     /// - 애플 로그인
     case appleLogin(AppleLoginRequest)
+    /// - 푸시 토큰 업데이트
+    case deviceToken(DeviceTokenRequest)
 }
 
 extension UserEndpoint {
@@ -27,15 +29,17 @@ extension UserEndpoint {
     var path: String {
         switch self {
         case .emailValidation:
-            return "/users/validation/email"
+            return "/v1/users/validation/email"
         case .emailRegister:
-            return "/users/join"
+            return "/v1/users/join"
         case .emailLogin:
-            return "/users/login"
+            return "/v1/users/login"
         case .kakaoLogin:
-            return "/users/login/kakao"
+            return "/v1/users/login/kakao"
         case .appleLogin:
-            return "/users/login/apple"
+            return "/v1/users/login/apple"
+        case .deviceToken:
+            return "/v1/users/deviceToken"
         }
     }
     
@@ -43,6 +47,8 @@ extension UserEndpoint {
         switch self {
         case .emailValidation, .emailRegister, .emailLogin, .kakaoLogin, .appleLogin:
             return .post
+        case .deviceToken:
+            return .put
         }
     }
     
@@ -58,15 +64,23 @@ extension UserEndpoint {
             return .requestJSONEncodable(model)
         case let .appleLogin(model):
             return .requestJSONEncodable(model)
+        case let .deviceToken(model):
+            return .requestJSONEncodable(model)
         }
     }
     
     var headers: HTTPHeaders? {
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else {
-            return nil
+        guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
+
+        switch self {
+        case .deviceToken:
+            let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
+            return HTTPHeaders([
+                "Authorization": accessToken,
+                "SeSACKey": key
+            ])
+        default:
+            return HTTPHeaders(["SeSACKey": key])
         }
-        return HTTPHeaders([
-            "SeSACKey": key
-        ])
     }
 }

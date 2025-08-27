@@ -19,7 +19,7 @@ extension AuthEndpoint {
     var path: String {
         switch self {
         case .refresh:
-            return "/auth/refresh"
+            return "/v1/auth/refresh"
         }
     }
     

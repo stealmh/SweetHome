@@ -52,6 +52,28 @@ final class NetworkService: NetworkServiceProtocol {
         }
     }
     
+    func noneRequest(_ target: TargetType) async throws -> Void {
+        return try await withCheckedThrowingContinuation { [weak self] continuation in
+            guard let self = self else {
+                continuation.resume(throwing: SHError.networkError(.unknown(statusCode: nil, message: "NetworkService가 해제되었습니다.")))
+                return
+            }
+            
+            do {
+                let urlRequest = try target.asURLRequest()
+                logger.logRequest(urlRequest)
+                
+                let dataRequest = session.request(urlRequest)
+                
+                dataRequest
+                    .validate(statusCode: 200..<300)
+
+            } catch {
+                continuation.resume(throwing: SHError.networkError(.unknown(statusCode: nil, message: "요청 생성 실패: \(error.localizedDescription)")))
+            }
+        }
+    }
+    
     func upload<T: Codable>(_ target: TargetType) async throws -> T {
         guard let multipartData = target.multipartData else {
             throw SHError.networkError(.unknown(statusCode: nil, message: "유효하지 않은 업로드 데이터입니다."))

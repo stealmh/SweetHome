@@ -98,3 +98,6 @@ iOSInjectionProject/
 # Swift Package Manager
 Package.resolved
 *.xcschememanagement.plist
+
+# Firebase configuration
+GoogleService-Info.plist
