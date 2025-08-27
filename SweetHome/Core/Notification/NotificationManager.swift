@@ -245,32 +245,28 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
 // MARK: - MessagingDelegate
 extension NotificationManager: MessagingDelegate {
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
-        guard let fcmToken = fcmToken else { return }
+        guard let fcmToken else { return }
         
-        print("FCM Registration Token: \(fcmToken)")
-        
-        // FCM 토큰을 키체인에 저장
         KeyChainManager.shared.save(.fcmToken, value: fcmToken)
         
-        // 서버에 FCM 토큰 전송
-        sendFCMTokenToServer(fcmToken)
-    }
-    
-    // FCM 토큰을 서버에 전송
-    private func sendFCMTokenToServer(_ token: String) {
-        // TODO: 서버 API 구현 시 사용
-        print("Sending FCM token to server: \(token)")
-        
-        // 예시: API 호출
-        /*
-        APIClient.shared.updateFCMToken(token) { result in
-            switch result {
-            case .success:
-                print("FCM token updated successfully")
-            case .failure(let error):
-                print("Failed to update FCM token: \(error)")
+        Task {
+            do {
+                try await sendFCMTokenToServer(fcmToken)
+            } catch {
+                print("❌ FCM 토큰 서버 전송 실패: \(error)")
             }
         }
-        */
+    }
+    
+    private func sendFCMTokenToServer(_ token: String) async throws {
+        print("🚀 [SERVER] FCM 토큰 서버 전송 시작: \(token)")
+        
+        let request = DeviceTokenRequest(deviceToken: token)
+        
+        do {
+            try await NetworkService.shared.noneRequest(UserEndpoint.deviceToken(request))
+        } catch {
+            throw error
+        }
     }
 }
