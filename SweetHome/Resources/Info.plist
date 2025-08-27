@@ -56,8 +56,6 @@
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
-		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>사용자의 현재위치를 받아와 주변에 있는 매물을 보여주는데 사용됩니다.</string>
