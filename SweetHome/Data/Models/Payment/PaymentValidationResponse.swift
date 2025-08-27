@@ -33,6 +33,6 @@ struct PaymentEstateInfo: Decodable {
     let area: Float
     let floors: Int
     let geolocation: BaseGeolocationResponse
-    let created_at: String
-    let updated_at: String
+    let createdAt: String
+    let updatedAt: String
 }
