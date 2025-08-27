@@ -8,7 +8,5 @@
 // MARK: - ChatNotificationData
 struct ChatNotificationData {
     let roomId: String
-    let senderId: String
-    let senderName: String
     let message: String
 }

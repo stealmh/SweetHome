@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 import UserNotifications
 import FirebaseMessaging
 import RxSwift
@@ -111,18 +112,17 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     
     // 채팅 알림 데이터 파싱
     private func parseChatNotification(_ userInfo: [AnyHashable: Any]) -> ChatNotificationData? {
+        print(#function)
         guard let roomId = userInfo["room_id"] as? String,
-              let senderId = userInfo["sender_id"] as? String,
-              let senderName = userInfo["sender_name"] as? String,
-              let messageContent = userInfo["message"] as? String else {
+              let aps = userInfo["aps"] as? [String: Any],
+              let alert = aps["alert"] as? [String: Any],
+              let message = alert["body"] as? String else {
             return nil
         }
         
         return ChatNotificationData(
             roomId: roomId,
-            senderId: senderId,
-            senderName: senderName,
-            message: messageContent
+            message: message
         )
     }
     
@@ -137,27 +137,88 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
             return
         }
         
-        // 채팅방에 없는 경우에만 푸시 알림 처리
-        updateUnreadCount(for: data.roomId)
+        print("   - 채팅방에 없으므로 푸시 알림 처리 시작")
         
-        // 새 메시지로 인한 읽지 않은 개수 업데이트
-        NotificationCenter.default.post(
-            name: .Chat.newMessageReceived,
-            object: nil,
-            userInfo: ["roomId": data.roomId]
-        )
+        // 1. 해당 채팅방의 마지막 메시지 정보 업데이트 (실제 메시지는 저장하지 않음)
+        updateChatRoomLastMessage(data: data)
+        
+        print("   - ✅ 채팅 알림 처리 완료")
     }
     
-    /// - 안읽음 메시지 카운트 업데이트
-    private func updateUnreadCount(for roomId: String) {
-        localRepository.incrementUnreadCount(for: roomId)
-            .subscribe(onNext: {
-                print("안읽음 카운트 업데이트 성공: \(roomId)")
-            }, onError: { error in
-                print("안읽음 카운트 업데이트 실패: \(error)")
-            })
-            .disposed(by: disposeBag)
+    // 채팅방의 마지막 푸시 메시지 정보 업데이트
+    private func updateChatRoomLastMessage(data: ChatNotificationData) {
+        print("📝 [마지막 메시지 업데이트] roomId: \(data.roomId)")
+        
+        // CoreData 백그라운드 컨텍스트를 직접 사용
+        CoreDataStack.shared.performBackgroundTask { [weak self] backgroundContext in
+            guard let self = self else { return }
+            
+            // Merge 정책 설정 - 외부 변경사항을 우선으로 병합
+            backgroundContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+            backgroundContext.automaticallyMergesChangesFromParent = true
+            
+            do {
+                // 1. 채팅방 확인/생성
+                let roomFetchRequest: NSFetchRequest<SweetHome.CDChatRoom> = SweetHome.CDChatRoom.fetchRequest()
+                roomFetchRequest.predicate = NSPredicate(format: "roomId == %@", data.roomId)
+                
+                var chatRoom: SweetHome.CDChatRoom
+                if let existingRoom = try backgroundContext.fetch(roomFetchRequest).first {
+                    chatRoom = existingRoom
+                } else {
+                    // 채팅방이 없으면 생성 (푸시로만 온 경우)
+                    chatRoom = SweetHome.CDChatRoom(context: backgroundContext)
+                    chatRoom.roomId = data.roomId
+                    chatRoom.createdAt = Date()
+                    chatRoom.updatedAt = Date()
+                    chatRoom.unreadCount = 0
+                }
+                
+                // 2. 채팅방 업데이트
+                chatRoom.updatedAt = Date()
+                chatRoom.lastPushMessage = data.message  // 푸시 메시지 저장
+                
+                // 3. 안읽음 카운트 증가
+                chatRoom.unreadCount += 1
+                
+                print("   - 새 푸시 메시지: \(data.message)")
+                print("   - 안읽음 카운트: \(chatRoom.unreadCount)")
+                
+                // 4. 저장
+                if backgroundContext.hasChanges {
+                    try backgroundContext.save()
+                    print("   - ✅ CoreData 직접 저장 성공")
+                    
+                    // 메인 스레드에서 UI 업데이트
+                    DispatchQueue.main.async { [weak self] in
+                        NotificationCenter.default.post(
+                            name: .Chat.newMessageReceived,
+                            object: nil,
+                            userInfo: ["roomId": data.roomId, "message": data.message]
+                        )
+                        
+                        // 앱 배지 카운트 업데이트
+                        self?.updateAppBadgeCount()
+                    }
+                } else {
+                    print("   - 변경사항 없음, 저장 건너뛰기")
+                }
+                
+            } catch {
+                print("   - ❌ CoreData 직접 저장 실패: \(error)")
+                
+                // 실패한 경우에도 최소한 UI 업데이트
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(
+                        name: .Chat.newMessageReceived,
+                        object: nil,
+                        userInfo: ["roomId": data.roomId, "message": data.message]
+                    )
+                }
+            }
+        }
     }
+    
     /// - 채팅방의 메세지를 읽음 처리함(채팅방 진입 시 호출)
     func markRoomAsRead(_ roomId: String) {
         localRepository.resetUnreadCount(for: roomId)
@@ -174,25 +235,12 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     func handleBackgroundChatNotification(_ userInfo: [AnyHashable: Any]) {
         guard let chatData = parseChatNotification(userInfo) else { return }
         
-        print("백그라운드에서 채팅 알림 처리: \(chatData.roomId)")
+        print("🌙 [백그라운드] 채팅 알림 처리: \(chatData.roomId)")
         
-        // 백그라운드에서도 Realm 업데이트 가능
-        updateUnreadCountInBackground(for: chatData.roomId)
-        
-        // 앱 배지 카운트 업데이트
-        updateAppBadgeCount()
+        // 백그라운드에서도 동일한 처리 (마지막 푸시 메시지 업데이트 + 안읽음 카운트 증가)
+        updateChatRoomLastMessage(data: chatData)
     }
     
-    /// - 백그라운드에서 안읽음 카운트 업데이트
-    private func updateUnreadCountInBackground(for roomId: String) {
-        localRepository.incrementUnreadCount(for: roomId)
-            .subscribe(onNext: {
-                print("백그라운드에서 안읽음 카운트 업데이트 완료: \(roomId)")
-            }, onError: { error in
-                print("백그라운드 CoreData 업데이트 실패: \(error)")
-            })
-            .disposed(by: disposeBag)
-    }
     
     /// - 앱이 포그라운드로 돌아올 때 안읽음 카운트 동기화
     func syncUnreadCountsOnForeground() {

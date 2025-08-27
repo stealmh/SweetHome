@@ -25,9 +25,18 @@ class CoreDataStack {
         }
         
         let container = NSPersistentContainer(name: "SweetHomeData", managedObjectModel: managedObjectModel)
+        
+        // 자동 마이그레이션 옵션 설정
+        let storeDescription = container.persistentStoreDescriptions.first
+        storeDescription?.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
+        storeDescription?.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
+        
         container.loadPersistentStores { _, error in
             if let error = error as NSError? {
+                print("CoreData 마이그레이션 실패: \(error), \(error.userInfo)")
                 fatalError("Unresolved error \(error), \(error.userInfo)")
+            } else {
+                print("CoreData 로드 성공 (자동 마이그레이션 포함)")
             }
         }
         return container

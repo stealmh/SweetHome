@@ -34,7 +34,9 @@ struct MockChatData {
                     profileImageURL: "/data/profiles/1707716853682.png"
                 ),
                 attachedFiles: ["/data/chats/image_1712739634962.png"]
-            ), unreadCount: 0
+            ),
+            lastPushMessage: nil,
+            unreadCount: 0
         ),
         ChatRoom(
             roomId: "66387304d5418c5e1e141863",
@@ -61,7 +63,9 @@ struct MockChatData {
                     profileImageURL: "/data/estates/house17_1747146355023.png"
                 ),
                 attachedFiles: []
-            ), unreadCount: 0
+            ),
+            lastPushMessage: nil,
+            unreadCount: 0
         ),
         ChatRoom(
             roomId: "66387304d5418c5e1e141864",
@@ -88,7 +92,9 @@ struct MockChatData {
                     profileImageURL: "/data/profiles/1707716853684.png"
                 ),
                 attachedFiles: []
-            ), unreadCount: 0
+            ),
+            lastPushMessage: nil,
+            unreadCount: 0
         )
     ]
 }

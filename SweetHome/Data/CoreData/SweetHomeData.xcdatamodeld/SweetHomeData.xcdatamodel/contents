@@ -23,6 +23,7 @@
     <entity name="CDChatRoom" representedClassName="CDChatRoom" syncable="YES" codeGenerationType="class">
         <attribute name="createdAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="lastChatId" optional="YES" attributeType="String"/>
+        <attribute name="lastPushMessage" optional="YES" attributeType="String"/>
         <attribute name="lastReadChatId" optional="YES" attributeType="String"/>
         <attribute name="roomId" optional="NO" attributeType="String"/>
         <attribute name="unreadCount" optional="NO" attributeType="Integer 32" defaultValue="0" usesScalarValueType="YES"/>

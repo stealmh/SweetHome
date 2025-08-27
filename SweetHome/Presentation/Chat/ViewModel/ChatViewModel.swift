@@ -97,6 +97,7 @@ class ChatViewModel: ViewModelable {
                             updatedAt: chatRoom.updatedAt,
                             participants: chatRoom.participants,
                             lastChat: chatRoom.lastChat,
+                            lastPushMessage: chatRoom.lastPushMessage,
                             unreadCount: localRoom.unreadCount
                         )
                     } else {
