@@ -73,4 +73,15 @@ class EstateDetailBottomView: UIView {
         let likeImage = isLiked ? SHAsset.Icon.likeFill : SHAsset.Icon.likeEmpty
         favoriteButton.setImage(likeImage, for: .normal)
     }
+    
+    /// - 예약 상태에 따른 버튼 타이틀/활성화 상태를 설정합니다.
+    func configureReservationStatus(_ isReserved: Bool) {
+        if isReserved {
+            reservationButton.setTitle("예약중", for: .normal)
+            reservationButton.isEnabled = false
+        } else {
+            reservationButton.setTitle("예약하기", for: .normal)
+            reservationButton.isEnabled = true
+        }
+    }
 }
