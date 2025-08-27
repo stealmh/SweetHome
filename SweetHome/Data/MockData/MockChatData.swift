@@ -36,6 +36,7 @@ struct MockChatData {
                 attachedFiles: ["/data/chats/image_1712739634962.png"]
             ),
             lastPushMessage: nil,
+            lastPushMessageDate: nil,
             unreadCount: 0
         ),
         ChatRoom(
@@ -65,6 +66,7 @@ struct MockChatData {
                 attachedFiles: []
             ),
             lastPushMessage: nil,
+            lastPushMessageDate: nil,
             unreadCount: 0
         ),
         ChatRoom(
@@ -94,6 +96,7 @@ struct MockChatData {
                 attachedFiles: []
             ),
             lastPushMessage: nil,
+            lastPushMessageDate: nil,
             unreadCount: 0
         )
     ]

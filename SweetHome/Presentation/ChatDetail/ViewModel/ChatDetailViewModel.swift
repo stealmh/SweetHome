@@ -57,15 +57,8 @@ class ChatDetailViewModel: ViewModelable {
             }
             .do(onNext: { [weak self] messages in 
                 isLoadingRelay.onNext(false)
-                // 채팅방 진입 시 모든 메시지를 읽음 처리
-                if let lastMessage = messages.last {
-                    self?.localRepository.markMessagesAsRead(for: input.roomId, upTo: lastMessage.chatId)
-                        .subscribe()
-                        .disposed(by: self?.disposeBag ?? DisposeBag())
-                    
-                    // NotificationManager에도 알림
-                    NotificationManager.shared.markRoomAsRead(input.roomId)
-                }
+                // 채팅방 진입 시 읽음 처리
+                self?.handleRoomEnter(roomId: input.roomId, messages: messages)
             })
             .subscribe(onNext: { [weak self] messages in
                 self?.chatMessagesRelay.onNext(messages)
@@ -134,9 +127,73 @@ class ChatDetailViewModel: ViewModelable {
         
         viewWillDisappear
             .subscribe(onNext: { [weak self] _ in
-                self?.socketManager.leaveRoom(roomId: roomId)
+                // 채팅방 퇴장 시 처리
+                self?.handleRoomExit(roomId: roomId)
             })
             .disposed(by: disposeBag)
+    }
+    
+    // MARK: - Room Enter/Exit Handling
+    
+    private func handleRoomEnter(roomId: String, messages: [LastChat]) {
+        print("🚪 [채팅방 진입] 채팅방 진입 처리 시작: \(roomId)")
+        
+        // 채팅방 진입 시 읽음 처리 - NotificationManager에 일임하여 충돌 방지
+        if let lastMessage = messages.last {
+            print("   - 마지막 메시지까지 읽음 처리: \(lastMessage.chatId)")
+            
+            // NotificationManager에서 통합 읽음 처리 (메시지 읽음 + 안읽음 카운트 리셋 + lastPushMessage 클리어)
+            NotificationManager.shared.markRoomAsRead(roomId)
+            print("   - 통합 읽음 처리 완료")
+        }
+        
+        print("   - ✅ 채팅방 진입 처리 완료")
+    }
+    
+    // MARK: - Room Exit Handling
+    
+    private func handleRoomExit(roomId: String) {
+        print("🚪 [채팅방 퇴장] 채팅방 퇴장 처리 시작: \(roomId)")
+        
+        // 1. 소켓에서 채팅방 퇴장
+        socketManager.leaveRoom(roomId: roomId)
+        print("   - 소켓 방 퇴장 완료")
+        
+        // 2. 현재 표시된 메시지들 중 마지막 메시지까지 읽음 처리
+        do {
+            let currentMessages = try chatMessagesRelay.value()
+            if let lastMessage = currentMessages.last {
+                print("   - 마지막 메시지까지 읽음 처리: \(lastMessage.chatId)")
+                
+                // NotificationManager에서 통합 읽음 처리 (충돌 방지)
+                NotificationManager.shared.markRoomAsRead(roomId)
+                print("   - 통합 읽음 처리 완료")
+            }
+        } catch {
+            print("   - 현재 메시지 목록 가져오기 실패: \(error)")
+        }
+        
+        // 3. 로컬 최신 메시지와 채팅방 목록 동기화
+        DispatchQueue.main.async {
+            // 채팅방 목록 즉시 새로고침 (로컬 데이터 기반)
+            NotificationCenter.default.post(
+                name: .Chat.newMessageReceived,
+                object: nil,
+                userInfo: ["roomId": roomId, "action": "roomExit"]
+            )
+            print("   - 채팅방 목록 로컬 동기화 트리거 완료")
+        }
+        
+        // 4. 백그라운드에서 증분 동기화 (선택적)
+        performIncrementalSync(roomId: roomId)
+            .subscribe(onNext: {
+                print("   - 백그라운드 증분 동기화 완료")
+            }, onError: { error in
+                print("   - 백그라운드 증분 동기화 실패: \(error)")
+            })
+            .disposed(by: disposeBag)
+        
+        print("   - ✅ 채팅방 퇴장 처리 완료")
     }
     
     private func handleNewSocketMessage(_ response: LastChatResponse) {

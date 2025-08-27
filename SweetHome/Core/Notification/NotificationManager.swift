@@ -188,8 +188,10 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
                 }
                 
                 // 2. 채팅방 업데이트
-                chatRoom.updatedAt = Date()
+                let currentDate = Date()
+                chatRoom.updatedAt = currentDate
                 chatRoom.lastPushMessage = data.message  // 푸시 메시지 저장
+                chatRoom.lastPushMessageDate = currentDate  // 푸시 메시지 날짜 저장
                 
                 // 3. 안읽음 카운트 증가
                 chatRoom.unreadCount += 1
@@ -234,15 +236,54 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
     
     /// - 채팅방의 메세지를 읽음 처리함(채팅방 진입 시 호출)
     func markRoomAsRead(_ roomId: String) {
-        localRepository.resetUnreadCount(for: roomId)
-            .subscribe(onNext: { [weak self] in
-                print("채팅방 읽음 처리 완료: \(roomId)")
-                // 앱 배지 카운트 업데이트
-                self?.updateAppBadgeCount()
-            }, onError: { error in
-                print("읽음 처리 실패: \(error)")
-            })
-            .disposed(by: disposeBag)
+        print("📖 [읽음 처리] 채팅방 읽음 처리 시작: \(roomId)")
+        
+        // 메인 컨텍스트에서 직접 처리하여 충돌 방지
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            let mainContext = CoreDataStack.shared.context
+            
+            do {
+                // 채팅방 조회
+                let roomFetchRequest: NSFetchRequest<SweetHome.CDChatRoom> = SweetHome.CDChatRoom.fetchRequest()
+                roomFetchRequest.predicate = NSPredicate(format: "roomId == %@", roomId)
+                
+                if let chatRoom = try mainContext.fetch(roomFetchRequest).first {
+                    // 안읽음 카운트 리셋
+                    chatRoom.unreadCount = 0
+                    // lastPushMessage 클리어 (이제 실제 채팅 메시지가 최신이므로)
+                    chatRoom.lastPushMessage = nil
+                    chatRoom.lastPushMessageDate = nil
+                    chatRoom.updatedAt = Date()
+                    
+                    if mainContext.hasChanges {
+                        try mainContext.save()
+                        print("   - ✅ 읽음 처리 및 lastPushMessage 클리어 완료")
+                        
+                        // 앱 배지 카운트 업데이트
+                        self.updateAppBadgeCount()
+                        
+                        // UI 업데이트 알림
+                        NotificationCenter.default.post(
+                            name: .Chat.newMessageReceived,
+                            object: nil,
+                            userInfo: ["roomId": roomId]
+                        )
+                    }
+                }
+                
+            } catch {
+                print("   - ❌ 읽음 처리 실패: \(error)")
+                
+                // 실패해도 최소한 UI 업데이트는 트리거
+                NotificationCenter.default.post(
+                    name: .Chat.newMessageReceived,
+                    object: nil,
+                    userInfo: ["roomId": roomId]
+                )
+            }
+        }
     }
     /// - 백그라운드에서 채팅 알림 처리
     func handleBackgroundChatNotification(_ userInfo: [AnyHashable: Any]) {

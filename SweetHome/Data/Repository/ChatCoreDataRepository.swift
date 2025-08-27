@@ -31,6 +31,7 @@ protocol ChatLocalRepository {
     // MARK: - Sync Management
     func getLastMessageDate(for roomId: String) -> Observable<Date?>
     func markMessagesAsRead(for roomId: String, upTo lastReadChatId: String) -> Observable<Void>
+    func getLatestMessageForRoom(roomId: String) -> Observable<LastChat?>
 }
 
 class ChatCoreDataRepository: ChatLocalRepository {
@@ -531,6 +532,53 @@ extension ChatCoreDataRepository {
                 observer.onCompleted()
             } catch {
                 observer.onError(error)
+            }
+            
+            return Disposables.create()
+        }
+    }
+    
+    // MARK: - Latest Message Retrieval
+    func getLatestMessageForRoom(roomId: String) -> Observable<LastChat?> {
+        return Observable.create { [weak self] observer in
+            guard let self = self else {
+                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                return Disposables.create()
+            }
+            
+            self.coreDataStack.performBackgroundTask { context in
+                do {
+                    // 해당 채팅방의 가장 최근 메시지 조회
+                    let fetchRequest: NSFetchRequest<SweetHome.CDChatMessage> = SweetHome.CDChatMessage.fetchRequest()
+                    fetchRequest.predicate = NSPredicate(format: "roomId == %@", roomId)
+                    fetchRequest.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+                    fetchRequest.fetchLimit = 1
+                    
+                    let results = try context.fetch(fetchRequest)
+                    
+                    if let latestMessage = results.first {
+                        let lastChat = LastChat(
+                            chatId: latestMessage.chatId ?? "",
+                            roomId: latestMessage.roomId ?? "",
+                            content: latestMessage.content ?? "",
+                            createdAt: latestMessage.createdAt ?? Date(),
+                            updatedAt: latestMessage.updatedAt ?? Date(),
+                            sender: ChatSender(
+                                userId: latestMessage.senderId ?? "",
+                                nickname: latestMessage.senderNickname ?? "",
+                                introduction: latestMessage.senderIntroduction ?? "",
+                                profileImageURL: latestMessage.senderProfileImageURL ?? ""
+                            ),
+                            attachedFiles: latestMessage.attachedFiles as? [String] ?? []
+                        )
+                        observer.onNext(lastChat)
+                    } else {
+                        observer.onNext(nil)
+                    }
+                    observer.onCompleted()
+                } catch {
+                    observer.onError(error)
+                }
             }
             
             return Disposables.create()

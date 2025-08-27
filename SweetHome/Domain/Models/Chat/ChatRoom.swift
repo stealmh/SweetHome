@@ -14,6 +14,7 @@ struct ChatRoom: Hashable {
     let participants: [Participant]
     let lastChat: LastChat?
     let lastPushMessage: String?
+    let lastPushMessageDate: Date?
     let unreadCount: Int
 }
 
@@ -28,6 +29,7 @@ extension ChatRoomResponse {
             participants: participants.map { $0.toDomain() },
             lastChat: lastChat?.toDomain() ?? createDefaultLastChat(),
             lastPushMessage: nil,
+            lastPushMessageDate: nil,
             unreadCount: 0
         )
     }
@@ -61,6 +63,7 @@ extension ChatRoomListDataResponse {
             participants: participants.map { $0.toDomain() },
             lastChat: lastChat?.toDomain(),
             lastPushMessage: nil,
+            lastPushMessageDate: nil,
             unreadCount: 0
         )
     }

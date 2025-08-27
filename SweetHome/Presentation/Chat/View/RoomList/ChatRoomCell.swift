@@ -128,12 +128,8 @@ extension ChatRoomCell {
         
         userNameLabel.text = otherParticipant?.nickname
         
-        // lastPushMessage가 있으면 우선 표시, 없으면 lastChat 표시
-        if let lastPushMessage = chatRoom.lastPushMessage, !lastPushMessage.isEmpty {
-            messageLabel.text = lastPushMessage
-        } else {
-            messageLabel.text = chatRoom.lastChat?.content
-        }
+        // ChatViewModel에서 이미 최신 메시지를 lastChat에 통합했으므로 단순하게 표시
+        messageLabel.text = chatRoom.lastChat?.content ?? "새로운 채팅을 시작하세요"
         
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd"
@@ -151,4 +147,5 @@ extension ChatRoomCell {
             messageCountContainerView.isHidden = true
         }
     }
+    
 }

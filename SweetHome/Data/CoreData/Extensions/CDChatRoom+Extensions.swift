@@ -17,6 +17,7 @@ extension ChatRoom {
         entity.updatedAt = updatedAt
         entity.lastChatId = lastChat?.chatId
         entity.lastPushMessage = lastPushMessage
+        entity.lastPushMessageDate = lastPushMessageDate
         entity.unreadCount = Int32(unreadCount)
         
         // 참가자들 설정
@@ -38,6 +39,7 @@ extension SweetHome.CDChatRoom {
             participants: participantsArray.map { $0.toDomain() },
             lastChat: lastChat,
             lastPushMessage: lastPushMessage,
+            lastPushMessageDate: lastPushMessageDate,
             unreadCount: Int(unreadCount)
         )
     }
