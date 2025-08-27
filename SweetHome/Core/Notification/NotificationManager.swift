@@ -69,10 +69,23 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         let userInfo = notification.request.content.userInfo
+
+        /// - 현재 채팅방에 있는 경우  -> 알림 미표시
+        if let roomId = userInfo["room_id"] as? String {
+            let isInTargetRoom = ChatSocketManager.shared.joinedRoomIds.contains(roomId)
+            
+            if isInTargetRoom {
+                completionHandler([])
+                return
+            }
+        }
+        
+        /// - FCM 메시지 처리 (데이터 업데이트)
         handleFCMMessage(userInfo)
         
-        // foreground에서도 알림 표시
-        completionHandler([.alert, .badge, .sound])
+        /// - 다른 채팅방이거나 채팅방이 아닌 경우 알림 표시
+        print("   - 알림 표시함")
+        completionHandler([.banner, .badge, .sound, .list])
     }
     
     // 사용자가 푸시 알림을 탭했을 때
