@@ -13,4 +13,6 @@ extension Notification.Name {
         static let syncUnreadCounts = Notification.Name("SyncUnreadCountsFromRealm")
         static let navigateToChat = Notification.Name("NavigateToChat")
     }
+    static let refreshTokenExpired = Notification.Name("refreshTokenExpired")
+    static let mainTabBarReady = Notification.Name("MainTabBarReady")
 }
