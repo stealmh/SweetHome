@@ -107,7 +107,7 @@ class EstateMapBottomCell: UICollectionViewCell {
     }
     
     func configure(type: BannerEstateType, _ item: EstateGeoLocationDataResponse) {
-        estateThumbnailView.setAuthenticatedImage(with: item.thumbnails.first ?? "")
+        estateThumbnailView.setAuthenticatedImage(with: item.thumbnails.first)
         estateCateogryTagView.configure(text: item.category, backgroundColor: SHColor.Brand.brightWood, textColor: .white)
         estateNameLabel.text = item.title
         // 가격 포맷팅 적용

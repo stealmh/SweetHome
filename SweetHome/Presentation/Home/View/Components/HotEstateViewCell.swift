@@ -111,7 +111,7 @@ class HotEstateViewCell: UICollectionViewCell {
     }
     
     func configure(with estate: Estate) {
-        backgroundImageView.setAuthenticatedImage(with: estate.thumbnails.first ?? "")
+        backgroundImageView.setAuthenticatedImage(with: estate.thumbnails.first)
         titleLabel.text = estate.title
         rentPriceLabel.text = estate.rentDisplayText
         locationAndSizeLabel.text = "\(estate.area)m²" // TODO: 위치 정보 추가

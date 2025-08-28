@@ -105,7 +105,7 @@ class RecentSearchEstateViewCell: UICollectionViewCell {
     }
     
     func configure(with estate: Estate) {
-        thumbnailImageView.setAuthenticatedImage(with: estate.thumbnails.first!)
+        thumbnailImageView.setAuthenticatedImage(with: estate.thumbnails.first)
         estateTypeLabel.text = estate.category
         rentPriceLabel.text = estate.rentDisplayText
         //TODO: 위치 정보 추가해서 넣기
