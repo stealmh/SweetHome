@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-labelledby="t2 d2">
+  <title id="t2">Monogram default avatar</title>
+  <desc id="d2">Circular badge with abstract letter-style mark</desc>
+  <defs>
+    <linearGradient id="g2" x1="0" x2="1">
+      <stop offset="0" stop-color="#FFEDD5"></stop>
+      <stop offset="1" stop-color="#FFD7A6"></stop>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="url(#g2)"></circle>
+  <rect x="26" y="34" width="68" height="52" rx="12" fill="#FFFFFF" opacity="0.12"></rect>
+  <path d="M36 80 L36 52 A12 12 0 0 1 60 52 L60 80 Z M84 80 L84 44 L68 44 L68 80 Z" fill="#874B00"></path>
+  <!-- abstract 'U' / shape that reads as user-mark -->
+</svg>
