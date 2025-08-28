@@ -13,6 +13,18 @@ class MainTabBarController: UITabBarController {
         super.viewDidLoad()
         setupTabBar()
         setupTabBarAppearance()
+        setupNotificationObservers()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // 메인 탭바가 준비되었음을 알림
+        NotificationCenter.default.post(name: .mainTabBarReady, object: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     private func setupTabBar() {
@@ -73,5 +85,33 @@ class MainTabBarController: UITabBarController {
         UITabBarItem.appearance().setTitleTextAttributes([
             .font: SHFont.pretendard(.semiBold).setSHFont(.caption1) ?? UIFont.systemFont(ofSize: 10)
         ], for: .selected)
+    }
+    
+    // MARK: - Notification Setup
+    private func setupNotificationObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleNavigateToChat(_:)),
+            name: .Chat.navigateToChat,
+            object: nil
+        )
+    }
+    
+    @objc private func handleNavigateToChat(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let roomId = userInfo["roomId"] as? String else { return }
+        
+        // 채팅 탭으로 이동 (인덱스 2)
+        selectedIndex = 2
+        
+        // 채팅 상세 화면으로 이동
+        if let navController = selectedViewController as? UINavigationController,
+           let chatViewController = navController.topViewController as? ChatViewController {
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                let chatDetailVC = ChatDetailViewController(roomId: roomId)
+                navController.pushViewController(chatDetailVC, animated: true)
+            }
+        }
     }
 }
