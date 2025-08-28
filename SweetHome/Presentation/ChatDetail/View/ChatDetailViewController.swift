@@ -21,7 +21,8 @@ class ChatDetailViewController: BaseViewController {
         let layout = layoutManager.createLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .systemBackground
-        cv.register(ChatMessageCell.self, forCellWithReuseIdentifier: "ChatMessageCell")
+        cv.register(MyMessageCell.self, forCellWithReuseIdentifier: "MyMessageCell")
+        cv.register(OtherMessageCell.self, forCellWithReuseIdentifier: "OtherMessageCell")
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
