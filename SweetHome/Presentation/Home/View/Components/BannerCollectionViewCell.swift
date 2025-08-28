@@ -82,7 +82,7 @@ class BannerCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with estate: Estate) {
-        backgroundImageView.setAuthenticatedImage(with: estate.thumbnails.first!)
+        backgroundImageView.setAuthenticatedImage(with: estate.thumbnails.first)
         locationTagView.setLabel(location: "서울 반포동")
         titleLabel.text = estate.title
         introductionLabel.text = estate.introduction
