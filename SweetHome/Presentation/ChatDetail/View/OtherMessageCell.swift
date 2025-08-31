@@ -91,7 +91,7 @@ final class OtherMessageCell: UICollectionViewCell {
     }
     
     func configure(with message: LastChat, shouldShowTime: Bool = true, shouldShowProfile: Bool = true) {
-        messageLabel.text = message.content
+        messageLabel.text = message.displayLabel
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
