@@ -58,20 +58,40 @@ private extension ChatDetailCollectionViewDataSource {
             let shouldShowProfile = self.shouldShowProfile(for: message, at: indexPath)
             
             
+            let hasFiles = !message.attachedFiles.isEmpty
+            
             if isMyMessage {
-                let cell = collectionView.dequeueReusableCell(
-                    withReuseIdentifier: "MyMessageCell",
-                    for: indexPath
-                ) as! MyMessageCell
-                cell.configure(with: message, shouldShowTime: shouldShowTime)
-                return cell
+                if hasFiles {
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "MyMessageFileCell",
+                        for: indexPath
+                    ) as! MyMessageFileCell
+                    cell.configure(with: message, shouldShowTime: shouldShowTime)
+                    return cell
+                } else {
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "MyMessageCell",
+                        for: indexPath
+                    ) as! MyMessageCell
+                    cell.configure(with: message, shouldShowTime: shouldShowTime)
+                    return cell
+                }
             } else {
-                let cell = collectionView.dequeueReusableCell(
-                    withReuseIdentifier: "OtherMessageCell",
-                    for: indexPath
-                ) as! OtherMessageCell
-                cell.configure(with: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
-                return cell
+                if hasFiles {
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "OtherMessageFileCell",
+                        for: indexPath
+                    ) as! OtherMessageFileCell
+                    cell.configure(with: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
+                    return cell
+                } else {
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "OtherMessageCell",
+                        for: indexPath
+                    ) as! OtherMessageCell
+                    cell.configure(with: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
+                    return cell
+                }
             }
         }
     }

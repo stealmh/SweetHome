@@ -9,6 +9,7 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import PhotosUI
 
 class ChatDetailViewController: BaseViewController {
     private let viewModel = ChatDetailViewModel()
@@ -23,6 +24,8 @@ class ChatDetailViewController: BaseViewController {
         cv.backgroundColor = .systemBackground
         cv.register(MyMessageCell.self, forCellWithReuseIdentifier: "MyMessageCell")
         cv.register(OtherMessageCell.self, forCellWithReuseIdentifier: "OtherMessageCell")
+        cv.register(MyMessageFileCell.self, forCellWithReuseIdentifier: "MyMessageFileCell")
+        cv.register(OtherMessageFileCell.self, forCellWithReuseIdentifier: "OtherMessageFileCell")
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
@@ -63,7 +66,7 @@ class ChatDetailViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .systemBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
-        
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         view.addSubviews(navigationBar, collectionView, chatInputView)
     }
     
@@ -97,6 +100,7 @@ class ChatDetailViewController: BaseViewController {
             onAppear: .just(()).asObservable(),
             roomId: roomId,
             sendMessage: sendMessageText,
+            sendPhotos: chatInputView.addPhotoButton.rx.tap.asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         
@@ -136,6 +140,13 @@ class ChatDetailViewController: BaseViewController {
                 self?.navigationBar.configure(name: name)
             })
             .disposed(by: disposeBag)
+        
+        output.showPhotoPicker
+            .drive(onNext: { [weak self] _ in
+                self?.presentPhotoPicker()
+            })
+            .disposed(by: disposeBag)
+        
         
         navigationBar.backButton.rx.tap
             .subscribe(onNext: { [weak self] in
@@ -209,5 +220,59 @@ private extension ChatDetailViewController {
         case .error(let message):
             print("소켓 에러: \(message)")
         }
+    }
+    
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 5
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+extension ChatDetailViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard !results.isEmpty else { return }
+        
+        let selectedPhotos = PublishSubject<[UIImage]>()
+        var loadedImages: [UIImage] = []
+        let group = DispatchGroup()
+        
+        for result in results {
+            group.enter()
+            result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+                defer { group.leave() }
+                if let image = object as? UIImage {
+                    loadedImages.append(image)
+                }
+            }
+        }
+        
+        group.notify(queue: .main) {
+            selectedPhotos.onNext(loadedImages)
+            selectedPhotos.onCompleted()
+        }
+        
+        selectedPhotos
+            .subscribe(onNext: { [weak self] images in
+                let imageDatas = images.compactMap { $0.jpegData(compressionQuality: 0.8) }
+                
+                /// - 5MB 제한 체크
+                let totalSize = imageDatas.reduce(0) { $0 + $1.count }
+                let maxSize = 5 * 1024 * 1024
+                
+                if totalSize > maxSize {
+                    print("크기를 초과합니다.")
+                    return
+                }
+                
+                self?.viewModel.uploadPhotos(imageDatas, roomId: self?.roomId ?? "")
+            })
+            .disposed(by: disposeBag)
     }
 }

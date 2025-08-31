@@ -16,6 +16,7 @@ class ChatDetailViewModel: ViewModelable {
     private let localRepository = ChatCoreDataRepository()
     private let chatMessagesRelay = BehaviorSubject<[LastChat]>(value: [])
     private let otherUserNameRelay = BehaviorSubject<String?>(value: nil)
+    private let uploadedFilesRelay = BehaviorSubject<[String]>(value: [])
     
     init() {
         _ = socketManager
@@ -25,6 +26,7 @@ class ChatDetailViewModel: ViewModelable {
         let onAppear: Observable<Void>
         let roomId: String
         let sendMessage: Observable<String>
+        let sendPhotos: Observable<Void>
         let viewWillDisappear: Observable<Void>
     }
     
@@ -35,6 +37,8 @@ class ChatDetailViewModel: ViewModelable {
         let messageSent: Driver<Void>
         let socketConnectionStatus: Driver<SocketConnectionStatus>
         let otherUserName: Driver<String?>
+        let showPhotoPicker: Driver<Void>
+        let photosUploaded: Driver<Void>
     }
     
     func transform(input: Input) -> Output {
@@ -42,6 +46,7 @@ class ChatDetailViewModel: ViewModelable {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
         let errorRelay = PublishSubject<SHError>()
         let messageSentRelay = PublishSubject<Void>()
+        let photosUploadedRelay = PublishSubject<Void>()
         
         setupSocketConnection(
             roomId: input.roomId,
@@ -74,10 +79,12 @@ class ChatDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] message -> Observable<Void> in
                 guard let self else { return .empty() }
-                let sendChat = SendChat(content: message, files: nil)
+                let files = (try? self.uploadedFilesRelay.value()) ?? []
+                let sendChat = SendChat(content: message, files: files.isEmpty ? nil : files)
                 return self.apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: input.roomId, model: sendChat))
                     .map { (_: LastChatResponse) in
-                        // HTTP 응답은 성공 여부만 확인하고, UI 업데이트는 소켓으로만 처리
+                        // 메시지 전송 후 업로드된 파일 목록 초기화
+                        self.uploadedFilesRelay.onNext([])
                         return ()
                     }
             }
@@ -110,7 +117,9 @@ class ChatDetailViewModel: ViewModelable {
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
             messageSent: messageSentRelay.asDriver(onErrorDriveWith: .empty()),
             socketConnectionStatus: socketManager.connectionStatus.asDriver(onErrorDriveWith: .empty()),
-            otherUserName: otherUserNameRelay.asDriver(onErrorDriveWith: .empty())
+            otherUserName: otherUserNameRelay.asDriver(onErrorDriveWith: .empty()),
+            showPhotoPicker: input.sendPhotos.asDriver(onErrorDriveWith: .empty()),
+            photosUploaded: photosUploadedRelay.asDriver(onErrorDriveWith: .empty())
         )
     }
     
@@ -273,5 +282,38 @@ class ChatDetailViewModel: ViewModelable {
                         return .just(())
                     }
             }
+    }
+    
+    func uploadPhotos(_ imageDatas: [Data], roomId: String) {
+        guard !imageDatas.isEmpty else { return }
+        
+        let userId = KeyChainManager.shared.read(.userID) ?? ""
+        let timestamp = Int(Date().timeIntervalSince1970)
+        var multipartData: [MultipartFormData] = []
+        
+        for (index, imageData) in imageDatas.enumerated() {
+            let fileName = "\(userId)_\(timestamp)_\(index).jpg"
+            let formData = MultipartFormData(
+                data: imageData,
+                name: "files",
+                fileName: fileName,
+                mimeType: "image/jpeg"
+            )
+            multipartData.append(formData)
+        }
+        
+        apiClient.uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartData))
+            .flatMap { [weak self] (response: ChatUploadResponse) -> Observable<Void> in
+                guard let self else { return .empty() }
+                let sendChat = SendChat(content: "사진", files: response.files)
+                return self.apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: roomId, model: sendChat))
+                    .map { (_: LastChatResponse) in () }
+            }
+            .subscribe(onNext: { _ in
+                print("사진 전송 완료")
+            }, onError: { error in
+                print("사진 업로드/전송 실패: \(error)")
+            })
+            .disposed(by: disposeBag)
     }
 }
