@@ -48,6 +48,33 @@ class ApiClient {
         }
     }
     
+    func uploadObservable(_ endpoint: TargetType) -> Observable<ChatUploadResponse> {
+        return Observable.create { [weak self] observer in
+            guard let self = self else {
+                observer.onError(SHError.networkError(.unknown(statusCode: nil, message: "ApiClient가 해제되었습니다.")))
+                return Disposables.create()
+            }
+            
+            let task = Task {
+                do {
+                    let response: ChatUploadResponse = try await self.network.upload(endpoint)
+                    await MainActor.run {
+                        observer.onNext(response)
+                        observer.onCompleted()
+                    }
+                } catch {
+                    await MainActor.run {
+                        observer.onError(error)
+                    }
+                }
+            }
+            
+            return Disposables.create {
+                task.cancel()
+            }
+        }
+    }
+    
     // MARK: - Async/Await 방식 (일반 제네릭 타입)
     /// async/await를 사용한 네트워크 요청
     /// - Parameter endpoint: 요청할 엔드포인트

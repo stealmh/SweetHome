@@ -17,6 +17,7 @@ enum ChatEndpoint: TargetType {
     case sendMessage(room_id: String, model: SendChat)
     /// - 채팅내역 목록 조회
     case messageRead(room_id: String, next: String?)
+    case chatFiles(room_id: String, files: [MultipartFormData])
 }
 
 extension ChatEndpoint {
@@ -32,6 +33,8 @@ extension ChatEndpoint {
             return "/v1/chats/\(id)"
         case let .messageRead(id, _):
             return "/v1/chats/\(id)"
+        case let .chatFiles(id, _):
+            return "/v1/chats/\(id)/files"
         }
     }
     
@@ -39,7 +42,7 @@ extension ChatEndpoint {
         switch self {
         case .listRead, .messageRead:
             return .get
-        case .create_or_read, .sendMessage:
+        case .create_or_read, .sendMessage, .chatFiles:
             return .post
         }
     }
@@ -59,6 +62,8 @@ extension ChatEndpoint {
             } else {
                 return .requestPlain
             }
+        case let .chatFiles(_, files):
+            return .uploadMultipart(files)
         }
     }
     
