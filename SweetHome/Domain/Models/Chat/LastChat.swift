@@ -11,6 +11,13 @@ struct LastChat: Hashable {
     let chatId: String
     let roomId: String
     let content: String
+    
+    var displayLabel: String {
+        if content == "사진" && !attachedFiles.isEmpty {
+            return "사진"
+        }
+        return content
+    }
     let createdAt: Date
     let updatedAt: Date
     let sender: ChatSender
