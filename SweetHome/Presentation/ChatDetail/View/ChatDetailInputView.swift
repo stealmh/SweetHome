@@ -11,24 +11,33 @@ import SnapKit
 final class ChatDetailInputView: UIView {
     
     let messageTextView: UITextView = {
-        let textView = UITextView()
-        textView.font = .systemFont(ofSize: 16)
-        textView.backgroundColor = .systemGray6
-        textView.layer.cornerRadius = 20
-        textView.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
-        textView.isScrollEnabled = false
-        textView.showsVerticalScrollIndicator = false
-        return textView
+        let v = UITextView()
+        v.font = .systemFont(ofSize: 16)
+        v.backgroundColor = .systemGray6
+        v.layer.cornerRadius = 20
+        v.textContainerInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
+        v.isScrollEnabled = false
+        v.showsVerticalScrollIndicator = false
+        return v
+    }()
+    
+    let addPhotoButton: UIButton = {
+        let v = UIButton(type: .system)
+        v.setImage(UIImage(systemName: "plus.circle"), for: .normal)
+        v.tintColor = .systemGray
+        v.contentVerticalAlignment = .fill
+        v.contentHorizontalAlignment = .fill
+        return v
     }()
     
     let sendButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("전송", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .systemBlue
-        button.layer.cornerRadius = 20
-        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        return button
+        let v = UIButton(type: .system)
+        v.setTitle("전송", for: .normal)
+        v.setTitleColor(.white, for: .normal)
+        v.backgroundColor = .systemBlue
+        v.layer.cornerRadius = 20
+        v.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        return v
     }()
     
     private var messageTextViewBottomConstraint: Constraint!
@@ -45,7 +54,7 @@ final class ChatDetailInputView: UIView {
     
     private func setupUI() {
         backgroundColor = .white
-        addSubviews(messageTextView, sendButton)
+        addSubviews(addPhotoButton, messageTextView, sendButton)
     }
     
     override func layoutSubviews() {
@@ -70,9 +79,15 @@ final class ChatDetailInputView: UIView {
     }
     
     private func setupConstraints() {
+        addPhotoButton.snp.makeConstraints {
+            $0.leading.equalToSuperview().offset(10)
+            $0.bottom.equalTo(messageTextView.snp.bottom)
+            $0.width.height.equalTo(28)
+        }
+        
         messageTextView.snp.makeConstraints {
             $0.top.equalToSuperview().offset(8)
-            $0.leading.equalToSuperview().offset(8)
+            $0.leading.equalTo(addPhotoButton.snp.trailing).offset(4)
             messageTextViewBottomConstraint = $0.bottom.equalToSuperview().constraint
             $0.height.greaterThanOrEqualTo(40)
             $0.height.lessThanOrEqualTo(100)
