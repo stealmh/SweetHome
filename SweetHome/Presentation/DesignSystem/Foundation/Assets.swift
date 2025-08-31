@@ -57,4 +57,9 @@ enum SHAsset {
         static let apple = UIImage(named: "appleid_button")
         static let kakao = UIImage(named: "kakao")
     }
+    
+    enum Default {
+        static let defaultImage = UIImage(named: "defaultImage")
+        static let defaultEstate = UIImage(named: "defaultEstate")
+    }
 }

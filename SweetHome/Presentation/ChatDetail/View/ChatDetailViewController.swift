@@ -9,11 +9,13 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import PhotosUI
 
 class ChatDetailViewController: BaseViewController {
     private let viewModel = ChatDetailViewModel()
     private let roomId: String
     private let refreshControl = UIRefreshControl()
+    private let selectedPhotosRelay = PublishSubject<[Data]>()
     
     private let navigationBar = ChatDetailNavigationBar()
     
@@ -21,7 +23,10 @@ class ChatDetailViewController: BaseViewController {
         let layout = layoutManager.createLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .systemBackground
-        cv.register(ChatMessageCell.self, forCellWithReuseIdentifier: "ChatMessageCell")
+        cv.register(MyMessageCell.self, forCellWithReuseIdentifier: "MyMessageCell")
+        cv.register(OtherMessageCell.self, forCellWithReuseIdentifier: "OtherMessageCell")
+        cv.register(MyMessageFileCell.self, forCellWithReuseIdentifier: "MyMessageFileCell")
+        cv.register(OtherMessageFileCell.self, forCellWithReuseIdentifier: "OtherMessageFileCell")
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
@@ -62,7 +67,7 @@ class ChatDetailViewController: BaseViewController {
     override func setupUI() {
         view.backgroundColor = .systemBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
-        
+        navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         view.addSubviews(navigationBar, collectionView, chatInputView)
     }
     
@@ -96,6 +101,8 @@ class ChatDetailViewController: BaseViewController {
             onAppear: .just(()).asObservable(),
             roomId: roomId,
             sendMessage: sendMessageText,
+            sendPhotos: chatInputView.addPhotoButton.rx.tap.asObservable(),
+            selectedPhotos: selectedPhotosRelay.asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         
@@ -135,6 +142,13 @@ class ChatDetailViewController: BaseViewController {
                 self?.navigationBar.configure(name: name)
             })
             .disposed(by: disposeBag)
+        
+        output.showPhotoPicker
+            .drive(onNext: { [weak self] _ in
+                self?.presentPhotoPicker()
+            })
+            .disposed(by: disposeBag)
+        
         
         navigationBar.backButton.rx.tap
             .subscribe(onNext: { [weak self] in
@@ -207,6 +221,54 @@ private extension ChatDetailViewController {
             print("소켓 연결 끊김")
         case .error(let message):
             print("소켓 에러: \(message)")
+        }
+    }
+    
+    private func presentPhotoPicker() {
+        var configuration = PHPickerConfiguration()
+        configuration.selectionLimit = 5
+        configuration.filter = .images
+        
+        let picker = PHPickerViewController(configuration: configuration)
+        picker.delegate = self
+        present(picker, animated: true)
+    }
+}
+
+extension ChatDetailViewController: PHPickerViewControllerDelegate {
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        picker.dismiss(animated: true)
+        
+        guard !results.isEmpty else { return }
+        
+        let selectedPhotos = PublishSubject<[UIImage]>()
+        var loadedImages: [UIImage] = []
+        let group = DispatchGroup()
+        
+        for result in results {
+            group.enter()
+            result.itemProvider.loadDataRepresentation(forTypeIdentifier: "public.image") { data, error in
+                defer { group.leave() }
+                if let data = data,
+                   let downsampledImage = UIImage.downsample(from: data, to: CGSize(width: 1280, height: 1280)) {
+                    loadedImages.append(downsampledImage)
+                }
+            }
+        }
+        
+        group.notify(queue: .main) { [weak self] in
+            let imageDatas = loadedImages.compactMap { $0.adaptiveCompress(maxSizeBytes: 1024 * 1024) }
+            
+            /// - 5MB 제한 체크
+            let totalSize = imageDatas.reduce(0) { $0 + $1.count }
+            let maxSize = 5 * 1024 * 1024
+            
+            if totalSize > maxSize {
+                print("크기를 초과합니다.")
+                return
+            }
+            
+            self?.selectedPhotosRelay.onNext(imageDatas)
         }
     }
 }

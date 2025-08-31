@@ -11,12 +11,7 @@ import SnapKit
 class ChatRoomCell: UICollectionViewCell {
     private let profileImageView: UIImageView = {
         let v = UIImageView()
-        v.contentMode = .scaleAspectFit
-        v.layer.cornerRadius = 16
-        v.layer.borderWidth = 1
-        v.layer.borderColor = SHColor.GrayScale.gray_30.cgColor
-        v.clipsToBounds = true
-        v.tintColor = .black
+        v.contentMode = .scaleAspectFill
         return v
     }()
     
@@ -134,7 +129,7 @@ extension ChatRoomCell {
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd"
         dateLabel.text = formatter.string(from: chatRoom.lastChat?.createdAt ?? Date())
-        profileImageView.setAuthenticatedImage(with: otherParticipant?.profileImageURL ?? "")
+        profileImageView.setAuthenticatedImage(with: otherParticipant?.profileImageURL, defaultImageType: .profile)
         
         configureUnreadCount(chatRoom.unreadCount)
     }

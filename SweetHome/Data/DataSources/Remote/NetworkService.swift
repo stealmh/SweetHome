@@ -10,7 +10,7 @@ import Alamofire
 
 protocol NetworkServiceProtocol {
     func request<T: Decodable>(_ target: TargetType) async throws -> T
-    func upload<T: Codable>(_ target: TargetType) async throws -> T
+    func upload(_ target: TargetType) async throws -> ChatUploadResponse
 }
 
 final class NetworkService: NetworkServiceProtocol {
@@ -74,7 +74,7 @@ final class NetworkService: NetworkServiceProtocol {
         }
     }
     
-    func upload<T: Codable>(_ target: TargetType) async throws -> T {
+    func upload(_ target: TargetType) async throws -> ChatUploadResponse {
         guard let multipartData = target.multipartData else {
             throw SHError.networkError(.unknown(statusCode: nil, message: "유효하지 않은 업로드 데이터입니다."))
         }

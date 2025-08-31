@@ -103,7 +103,7 @@ class CustomEstateMarkerView: UIView {
         } else {
             print("🏠 기본 이미지 사용 (썸네일 없음)")
             // 썸네일이 없는 경우 기본 이미지 설정
-            thumbnailView.image = UIImage(systemName: "house.fill")
+            thumbnailView.image = SHAsset.Default.defaultEstate
             thumbnailView.tintColor = SHColor.Brand.deepCream
             // 기본 이미지도 로드 완료로 처리
             onImageLoaded?()
