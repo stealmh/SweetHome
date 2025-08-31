@@ -27,6 +27,7 @@ class ChatDetailViewModel: ViewModelable {
         let roomId: String
         let sendMessage: Observable<String>
         let sendPhotos: Observable<Void>
+        let selectedPhotos: Observable<[Data]>
         let viewWillDisappear: Observable<Void>
     }
     
@@ -108,6 +109,22 @@ class ChatDetailViewModel: ViewModelable {
             .subscribe(onNext: { error in
                 //TODO: ERROR TYPE 명시
                 //                errorRelay.onNext(SHError.from(error))
+            })
+            .disposed(by: disposeBag)
+        
+        input.selectedPhotos
+            .filter { !$0.isEmpty }
+            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+            .flatMapLatest { [weak self] imageDatas -> Observable<Void> in
+                guard let self else { return .empty() }
+                return self.uploadPhotos(imageDatas, roomId: input.roomId)
+            }
+            .do(onNext: { _ in isLoadingRelay.onNext(false) })
+            .subscribe(onNext: { _ in
+                photosUploadedRelay.onNext(())
+            }, onError: { error in
+                isLoadingRelay.onNext(false)
+                errorRelay.onNext(SHError.from(error))
             })
             .disposed(by: disposeBag)
         
@@ -283,37 +300,47 @@ class ChatDetailViewModel: ViewModelable {
                     }
             }
     }
-    
-    func uploadPhotos(_ imageDatas: [Data], roomId: String) {
-        guard !imageDatas.isEmpty else { return }
-        
+}
+
+/// - upload
+private extension ChatDetailViewModel {
+    func prepareMultipartData(from imageDatas: [Data]) -> [MultipartFormData] {
         let userId = KeyChainManager.shared.read(.userID) ?? ""
         let timestamp = Int(Date().timeIntervalSince1970)
-        var multipartData: [MultipartFormData] = []
         
-        for (index, imageData) in imageDatas.enumerated() {
+        return imageDatas.enumerated().map { index, imageData in
             let fileName = "\(userId)_\(timestamp)_\(index).jpg"
-            let formData = MultipartFormData(
+            return MultipartFormData(
                 data: imageData,
                 name: "files",
                 fileName: fileName,
                 mimeType: "image/jpeg"
             )
-            multipartData.append(formData)
         }
-        
-        apiClient.uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartData))
-            .flatMap { [weak self] (response: ChatUploadResponse) -> Observable<Void> in
-                guard let self else { return .empty() }
-                let sendChat = SendChat(content: "사진", files: response.files)
-                return self.apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: roomId, model: sendChat))
-                    .map { (_: LastChatResponse) in () }
+    }
+    
+    func uploadFiles(_ multipartData: [MultipartFormData], roomId: String) -> Observable<[String]> {
+        return apiClient.uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartData))
+            .map { (response: ChatUploadResponse) in
+                return response.files
             }
-            .subscribe(onNext: { _ in
-                print("사진 전송 완료")
-            }, onError: { error in
-                print("사진 업로드/전송 실패: \(error)")
-            })
-            .disposed(by: disposeBag)
+    }
+    
+    func sendPhotoMessage(with files: [String], roomId: String) -> Observable<Void> {
+        let sendChat = SendChat(content: "사진", files: files)
+        return apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: roomId, model: sendChat))
+            .map { (_: LastChatResponse) in () }
+    }
+    
+    func uploadPhotos(_ imageDatas: [Data], roomId: String) -> Observable<Void> {
+        guard !imageDatas.isEmpty else { return .just(()) }
+        
+        let multipartData = prepareMultipartData(from: imageDatas)
+        
+        return uploadFiles(multipartData, roomId: roomId)
+            .flatMap { [weak self] files -> Observable<Void> in
+                guard let self else { return .empty() }
+                return self.sendPhotoMessage(with: files, roomId: roomId)
+            }
     }
 }
