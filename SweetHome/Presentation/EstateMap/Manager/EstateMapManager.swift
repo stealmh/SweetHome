@@ -661,10 +661,19 @@ private extension EstateMapManager {
         }
     }
     
-    /// - UIView를 UIImage로 변환 (커스텀 메서드)
+    /// - UIView를 UIImage로 변환
     private func createImageFromView(view: UIView, size: CGSize) -> UIImage {
-        let renderer = UIGraphicsImageRenderer(size: size)
+        // 안전한 렌더링 포맷 지정
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        format.preferredRange = .standard
+        
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
         return renderer.image { context in
+            /// - Metal 사용 비활성화하고 CPU 렌더링 사용
+            context.cgContext.setAllowsAntialiasing(true)
+            context.cgContext.setShouldAntialias(true)
             view.layer.render(in: context.cgContext)
         }
     }
@@ -771,33 +780,14 @@ private extension EstateMapManager {
         
         return renderer.image { context in
             let rect = CGRect(origin: .zero, size: imageSize)
-            
-            // 외곽 그림자
-            context.cgContext.setShadow(offset: CGSize(width: 0, height: 2), blur: 4, color: UIColor.black.withAlphaComponent(0.3).cgColor)
-            
-            // 메인 원형
-            color.setFill()
-            context.cgContext.fillEllipse(in: rect)
-            
-            // 내부 하이라이트 원
-            let innerRect = rect.insetBy(dx: 2, dy: 2)
-            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                    colors: [color.withAlphaComponent(0.3).cgColor, UIColor.clear.cgColor] as CFArray,
-                                    locations: [0.0, 1.0])
-            
-            if let gradient = gradient {
-                context.cgContext.drawRadialGradient(gradient,
-                                                   startCenter: CGPoint(x: rect.midX, y: rect.midY - rect.height * 0.3),
-                                                   startRadius: 0,
-                                                   endCenter: CGPoint(x: rect.midX, y: rect.midY),
-                                                   endRadius: rect.width / 2,
-                                                   options: [])
-            }
-            
-            // 테두리
-            UIColor.white.setStroke()
-            context.cgContext.setLineWidth(2)
-            context.cgContext.strokeEllipse(in: rect)
+            let cgContext = context.cgContext
+
+            cgContext.setFillColor(color.cgColor)
+            cgContext.fillEllipse(in: rect)
+
+            cgContext.setStrokeColor(UIColor.white.cgColor)
+            cgContext.setLineWidth(2.0)
+            cgContext.strokeEllipse(in: rect.insetBy(dx: 1, dy: 1))
         }
     }
     
@@ -2004,9 +1994,18 @@ protocol EstateMapManagerDelegate: AnyObject {
 // MARK: - UIView Extension
 extension UIView {
     func asImage() -> UIImage {
-        let renderer = UIGraphicsImageRenderer(bounds: bounds)
+        // 안전한 렌더링 포맷 지정
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = UIScreen.main.scale
+        format.opaque = false
+        format.preferredRange = .standard
+        
+        let renderer = UIGraphicsImageRenderer(bounds: bounds, format: format)
         return renderer.image { rendererContext in
-            layer.render(in: rendererContext.cgContext)
+            let cgContext = rendererContext.cgContext
+            cgContext.setAllowsAntialiasing(true)
+            cgContext.setShouldAntialias(true)
+            layer.render(in: cgContext)
         }
     }
 }
