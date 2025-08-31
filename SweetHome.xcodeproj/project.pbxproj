@@ -16,7 +16,6 @@
 		162105C02E38B823006ACD9E /* RxKakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 162105BF2E38B823006ACD9E /* RxKakaoSDKAuth */; };
 		162105C22E38B823006ACD9E /* RxKakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 162105C12E38B823006ACD9E /* RxKakaoSDKCommon */; };
 		162105C72E38B9E1006ACD9E /* RxKakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */; };
-		163CB4ED2E5315AC0070F130 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 163CB4EC2E5315AC0070F130 /* RealmSwift */; };
 		163CB4FC2E53422B0070F130 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 163CB4FB2E53422B0070F130 /* FirebaseMessaging */; };
 		163CB5002E5348260070F130 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 163CB4FF2E5348260070F130 /* FirebaseCore */; };
 		16B8C8CF2E41D0B600CA762B /* KakaoMapsSDK-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 16B8C8CE2E41D0B600CA762B /* KakaoMapsSDK-SPM */; };
@@ -91,7 +90,6 @@
 				162105C72E38B9E1006ACD9E /* RxKakaoSDKUser in Frameworks */,
 				163CB5002E5348260070F130 /* FirebaseCore in Frameworks */,
 				16B8C8CF2E41D0B600CA762B /* KakaoMapsSDK-SPM in Frameworks */,
-				163CB4ED2E5315AC0070F130 /* RealmSwift in Frameworks */,
 				162105BA2E38B7C1006ACD9E /* SnapKit in Frameworks */,
 				162105BD2E38B7E5006ACD9E /* SocketIO in Frameworks */,
 			);
@@ -164,7 +162,6 @@
 				162105C12E38B823006ACD9E /* RxKakaoSDKCommon */,
 				162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */,
 				16B8C8CE2E41D0B600CA762B /* KakaoMapsSDK-SPM */,
-				163CB4EC2E5315AC0070F130 /* RealmSwift */,
 				163CB4FB2E53422B0070F130 /* FirebaseMessaging */,
 				163CB4FF2E5348260070F130 /* FirebaseCore */,
 			);
@@ -258,7 +255,6 @@
 				162105BB2E38B7E5006ACD9E /* XCRemoteSwiftPackageReference "socket" */,
 				162105BE2E38B823006ACD9E /* XCRemoteSwiftPackageReference "kakao-ios-sdk-rx" */,
 				16B8C8CD2E41D0B600CA762B /* XCRemoteSwiftPackageReference "KakaoMapsSDK-SPM" */,
-				163CB4EB2E5315AC0070F130 /* XCRemoteSwiftPackageReference "realm-swift" */,
 				163CB4FA2E53422B0070F130 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -678,14 +674,6 @@
 				minimumVersion = 2.24.6;
 			};
 		};
-		163CB4EB2E5315AC0070F130 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/realm/realm-swift";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		163CB4FA2E53422B0070F130 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -749,11 +737,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 162105BE2E38B823006ACD9E /* XCRemoteSwiftPackageReference "kakao-ios-sdk-rx" */;
 			productName = RxKakaoSDKUser;
-		};
-		163CB4EC2E5315AC0070F130 /* RealmSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 163CB4EB2E5315AC0070F130 /* XCRemoteSwiftPackageReference "realm-swift" */;
-			productName = RealmSwift;
 		};
 		163CB4FB2E53422B0070F130 /* FirebaseMessaging */ = {
 			isa = XCSwiftPackageProductDependency;
