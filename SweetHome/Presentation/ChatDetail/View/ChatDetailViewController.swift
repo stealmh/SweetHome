@@ -15,6 +15,7 @@ class ChatDetailViewController: BaseViewController {
     private let viewModel = ChatDetailViewModel()
     private let roomId: String
     private let refreshControl = UIRefreshControl()
+    private let selectedPhotosRelay = PublishSubject<[Data]>()
     
     private let navigationBar = ChatDetailNavigationBar()
     
@@ -101,6 +102,7 @@ class ChatDetailViewController: BaseViewController {
             roomId: roomId,
             sendMessage: sendMessageText,
             sendPhotos: chatInputView.addPhotoButton.rx.tap.asObservable(),
+            selectedPhotos: selectedPhotosRelay.asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         
@@ -245,34 +247,28 @@ extension ChatDetailViewController: PHPickerViewControllerDelegate {
         
         for result in results {
             group.enter()
-            result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+            result.itemProvider.loadDataRepresentation(forTypeIdentifier: "public.image") { data, error in
                 defer { group.leave() }
-                if let image = object as? UIImage {
-                    loadedImages.append(image)
+                if let data = data,
+                   let downsampledImage = UIImage.downsample(from: data, to: CGSize(width: 1280, height: 1280)) {
+                    loadedImages.append(downsampledImage)
                 }
             }
         }
         
-        group.notify(queue: .main) {
-            selectedPhotos.onNext(loadedImages)
-            selectedPhotos.onCompleted()
+        group.notify(queue: .main) { [weak self] in
+            let imageDatas = loadedImages.compactMap { $0.adaptiveCompress(maxSizeBytes: 1024 * 1024) }
+            
+            /// - 5MB 제한 체크
+            let totalSize = imageDatas.reduce(0) { $0 + $1.count }
+            let maxSize = 5 * 1024 * 1024
+            
+            if totalSize > maxSize {
+                print("크기를 초과합니다.")
+                return
+            }
+            
+            self?.selectedPhotosRelay.onNext(imageDatas)
         }
-        
-        selectedPhotos
-            .subscribe(onNext: { [weak self] images in
-                let imageDatas = images.compactMap { $0.jpegData(compressionQuality: 0.8) }
-                
-                /// - 5MB 제한 체크
-                let totalSize = imageDatas.reduce(0) { $0 + $1.count }
-                let maxSize = 5 * 1024 * 1024
-                
-                if totalSize > maxSize {
-                    print("크기를 초과합니다.")
-                    return
-                }
-                
-                self?.viewModel.uploadPhotos(imageDatas, roomId: self?.roomId ?? "")
-            })
-            .disposed(by: disposeBag)
     }
 }
