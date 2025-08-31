@@ -30,6 +30,10 @@ class EstateMapFilterManager: NSObject {
     /// - 필터 매니저 델리게이트
     weak var delegate: EstateMapFilterManagerDelegate?
     
+    deinit {
+        print("EstateMapFilterManager deinit")
+    }
+    
     // MARK: - Public Methods
     
     /// - 필터 버튼들을 부모 뷰에 추가하고 제약조건 설정

@@ -35,6 +35,10 @@ class EstateMapBottomCollectionManager: NSObject {
         super.init()
     }
     
+    deinit {
+        print("EstateMapBottomCollectionManager deinit")
+    }
+    
     // MARK: - Setup Methods
     func setupCollectionView(in parentView: UIView) -> UICollectionView {
         let layout = createCompositionalLayout()

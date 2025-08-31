@@ -11,7 +11,7 @@ import RxCocoa
 import CoreLocation
 
 class EstateMapViewModel: ViewModelable {
-    let disposeBag = DisposeBag()
+    var disposeBag = DisposeBag()
     
     struct Input {
         let mapPositionChanged: Observable<(latitude: Double, longitude: Double, maxDistance: Int)>
@@ -40,6 +40,20 @@ class EstateMapViewModel: ViewModelable {
     init(apiClient: ApiClient = ApiClient.shared, locationService: LocationServiceProtocol = LocationService()) {
         self.apiClient = apiClient
         self.locationService = locationService
+    }
+    
+    deinit {
+        print("EstateMapViewModel deinit")
+    }
+    
+    // MARK: - Cleanup
+    func cleanup() {
+        // 모든 진행 중인 Observable 체인 중단
+        disposeBag = DisposeBag()
+        
+        // 저장된 데이터 정리
+        allEstates.removeAll()
+        currentFilterValues = (nil, nil, nil)
     }
     
     func transform(input: Input) -> Output {

@@ -39,7 +39,7 @@ class EstateMapManager: NSObject {
     }
     
     deinit {
-        cleanup()
+        print("EstateMapManager deinit")
     }
     
     // MARK: - Public Methods
@@ -86,7 +86,7 @@ class EstateMapManager: NSObject {
     
     func viewDidDisappear() {
         removeObservers()
-        mapController?.resetEngine()
+//        mapController?.resetEngine()
     }
     
     /// - 맵 컨테이너 반환
@@ -106,9 +106,9 @@ class EstateMapManager: NSObject {
         positionChangeTimer = nil
         delayTimer?.invalidate()
         delayTimer = nil
-        mapController?.pauseEngine()
+//        mapController?.pauseEngine()
         mapController?.resetEngine()
-        removeObservers()
+//        removeObservers()
     }
     
     /// - 현재 줌 레벨 반환

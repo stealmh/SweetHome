@@ -74,12 +74,31 @@ class EstateMapViewController: BaseViewController {
         
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        
+        // 먼저 모든 Subject들 완료 처리하여 새로운 이벤트 방지
+        mapPositionChangedRelay.onCompleted()
+        estateTypeChangedRelay.onCompleted() 
+        estateSelectedRelay.onCompleted()
+        floatButtonTappedRelay.onCompleted()
+        filterChangedRelay.onCompleted()
+        
         mapManager.viewWillDisappear()
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        
+        // Delegate 해제
+        mapManager.delegate = nil
+        filterManager.delegate = nil
+        bottomCollectionManager.delegate = nil
+        floatButton.onClick = nil
+        
+        // ViewModel 정리
+        viewModel.cleanup()
+        
         mapManager.viewDidDisappear()
+        mapManager.cleanup()
     }
     
     override func viewDidLayoutSubviews() {
@@ -152,7 +171,7 @@ class EstateMapViewController: BaseViewController {
                 print("🔄 Loading: \(isLoading)")
                 // TODO: 로딩 UI 업데이트
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.estates
             .drive(onNext: { [weak self] estates in
@@ -184,14 +203,14 @@ class EstateMapViewController: BaseViewController {
                     self.updateFloatButtonPosition(collectionViewVisible: false)
                 }
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.selectedEstate
             .drive(onNext: { [weak self] estate in
                 print("🏠 Estate selected via ViewModel: \(estate.estate_id)")
                 // TODO: Navigate to estate detail
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.currentLocation
             .drive(onNext: { [weak self] location in
@@ -199,18 +218,18 @@ class EstateMapViewController: BaseViewController {
                 // TODO: 현재 위치로 지도 이동 또는 다른 액션 수행
                 self?.handleCurrentLocation(latitude: location.latitude, longitude: location.longitude)
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.error
             .drive(onNext: { error in
                 print("❌ Error: \(error)")
                 // TODO: 에러 처리 UI
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
     }
     
     deinit {
-        mapManager.cleanup()
+        print("EstateMapViewController deinit")
     }
 }
 // MARK: - Private Methods
