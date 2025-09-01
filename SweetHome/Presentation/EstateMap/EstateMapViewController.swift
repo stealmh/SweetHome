@@ -83,6 +83,7 @@ class EstateMapViewController: BaseViewController {
         filterChangedRelay.onCompleted()
         
         mapManager.viewWillDisappear()
+        tabBarController?.tabBar.isHidden = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
