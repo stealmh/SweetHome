@@ -28,7 +28,7 @@ struct ErrorAlertHelper {
             return "입력 오류"
         case .networkError(_):
             return "네트워크 오류"
-        case .commonError:
+        default:
             return "오류"
         }
     }
