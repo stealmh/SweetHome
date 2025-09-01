@@ -1819,8 +1819,11 @@ private extension EstateMapManager {
     func onEstateMarkerTapped(_ param: PoiInteractionEventParam) {
         print("🏠 Estate marker tapped")
         
-        // 매물 상세 정보 표시 로직
-        // delegate?.estateMarkerTapped(estateId: ...)
+        // currentEstateMarkers에서 해당 POI의 estateId 찾기
+        if let estateId = currentEstateMarkers.first(where: { $0.value === param.poiItem })?.key {
+            let actualEstateId = String(estateId.dropFirst(7)) // "estate_" 제거
+            delegate?.estateMarkerTapped(estateId: actualEstateId)
+        }
         
         // 간단한 시각적 피드백
         param.poiItem.hide()

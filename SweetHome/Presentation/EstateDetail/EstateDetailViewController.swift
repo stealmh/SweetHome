@@ -276,8 +276,9 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         /// - 유사한 매물 셀 눌렀을 때
         output.similarCellTappedResult
             .drive(onNext: { [weak self] estate in
-                // TODO: 유사한 매물 상세 화면으로 이동
-                print("유사한 매물 상세 화면 이동: \(estate.title)")
+                let detailVC = EstateDetailViewController(estate.id)
+                self?.navigationController?.pushViewController(detailVC, animated: true)
+                
             })
             .disposed(by: disposeBag)
         

@@ -208,8 +208,9 @@ class EstateMapViewController: BaseViewController {
         
         output.selectedEstate
             .drive(onNext: { [weak self] estate in
-                print("🏠 Estate selected via ViewModel: \(estate.estate_id)")
-                // TODO: Navigate to estate detail
+                let detailVC = EstateDetailViewController(estate.estate_id)
+                self?.navigationController?.pushViewController(detailVC, animated: true)
+
             })
             .disposed(by: disposeBag)
         
@@ -235,6 +236,8 @@ class EstateMapViewController: BaseViewController {
 }
 // MARK: - Private Methods
 private extension EstateMapViewController {
+    
+
     
     /// - 매니저들 설정
     func setupManagers() {
@@ -371,8 +374,8 @@ extension EstateMapViewController: EstateMapManagerDelegate {
     }
     
     func estateMarkerTapped(estateId: String) {
-        print("🏠 Estate marker tapped: \(estateId)")
-        // 매물 상세 화면으로 이동하는 로직 구현
+        let detailVC = EstateDetailViewController(estateId)
+        navigationController?.pushViewController(detailVC, animated: true)
     }
     
     func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [EstateGeoLocationDataResponse]) {
