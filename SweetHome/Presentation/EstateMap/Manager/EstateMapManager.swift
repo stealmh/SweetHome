@@ -260,6 +260,8 @@ private extension EstateMapManager {
             let oldZoomLevel = currentZoomLevel
             currentZoomLevel = newZoomLevel
             
+            print("🔍 Zoom: \(newZoomLevel)")
+            
             // 클러스터링 전략이 변경되었는지 확인
             if shouldUpdateClustering(newZoomLevel: newZoomLevel) {
                 
@@ -1384,8 +1386,17 @@ private extension EstateMapManager {
                 ))
             }
         }
-        
         return ClusteringResult(individualMarkers: individualMarkers, clusters: clusters)
+    }
+    
+    /// - 화면 기반 클러스터링 (겹침 방지 최적화)
+    private func performScreenBasedClustering(estates: [EstateGeoLocationDataResponse]) -> ClusteringResult {
+        guard !estates.isEmpty else {
+            return ClusteringResult(individualMarkers: [], clusters: [])
+        }
+        
+        let gridSize = getGridSize(for: currentZoomLevel)
+        return performAggressiveGridClustering(estates: estates, gridSize: gridSize)
     }
     
     /// - 균형잡힌 Distance 클러스터링 (중간 줌 레벨용)
@@ -1610,6 +1621,50 @@ private extension EstateMapManager {
         return ClusteringResult(individualMarkers: result.individualMarkers, clusters: mergedClusters)
     }
     
+    /// - 보수적 클러스터 병합 (과도한 병합 방지)
+    private func mergeOverlappingClustersConservative(result: ClusteringResult, mergeDistance: Double) -> ClusteringResult {
+        guard result.clusters.count > 1 else { 
+            return result 
+        }
+        
+        // 병합 거리를 더 보수적으로 조정 (50% 감소)
+        let conservativeMergeDistance = mergeDistance * 0.5
+        
+        var mergedClusters: [EstateCluster] = []
+        var processedIndices: Set<Int> = []
+        
+        for (index, cluster) in result.clusters.enumerated() {
+            if processedIndices.contains(index) { continue }
+            
+            // 현재 클러스터를 기준으로 병합할 클러스터들 찾기
+            var mergeCandidates: [EstateCluster] = [cluster]
+            processedIndices.insert(index)
+            
+            for (otherIndex, otherCluster) in result.clusters.enumerated() {
+                if processedIndices.contains(otherIndex) { continue }
+                
+                let distance = calculateHaversineDistance(
+                    lat1: cluster.centerPosition.wgsCoord.latitude,
+                    lon1: cluster.centerPosition.wgsCoord.longitude,
+                    lat2: otherCluster.centerPosition.wgsCoord.latitude,
+                    lon2: otherCluster.centerPosition.wgsCoord.longitude
+                )
+                
+                // 보수적 거리로 병합 결정
+                if distance <= conservativeMergeDistance {
+                    mergeCandidates.append(otherCluster)
+                    processedIndices.insert(otherIndex)
+                }
+            }
+            
+            // 병합된 클러스터 생성
+            let mergedCluster = createMergedCluster(from: mergeCandidates)
+            mergedClusters.append(mergedCluster)
+        }
+        
+        return ClusteringResult(individualMarkers: result.individualMarkers, clusters: mergedClusters)
+    }
+    
     /// - 여러 클러스터를 하나로 병합
     private func createMergedCluster(from clusters: [EstateCluster]) -> EstateCluster {
         guard !clusters.isEmpty else {
@@ -1663,6 +1718,97 @@ private extension EstateMapManager {
         let c = 2 * atan2(sqrt(a), sqrt(1-a))
         
         return earthRadius * c
+    }
+    
+    /// - 화면 기준 거리 계산 (픽셀 근사값)
+    private func calculateScreenDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double) -> Double {
+        // 현재 줌 레벨에 따른 1도당 픽셀 수 계산
+        let pixelsPerDegree = getPixelsPerDegree(for: currentZoomLevel)
+        
+        let latDiff = abs(lat1 - lat2)
+        let lonDiff = abs(lon1 - lon2)
+        
+        // 위도/경도 차이를 픽셀로 변환
+        let pixelDistance = sqrt(pow(latDiff * pixelsPerDegree, 2) + pow(lonDiff * pixelsPerDegree, 2))
+        
+        return pixelDistance
+    }
+    
+    /// - 줌 레벨에 따른 1도당 픽셀 수 반환 (보정된 값)
+    private func getPixelsPerDegree(for zoomLevel: Int) -> Double {
+        // 더 현실적인 픽셀 밀도로 조정 (과도한 병합 방지)
+        switch zoomLevel {
+        case 0...6:   return 1.0       // 매우 낮은 밀도
+        case 7...9:   return 5.0       // 낮은 밀도  
+        case 10...12: return 20.0      // 중간 밀도 (200 -> 20으로 대폭 감소)
+        case 13...15: return 100.0     // 높은 밀도 (1000 -> 100으로 감소)
+        default:      return 500.0     // 매우 높은 밀도 (5000 -> 500으로 감소)
+        }
+    }
+    
+    /// - 클러스터 마커 크기 기반 최소 분리 거리 계산 (픽셀)
+    private func getMinimumSeparationDistance(cluster1Count: Int, cluster2Count: Int) -> Double {
+        let size1 = getClusterMarkerSize(for: cluster1Count)
+        let size2 = getClusterMarkerSize(for: cluster2Count)
+        
+        // 두 클러스터 반지름의 합 + 최소 여유 공간 (5픽셀로 감소)
+        return (size1 + size2) / 2.0 + 5.0
+    }
+    
+    /// - 클러스터 개수에 따른 마커 크기 반환 (조정된 크기)
+    private func getClusterMarkerSize(for count: Int) -> Double {
+        switch count {
+        case 2...9:   return 24.0  // 소규모 클러스터 (32->24로 감소)
+        case 10...49: return 32.0  // 중간 클러스터 (40->32로 감소)
+        default:      return 40.0  // 대규모 클러스터 (48->40으로 감소)
+        }
+    }
+    
+    /// - Union-Find 자료구조를 이용한 효율적 클러스터 병합
+    private class UnionFind {
+        private var parent: [Int]
+        private var rank: [Int]
+        
+        init(size: Int) {
+            parent = Array(0..<size)
+            rank = Array(repeating: 0, count: size)
+        }
+        
+        func find(_ x: Int) -> Int {
+            if parent[x] != x {
+                parent[x] = find(parent[x]) // 경로 압축
+            }
+            return parent[x]
+        }
+        
+        func union(_ x: Int, _ y: Int) {
+            let rootX = find(x)
+            let rootY = find(y)
+            
+            if rootX != rootY {
+                // 랭크에 따른 합집합
+                if rank[rootX] < rank[rootY] {
+                    parent[rootX] = rootY
+                } else if rank[rootX] > rank[rootY] {
+                    parent[rootY] = rootX
+                } else {
+                    parent[rootY] = rootX
+                    rank[rootX] += 1
+                }
+            }
+        }
+        
+        func getGroups() -> [Int: [Int]] {
+            var groups: [Int: [Int]] = [:]
+            for i in 0..<parent.count {
+                let root = find(i)
+                if groups[root] == nil {
+                    groups[root] = []
+                }
+                groups[root]?.append(i)
+            }
+            return groups
+        }
     }
     
     /// - 클러스터 크기에 따른 스타일 결정 (커스텀 UIView 우선 사용)
