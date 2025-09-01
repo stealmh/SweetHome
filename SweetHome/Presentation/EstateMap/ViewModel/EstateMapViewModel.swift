@@ -19,6 +19,7 @@ class EstateMapViewModel: ViewModelable {
         let estateSelected: Observable<EstateGeoLocationDataResponse>
         let floatButtonTapped: Observable<Void>
         let filterChanged: Observable<(area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?)>
+        let loadAllEstates: Observable<Void> // 전체 데이터 로드 트리거
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
@@ -27,6 +28,7 @@ class EstateMapViewModel: ViewModelable {
         let selectedEstate: Driver<EstateGeoLocationDataResponse>
         let currentLocation: Driver<(latitude: Double, longitude: Double)>
         let error: Driver<SHError>
+        let allEstatesLoaded: Driver<[EstateGeoLocationDataResponse]> // 전체 데이터 로드 완료
     }
     
     // MARK: - Properties
@@ -43,7 +45,6 @@ class EstateMapViewModel: ViewModelable {
     }
     
     deinit {
-        print("EstateMapViewModel deinit")
     }
     
     // MARK: - Cleanup
@@ -62,10 +63,46 @@ class EstateMapViewModel: ViewModelable {
         let selectedEstateRelay = PublishSubject<EstateGeoLocationDataResponse>()
         let currentLocationRelay = PublishSubject<(latitude: Double, longitude: Double)>()
         let errorRelay = PublishSubject<SHError>()
+        let allEstatesLoadedRelay = PublishSubject<[EstateGeoLocationDataResponse]>()
         
         input.estateTypeChanged
             .subscribe(onNext: { [weak self] estateType in
                 self?.currentEstateType = estateType
+            })
+            .disposed(by: disposeBag)
+        
+        // 전체 매물 데이터 로드 (한반도 전체 범위로 maxDistance 설정)
+        input.loadAllEstates
+            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+            .flatMapLatest { [weak self] _ -> Observable<[EstateGeoLocationDataResponse]> in
+                guard let self else {
+                    return Observable.error(SHError.commonError(.weakSelfFailure))
+                }
+                
+                // 한반도 중심 좌표 (대한민국 중심부)
+                let koreaCenter = (latitude: 36.5, longitude: 127.5)
+                let maxDistance = 500000 // 500km (한반도 전체 커버)
+                
+                let request = EstateGeoLocationRequest(
+                    category: self.currentEstateType.rawValue,
+                    longitude: String(koreaCenter.longitude),
+                    latitude: String(koreaCenter.latitude),
+                    maxDistance: maxDistance
+                )
+                
+                return self.apiClient
+                    .requestObservable(EstateEndpoint.geoLocation(parameter: request))
+                    .map { (response: EstateGeoLocationResponse) -> [EstateGeoLocationDataResponse] in
+                        response.data
+                    }
+            }
+            .subscribe(onNext: { [weak self] estates in
+                self?.allEstates = estates
+                allEstatesLoadedRelay.onNext(estates)
+                isLoadingRelay.onNext(false)
+            }, onError: { error in
+                errorRelay.onNext(SHError.networkError(.connectionFailed("fail")))
+                isLoadingRelay.onNext(false)
             })
             .disposed(by: disposeBag)
         
@@ -126,7 +163,6 @@ class EstateMapViewModel: ViewModelable {
                 
                 return self.locationService.getCurrentLocation()
                     .catch { error -> Observable<(latitude: Double, longitude: Double)> in
-                        print("❌ Location error: \(error)")
                         let locationError = SHError.estateError(.invalidLocation)
                         errorRelay.onNext(locationError)
                         return Observable.empty()
@@ -135,7 +171,6 @@ class EstateMapViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(
                 onNext: { location in
-                    print("📍 Current location received: \(location.latitude), \(location.longitude)")
                     currentLocationRelay.onNext(location)
                 },
                 onError: { error in
@@ -150,7 +185,8 @@ class EstateMapViewModel: ViewModelable {
             estates: estatesRelay.asDriver(onErrorDriveWith: .empty()),
             selectedEstate: selectedEstateRelay.asDriver(onErrorDriveWith: .empty()),
             currentLocation: currentLocationRelay.asDriver(onErrorDriveWith: .empty()),
-            error: errorRelay.asDriver(onErrorDriveWith: .empty())
+            error: errorRelay.asDriver(onErrorDriveWith: .empty()),
+            allEstatesLoaded: allEstatesLoadedRelay.asDriver(onErrorDriveWith: .empty())
         )
     }
     

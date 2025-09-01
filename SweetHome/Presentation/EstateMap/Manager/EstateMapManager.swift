@@ -33,16 +33,72 @@ class EstateMapManager: NSObject {
     private var imageCache: [String: UIImage] = [:]
     private let maxCacheSize = 50 // 최대 캐시 이미지 수
     
+    /// - 전체 매물 데이터 저장
+    private var allEstates: [EstateGeoLocationDataResponse] = []
+    var isAllEstatesLoaded = false
+    
     // MARK: - Initialization
     override init() {
         super.init()
     }
     
     deinit {
-        print("EstateMapManager deinit")
     }
     
     // MARK: - Public Methods
+    
+    /// - 전체 매물 데이터 로드
+    public func loadAllEstates(_ estates: [EstateGeoLocationDataResponse]) {
+        allEstates = estates
+        isAllEstatesLoaded = true
+        
+        // 현재 뷰포트에 맞는 매물들로 마커 업데이트
+        updateMarkersForCurrentViewport()
+        
+        // 모니터링 주기를 더 빠르게 변경
+        if let mapView = mapController?.getView("mapview") as? KakaoMap {
+            positionChangeTimer?.invalidate()
+            startMapMoveMonitoring(mapView: mapView)
+        }
+    }
+    
+    /// - 현재 뷰포트 기준으로 매물 필터링 및 마커 업데이트
+    private func updateMarkersForCurrentViewport() {
+        guard isAllEstatesLoaded, let mapView = mapController?.getView("mapview") as? KakaoMap else {
+            return
+        }
+        
+        let filteredEstates = filterEstatesInCurrentViewport(mapView: mapView)
+        
+        // 기존 로직 재사용
+        updateEstateMarkersInternal(with: filteredEstates)
+    }
+    
+    /// - 현재 화면에 보이는 영역의 매물 필터링
+    private func filterEstatesInCurrentViewport(mapView: KakaoMap) -> [EstateGeoLocationDataResponse] {
+        let viewRect = mapView.viewRect
+        
+        // 화면 네 모서리 좌표 계산
+        let topLeft = mapView.getPosition(CGPoint(x: 0, y: 0))
+        let bottomRight = mapView.getPosition(CGPoint(x: viewRect.width, y: viewRect.height))
+        
+        let expandRatio = 0.1 // 뷰포트를 10% 확장하여 여유 공간 확보
+        
+        let latRange = abs(topLeft.wgsCoord.latitude - bottomRight.wgsCoord.latitude) * expandRatio
+        let lonRange = abs(topLeft.wgsCoord.longitude - bottomRight.wgsCoord.longitude) * expandRatio
+        
+        let minLat = min(topLeft.wgsCoord.latitude, bottomRight.wgsCoord.latitude) - latRange
+        let maxLat = max(topLeft.wgsCoord.latitude, bottomRight.wgsCoord.latitude) + latRange
+        let minLon = min(topLeft.wgsCoord.longitude, bottomRight.wgsCoord.longitude) - lonRange
+        let maxLon = max(topLeft.wgsCoord.longitude, bottomRight.wgsCoord.longitude) + lonRange
+        
+        return allEstates.filter { estate in
+            estate.geolocation.latitude >= minLat &&
+            estate.geolocation.latitude <= maxLat &&
+            estate.geolocation.longitude >= minLon &&
+            estate.geolocation.longitude <= maxLon
+        }
+    }
     
     /// - 맵 컨테이너를 설정하고 초기화
     func setupMapContainer(in parentView: UIView, below searchView: UIView) -> KMViewContainer? {
@@ -134,16 +190,13 @@ class EstateMapManager: NSObject {
 extension EstateMapManager: MapControllerDelegate {
     
     func authenticationSucceeded() {
-        print("🔐 authenticationSucceeded called")
         
         if _auth == false {
             _auth = true
-            print("🔐 Auth status changed to true")
         }
         
         if _appear && mapController?.isEngineActive == false {
             mapController?.activateEngine()
-            print("🔐 Engine activated")
         }
         
         addViews()
@@ -151,7 +204,6 @@ extension EstateMapManager: MapControllerDelegate {
     
     /// - 맵 뷰를 추가 (MapControllerDelegate 프로토콜 요구사항)
     func addViews() {
-        print("🗺️ addViews() called")
         
         let defaultPosition: MapPoint = MapPoint(longitude: 126.88687510570243, latitude: 37.51765394494029)
         let mapviewInfo: MapviewInfo = MapviewInfo(viewName: "mapview", viewInfoName: "map", defaultPosition: defaultPosition, defaultLevel: 7)
@@ -160,11 +212,9 @@ extension EstateMapManager: MapControllerDelegate {
     }
     
     func addViewSucceeded(_ viewName: String, viewInfoName: String) {
-        print("✅ addViewSucceeded called for \(viewName)")
         
         guard let mapView = mapController?.getView("mapview") as? KakaoMap,
               let container = mapContainer else {
-            print("❌ Error: mapView or mapContainer is nil")
             return
         }
         
@@ -179,7 +229,6 @@ extension EstateMapManager: MapControllerDelegate {
     }
     
     func addViewFailed(_ viewName: String, viewInfoName: String) {
-        print("❌ Map view failed to add: \(viewName)")
         delegate?.mapDidFailSetup(error: "Failed to add map view: \(viewName)")
     }
     
@@ -192,16 +241,12 @@ private extension EstateMapManager {
     func setupZoomLevelTracking(mapView: KakaoMap) {
         /// - 초기 줌 레벨 저장
         currentZoomLevel = Int(mapView.zoomLevel)
-        print("📏 초기 zoom level: \(currentZoomLevel)")
     }
     
     /// - 맵 이동 추적 설정
     func setupMapMoveTracking(mapView: KakaoMap) {
         /// - 초기 맵 중심 좌표 저장
         currentMapPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
-        if let position = currentMapPosition {
-            print("📍 초기 위치 - Lat: \(position.wgsCoord.latitude), Lng: \(position.wgsCoord.longitude)")
-        }
         
         // 맵 이동 감지를 위한 타이머 시작
         startMapMoveMonitoring(mapView: mapView)
@@ -215,14 +260,12 @@ private extension EstateMapManager {
             let oldZoomLevel = currentZoomLevel
             currentZoomLevel = newZoomLevel
             
-            print("🔍 Zoom level changed: \(oldZoomLevel) -> \(newZoomLevel)")
-            
             // 클러스터링 전략이 변경되었는지 확인
             if shouldUpdateClustering(newZoomLevel: newZoomLevel) {
-                if newZoomLevel >= 13 || oldZoomLevel >= 13 {
-                    print("🔄 Estate marker scale update needed - will update markers")
-                } else {
-                    print("🔄 Clustering strategy changed - will update markers")
+                
+                // 전체 데이터가 로드되었다면 뷰포트 필터링 사용
+                if isAllEstatesLoaded {
+                    updateMarkersForCurrentViewport()
                 }
             }
             
@@ -233,7 +276,6 @@ private extension EstateMapManager {
     
     /// - 맵 이동 감지 시작 (위치 변화 기반 감지 - 제스처 충돌 방지)
     func startMapMoveMonitoring(mapView: KakaoMap) {
-        /// - 0.2초마다 줌과 위치를 함께 체크
         positionChangeTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
             self?.monitorMapChanges(mapView: mapView)
         }
@@ -258,8 +300,7 @@ private extension EstateMapManager {
         let latDiff = abs(newPosition.wgsCoord.latitude - currentPosition.wgsCoord.latitude)
         let lngDiff = abs(newPosition.wgsCoord.longitude - currentPosition.wgsCoord.longitude)
         
-        // 임계값을 높여서 불필요한 업데이트 방지
-        let threshold = 0.000001 // 기존 0.0000001에서 10배 증가
+        let threshold = 0.000001
         
         if latDiff > threshold || lngDiff > threshold {
             triggerPositionChangeCheck(mapView: mapView)
@@ -270,7 +311,15 @@ private extension EstateMapManager {
     func triggerPositionChangeCheck(mapView: KakaoMap) {
         // 마커 업데이트 중이면 무시
         guard !isUpdatingMarkers else {
-            print("⏳ Skipping position change check - markers updating")
+            return
+        }
+        
+        /// - 현재 위치 업데이트
+        currentMapPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
+        
+        // 전체 데이터가 로드되었다면 즉시 업데이트 (디바운싱 없이)
+        if isAllEstatesLoaded {
+            updateMarkersForCurrentViewport()
             return
         }
         
@@ -278,10 +327,6 @@ private extension EstateMapManager {
         delayTimer?.invalidate()
         delayTimer = nil
         
-        /// - 현재 위치 업데이트
-        currentMapPosition = mapView.getPosition(CGPoint(x: mapView.viewRect.width/2, y: mapView.viewRect.height/2))
-        
-        /// - 딜레이 시간 단축 (0.5초 -> 0.3초)
         delayTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { [weak self] _ in
             self?.checkFinalMapPosition(mapView: mapView)
         }
@@ -311,14 +356,17 @@ private extension EstateMapManager {
     
     /// - 맵 이동 완료 시 호출 (마커 업데이트를 위한 좌표 출력)
     func onMapMoveCompleted(position: MapPoint) {
-        print("🗺️ Map position changed - Lat: \(position.wgsCoord.latitude), Lng: \(position.wgsCoord.longitude)")
-        print("📍 Ready to fetch markers for current location with \(calculateMaxDistance(from: currentZoomLevel))m radius")
         
-        delegate?.mapPositionChanged(
-            latitude: position.wgsCoord.latitude,
-            longitude: position.wgsCoord.longitude,
-            maxDistance: calculateMaxDistance(from: currentZoomLevel)
-        )
+        // 전체 데이터가 로드되었다면 뷰포트 필터링 사용, 아니면 기존 방식
+        if isAllEstatesLoaded {
+            updateMarkersForCurrentViewport()
+        } else {
+            delegate?.mapPositionChanged(
+                latitude: position.wgsCoord.latitude,
+                longitude: position.wgsCoord.longitude,
+                maxDistance: calculateMaxDistance(from: currentZoomLevel)
+            )
+        }
     }
     
     /// - 줌 레벨에 따른 움직임 인식 임계값 계산
@@ -354,13 +402,11 @@ private extension EstateMapManager {
             guard let self = self,
                   let mapController = self.mapController,
                   let mapView = mapController.getView("mapview") as? KakaoMap else {
-                print("❌ Map controller or view not available for movement")
                 return
             }
             
             // 지도가 준비되었는지 확인
             guard mapController.isEngineActive else {
-                print("❌ Map engine is not active yet")
                 // 잠시 후 재시도
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     self.moveToLocation(latitude: latitude, longitude: longitude, animated: animated)
@@ -374,27 +420,20 @@ private extension EstateMapManager {
                 // 애니메이션과 함께 이동
                 let cameraUpdate = CameraUpdate.make(target: position, mapView: mapView)
                 mapView.moveCamera(cameraUpdate)
-                print("📍 Map moved to location: \(latitude), \(longitude) with animation")
             } else {
                 // 즉시 이동
                 let cameraUpdate = CameraUpdate.make(target: position, mapView: mapView)
                 mapView.moveCamera(cameraUpdate)
-                print("📍 Map moved to location: \(latitude), \(longitude) immediately")
             }
         }
     }
     
     /// - 매물 데이터로 마커 업데이트 (최적화된 버전)
-    public func updateEstateMarkers(with estates: [EstateGeoLocationDataResponse]) {
+    private func updateEstateMarkersInternal(with estates: [EstateGeoLocationDataResponse]) {
         // 매물 개수 제한 (성능 및 안정성을 위해)
         let maxEstates = getMaxEstatesForZoomLevel(currentZoomLevel)
         let limitedEstates = Array(estates.prefix(maxEstates))
         
-        if estates.count > maxEstates {
-            print("⚠️ 매물 개수 제한: \(estates.count) → \(limitedEstates.count)개 (줌 레벨: \(currentZoomLevel))")
-        } else {
-            print("📍 현재 위치 매물: \(limitedEstates.count)개, 줌 레벨: \(currentZoomLevel)")
-        }
         
         // 중복 업데이트 방지
         guard !isUpdatingMarkers else {
@@ -423,22 +462,18 @@ private extension EstateMapManager {
     
     /// - 최적화된 마커 업데이트 처리
     private func processMarkerUpdateOptimized(with estates: [EstateGeoLocationDataResponse]) {
-        print("🔄 마커 업데이트 시작 - 기존 마커 정리")
         
         // 기존 마커 완전 정리
         clearAllEstateMarkersSync()
         
         // 짧은 지연으로 정리 작업 완료 보장
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            print("🔄 새로운 마커 생성 시작")
             
             // 새 마커 생성
             self?.createEstateMarkersOptimized(from: estates)
             
             // 마커 업데이트 완료 플래그 해제
             self?.isUpdatingMarkers = false
-            
-            print("🔄 마커 업데이트 완료")
         }
     }
     
@@ -451,7 +486,6 @@ private extension EstateMapManager {
     
     /// - 모든 매물 마커 제거 (기존 버전)
     func clearAllEstateMarkers() {
-        print("🧹 전체 마커 정리 시작: 클러스터 \(clusterMarkers.count)개, 개별 \(currentEstateMarkers.count)개")
         
         // 1. 개별 POI들을 명시적으로 제거
         var removedPois: [LodPoi] = []
@@ -460,7 +494,6 @@ private extension EstateMapManager {
         for (key, poi) in currentEstateMarkers {
             poi.hide()
             removedPois.append(poi)
-            print("🧹   개별 마커 제거: \(key)")
         }
         currentEstateMarkers.removeAll()
         
@@ -468,7 +501,6 @@ private extension EstateMapManager {
         for (key, poi) in clusterMarkers {
             poi.hide()
             removedPois.append(poi)
-            print("🧹   클러스터 마커 제거: \(key)")
         }
         clusterMarkers.removeAll()
         clusterData.removeAll()
@@ -482,28 +514,21 @@ private extension EstateMapManager {
             for poi in removedPois {
                 lodLayer.removeLodPoi(poiID: poi.itemID)
             }
-            
-            print("🧹 LOD Layer에서 \(removedPois.count)개 POI 제거 완료")
         }
-        
-        print("🧹 전체 마커 정리 완료")
     }
     
     /// - 동기식 마커 정리 (깜빡임 최소화)
     private func clearAllEstateMarkersSync() {
-        print("🧹 마커 정리 시작: 클러스터 \(clusterMarkers.count)개, 개별 \(currentEstateMarkers.count)개")
         
         // 1. 개별 POI들을 명시적으로 제거
         var removedPois: [LodPoi] = []
         for (key, poi) in currentEstateMarkers {
             poi.hide()
             removedPois.append(poi)
-            print("🧹   개별 마커 제거: \(key)")
         }
         for (key, poi) in clusterMarkers {
             poi.hide() 
             removedPois.append(poi)
-            print("🧹   클러스터 마커 제거: \(key)")
         }
         
         // 2. LOD Layer에서 POI들 제거
@@ -515,16 +540,12 @@ private extension EstateMapManager {
             for poi in removedPois {
                 lodLayer.removeLodPoi(poiID: poi.itemID)
             }
-            
-            print("🧹 LOD Layer에서 \(removedPois.count)개 POI 제거 완료")
         }
         
         // 3. 참조 정리
         currentEstateMarkers.removeAll()
         clusterMarkers.removeAll()
         clusterData.removeAll()
-        
-        print("🧹 마커 정리 완료")
     }
     
     /// - 마커 업데이트 전 줌 레벨 체크
@@ -559,7 +580,6 @@ private extension EstateMapManager {
         labelManager = mapView.getLabelManager()
         
         guard let manager = labelManager else {
-            print("❌ Failed to get label manager")
             return
         }
         
@@ -580,11 +600,6 @@ private extension EstateMapManager {
         
         /// - 클러스터 마커
         createClusterMarkerStyles(manager: manager)
-        
-        print("✅ Estate marker styles created with zoom level control:")
-        print("   📍 Clusters: Zoom 0-14")
-        print("   🏠 Basic markers: Zoom 10-14") 
-        print("   🖼️ Custom thumbnail markers: Zoom 15+")
     }
     
     /// - UIView를 이미지로 변환하여 마커 스타일 생성
@@ -609,14 +624,12 @@ private extension EstateMapManager {
         if let markerView = view as? CustomEstateMarkerView {
             markerView.onImageLoaded = { [weak self] in
                 DispatchQueue.main.async {
-                    print("🔄 이미지 로딩 완료, 마커 스타일 생성 시작: \(styleID)")
                     
                     // 이미지 로딩 완료 후 마커 스타일 생성
                     markerView.setNeedsLayout()
                     markerView.layoutIfNeeded()
                     
                     let finalImage = self?.createImageFromView(view: markerView, size: targetSize) ?? UIImage()
-                    print("🖼️ 최종 마커 이미지 크기: \(finalImage.size)")
                     
                     let iconStyle = PoiIconStyle(
                         symbol: finalImage,
@@ -633,7 +646,6 @@ private extension EstateMapManager {
                     let poiStyle = PoiStyle(styleID: styleID, styles: [perLevelStyle])
                     manager.addPoiStyle(poiStyle)
                     
-                    print("✅ 이미지 로딩 완료 후 마커 스타일 생성: \(styleID)")
                     completion?()
                 }
             }
@@ -656,7 +668,6 @@ private extension EstateMapManager {
             let poiStyle = PoiStyle(styleID: styleID, styles: [perLevelStyle])
             manager.addPoiStyle(poiStyle)
             
-            print("✅ 마커 스타일 즉시 생성: \(styleID)")
             completion?()
         }
     }
@@ -694,8 +705,6 @@ private extension EstateMapManager {
         let largeClusterView = CustomClusterMarkerView(count: 100)
         let largeSize = ClusterSize.fromCount(100)
         createCustomClusterStyleFromView(manager: manager, view: largeClusterView, styleID: "cluster_custom_large", size: largeSize)
-        
-        print("✅ Custom cluster marker styles created with CustomClusterMarkerView")
     }
     
     /// - CustomClusterMarkerView를 사용한 클러스터 스타일 생성 (줌 레벨별 크기)
@@ -737,8 +746,6 @@ private extension EstateMapManager {
         
         let poiStyle = PoiStyle(styleID: styleID, styles: styles)
         manager.addPoiStyle(poiStyle)
-        
-        print("✅ Created multi-scale cluster style '\(styleID)' for zoom levels: \(zoomLevels)")
     }
     
     /// - 개별 클러스터 스타일 생성
@@ -890,8 +897,6 @@ private extension EstateMapManager {
         dropEffect.interpolation = AnimationInterpolation(duration: 800, method: .cubicOut)
         
         markerAnimator = manager.addPoiAnimator(animatorID: "estateMarkerAnimator", effect: dropEffect)
-        
-        print("✅ Marker animations setup completed")
     }
     
     /// - LOD 레이어 설정 (클러스터링)
@@ -906,24 +911,16 @@ private extension EstateMapManager {
         )
         
         estateLodLayer = manager.addLodLabelLayer(option: lodOptions)
-        
-        if estateLodLayer != nil {
-            print("✅ Estate LOD Layer setup completed")
-        } else {
-            print("❌ Failed to create Estate LOD Layer")
-        }
     }
     
     /// - LOD를 사용한 효율적인 매물 마커 생성 (사용 중단됨)
     func createEstateMarkersWithLOD(from estates: [EstateGeoLocationDataResponse]) {
-        print("⚠️ 기존 마커 생성 메서드 호출됨 - 최적화된 메서드를 사용해야 함!")
         return // 기존 메서드 사용 중단
     }
     
     /// - 최적화된 마커 생성 (커스텀 뷰 사용)
     private func createEstateMarkersOptimized(from estates: [EstateGeoLocationDataResponse]) {
         guard let lodLayer = estateLodLayer, let labelManager = labelManager else {
-            print("❌ LOD Layer 또는 Label Manager가 nil")
             return
         }
         
@@ -932,8 +929,6 @@ private extension EstateMapManager {
         
         var poiOptions: [PoiOptions] = []
         var positions: [MapPoint] = []
-        
-        print("🔨 마커 생성 시작: \(clusteringResult.clusters.count)개 클러스터, \(clusteringResult.individualMarkers.count)개 개별 매물")
         
         // 1. 클러스터 마커 생성 (CustomClusterMarkerView 사용)
         for (index, cluster) in clusteringResult.clusters.enumerated() {
@@ -948,8 +943,6 @@ private extension EstateMapManager {
             
             // 병합된 클러스터는 계산된 중심점에 표시
             positions.append(cluster.centerPosition)
-            
-            print("🔨 클러스터 마커 준비: \(cluster.count)개 매물, 위치: (\(String(format: "%.6f", cluster.centerPosition.wgsCoord.latitude)), \(String(format: "%.6f", cluster.centerPosition.wgsCoord.longitude))), 스타일ID: \(clusterStyleID)")
         }
         
         // 2. 개별 매물 마커 생성 (CustomEstateMarkerView 사용)
@@ -965,41 +958,26 @@ private extension EstateMapManager {
             poiOptions.append(option)
             positions.append(MapPoint(longitude: estate.geolocation.longitude, 
                                     latitude: estate.geolocation.latitude))
-            
-            print("🔨 개별 마커 준비: 매물ID \(estate.estate_id), 스타일ID: \(estateStyleID)")
         }
-        
-        print("🔨 총 \(poiOptions.count)개 마커를 LOD Layer에 추가 중...")
         
         // 한 번에 모든 마커 추가
         if let addedPois = lodLayer.addLodPois(options: poiOptions, at: positions) {
-            print("✅ LOD Layer에 \(addedPois.count)개 마커 추가 성공")
             
             // 참조 저장
             saveMarkerReferences(pois: addedPois, clusteringResult: clusteringResult)
             
             // 즉시 표시
             lodLayer.showAllLodPois()
-            print("👀 모든 마커 표시 활성화")
             
             // 개별 마커도 강제로 표시
             for poi in addedPois {
                 poi.show()
             }
-            print("🔄 개별 마커 \(addedPois.count)개 강제 표시")
             
             // 약간의 지연 후 다시 한 번 표시
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 lodLayer.showAllLodPois()
-                print("🔄 0.2초 후 재표시 완료")
-                
-                // 각 POI의 표시 상태 확인
-                for (index, poi) in addedPois.enumerated() {
-                    print("🔍 POI \(index): 생성됨")
-                }
             }
-        } else {
-            print("❌ LOD Layer에 마커 추가 실패")
         }
     }
     
@@ -1008,11 +986,8 @@ private extension EstateMapManager {
         let styleID = "optimized_cluster_\(index)_\(cluster.count)_\(Int(cluster.centerPosition.wgsCoord.latitude * 1000000))_\(Int(cluster.centerPosition.wgsCoord.longitude * 1000000))"
         
         guard let labelManager = labelManager else { 
-            print("❌ Label manager nil for cluster \(index)")
             return "cluster_custom_small" 
         }
-        
-        print("🎨 클러스터 스타일 생성 시작: \(styleID), 개수: \(cluster.count)")
         
         // CustomClusterMarkerView 생성
         let clusterView = CustomClusterMarkerView(count: cluster.count)
@@ -1035,11 +1010,8 @@ private extension EstateMapManager {
         clusterView.setNeedsLayout()
         clusterView.layoutIfNeeded()
         
-        print("🎨 클러스터 뷰 크기: \(frameSize), 배경색 설정완료, 개수: \(cluster.count)")
-        
         // UIView를 이미지로 변환
         let clusterImage = createImageFromView(view: clusterView, size: frameSize)
-        print("🎨 클러스터 이미지 생성 완료: \(clusterImage.size)")
         
         // 아이콘 스타일 생성
         let iconStyle = PoiIconStyle(
@@ -1055,13 +1027,8 @@ private extension EstateMapManager {
             PerLevelPoiStyle(iconStyle: iconStyle, textStyle: emptyTextStyle, level: 21)
         ]
         
-        print("🎨 클러스터 스타일 줌 레벨 설정: 0-21 (모든 레벨)")
-        
-        
         let poiStyle = PoiStyle(styleID: styleID, styles: styles)
         labelManager.addPoiStyle(poiStyle)
-        
-        print("✅ 클러스터 스타일 생성 완료: \(styleID)")
         return styleID
     }
     
@@ -1084,8 +1051,6 @@ private extension EstateMapManager {
         estateView.frame = CGRect(origin: .zero, size: fixedSize)
         estateView.setNeedsLayout()
         estateView.layoutIfNeeded()
-        
-        print("🏠 매물 마커 생성: 매물ID \(estate.estate_id), 고정 크기: \(fixedSize)")
         
         // UIView를 이미지로 변환
         let estateImage = createImageFromView(view: estateView, size: fixedSize)
@@ -1112,7 +1077,6 @@ private extension EstateMapManager {
     
     /// - 마커 참조 저장 (분리된 메서드)
     private func saveMarkerReferences(pois: [LodPoi], clusteringResult: ClusteringResult) {
-        print("💾 마커 참조 저장 시작: \(pois.count)개 POI, \(clusteringResult.clusters.count)개 클러스터")
         
         for (index, poi) in pois.enumerated() {
             if index < clusteringResult.clusters.count {
@@ -1122,8 +1086,6 @@ private extension EstateMapManager {
                 clusterMarkers[clusterKey] = poi
                 clusterData[clusterKey] = cluster.estates
                 poi.addPoiTappedEventHandler(target: self, handler: EstateMapManager.onClusterMarkerTapped)
-                
-                print("💾 클러스터 참조 저장: 인덱스 \(index), 키: \(clusterKey), 개수: \(cluster.count)")
             } else {
                 // 개별 마커
                 let estateIndex = index - clusteringResult.clusters.count
@@ -1132,13 +1094,9 @@ private extension EstateMapManager {
                     let estateId = "estate_\(estate.estate_id)"
                     currentEstateMarkers[estateId] = poi
                     poi.addPoiTappedEventHandler(target: self, handler: EstateMapManager.onEstateMarkerTapped)
-                    
-                    print("💾 개별 마커 참조 저장: 인덱스 \(index), 매물ID: \(estate.estate_id)")
                 }
             }
         }
-        
-        print("💾 참조 저장 완료: 클러스터 \(clusterMarkers.count)개, 개별 마커 \(currentEstateMarkers.count)개")
     }
     
     /// - 동적 마커 스타일 생성 (각 매물마다 고유한 썸네일과 가격 표시)
@@ -1204,8 +1162,6 @@ private extension EstateMapManager {
         let poiStyle = PoiStyle(styleID: styleID, styles: styles)
         labelManager.addPoiStyle(poiStyle)
         
-        print("✅ Created scaled cluster style '\(styleID)' with \(cluster.count) estates (scale: \(scaleFactor))")
-        
         return styleID
     }
     
@@ -1258,7 +1214,6 @@ private extension EstateMapManager {
         }
         
         let zoomLevel = currentZoomLevel
-        print("🔍 클러스터링 시작: \(estates.count)개 매물, 줌 \(zoomLevel)")
         
         let result: ClusteringResult
         let isShowingIndividualMarkers: Bool
@@ -1279,7 +1234,6 @@ private extension EstateMapManager {
         
         // 겹치는 클러스터 병합 (다단계)
         let mergeDistance = getClusterMergeDistance(for: zoomLevel)
-        print("🔗 병합 거리 설정: \(mergeDistance)m (줌 레벨: \(zoomLevel))")
         
         var mergedResult = mergeOverlappingClusters(result: result, mergeDistance: mergeDistance)
         
@@ -1291,12 +1245,10 @@ private extension EstateMapManager {
             let secondMergedResult = mergeOverlappingClusters(result: mergedResult, mergeDistance: mergeDistance)
             
             if secondMergedResult.clusters.count < previousCount {
-                print("🔗 \(iterationCount + 1)차 병합: \(previousCount)개 → \(secondMergedResult.clusters.count)개 클러스터")
                 mergedResult = secondMergedResult
                 previousCount = secondMergedResult.clusters.count
                 iterationCount += 1
             } else {
-                print("🔗 더 이상 병합할 클러스터 없음 - 병합 완료")
                 break
             }
         }
@@ -1306,17 +1258,6 @@ private extension EstateMapManager {
         let finalClusters = mergedResult.clusters.count
         let totalInClusters = mergedResult.clusters.reduce(0) { $0 + $1.count }
         let totalProcessed = totalInClusters + mergedResult.individualMarkers.count
-        
-        print("🔍 최종 클러스터링 결과:")
-        print("   📊 병합 전후: \(originalClusters)개 → \(finalClusters)개 클러스터")
-        print("   📊 매물 분포: 클러스터 \(finalClusters)개(\(totalInClusters)개 매물) + 개별 \(mergedResult.individualMarkers.count)개")
-        print("   📊 총합: \(totalProcessed)개 (원본: \(estates.count)개)")
-        
-        if totalProcessed != estates.count {
-            print("⚠️ 매물 개수 불일치! 원본: \(estates.count), 처리됨: \(totalProcessed)")
-        } else {
-            print("✅ 매물 개수 검증 완료!")
-        }
         
         return mergedResult
     }
@@ -1453,8 +1394,6 @@ private extension EstateMapManager {
         var clusters: [EstateCluster] = []
         var individualMarkers: [EstateGeoLocationDataResponse] = []
         
-        print("🎯 Distance 클러스터링 시작: 거리 임계값 \(distance)m")
-        
         for (index, estate) in estates.enumerated() {
             if visited.contains(index) { continue }
             
@@ -1489,21 +1428,15 @@ private extension EstateMapManager {
                     estates: cluster,
                     centerPosition: MapPoint(longitude: centerLon, latitude: centerLat)
                 ))
-                print("📍 클러스터 생성: \(cluster.count)개 매물 (인덱스 \(index) 기준으로 \(nearbyCount)개 근처 매물 발견)")
             } else if let singleEstate = cluster.first {
                 individualMarkers.append(singleEstate)
-                print("🏠 개별 매물: 인덱스 \(index) (근처 매물 없음)")
             }
         }
-        
-        print("🎯 Distance 클러스터링 완료: \(clusters.count)개 클러스터, \(individualMarkers.count)개 개별 매물")
         return ClusteringResult(individualMarkers: individualMarkers, clusters: clusters)
     }
     
     /// - Grid 기반 클러스터링 (광역 뷰용 - Google Maps 스타일)
     func performGridClustering(estates: [EstateGeoLocationDataResponse], gridSize: Double) -> ClusteringResult {
-        print("🟦 ===== GRID CLUSTERING START =====")
-        print("🟦 Grid size: \(gridSize) degrees")
         
         var gridMap: [String: [EstateGeoLocationDataResponse]] = [:]
         
@@ -1515,23 +1448,15 @@ private extension EstateMapManager {
             
             if gridMap[gridKey] == nil {
                 gridMap[gridKey] = []
-                print("🟦 Created new grid cell: \(gridKey)")
             }
             gridMap[gridKey]?.append(estate)
-            
-            if index < 3 { // 처음 3개만 로그
-                print("🟦 Estate \(index + 1) assigned to grid \(gridKey): (\(String(format: "%.4f", estate.geolocation.latitude)), \(String(format: "%.4f", estate.geolocation.longitude)))")
-            }
         }
-        
-        print("🟦 Total grid cells created: \(gridMap.count)")
         
         var clusters: [EstateCluster] = []
         var individualMarkers: [EstateGeoLocationDataResponse] = []
         
         // 그리드 셀별로 클러스터 생성
         for (gridKey, gridEstates) in gridMap {
-            print("🟦 Processing grid \(gridKey) with \(gridEstates.count) estates")
             
             if gridEstates.count >= 2 {
                 let centerLat = gridEstates.map { $0.geolocation.latitude }.reduce(0, +) / Double(gridEstates.count)
@@ -1542,23 +1467,16 @@ private extension EstateMapManager {
                     centerPosition: MapPoint(longitude: centerLon, latitude: centerLat)
                 )
                 clusters.append(cluster)
-                print("📍 Created cluster with \(gridEstates.count) estates at (\(String(format: "%.4f", centerLat)), \(String(format: "%.4f", centerLon)))")
             } else if let singleEstate = gridEstates.first {
                 individualMarkers.append(singleEstate)
-                print("🏠 Single estate kept as individual marker: (\(String(format: "%.4f", singleEstate.geolocation.latitude)), \(String(format: "%.4f", singleEstate.geolocation.longitude)))")
             }
         }
-        
-        print("🟦 ===== GRID CLUSTERING END =====")
-        print("🏠 Grid result: \(clusters.count) clusters, \(individualMarkers.count) individual markers")
         
         return ClusteringResult(individualMarkers: individualMarkers, clusters: clusters)
     }
     
     /// - Distance 기반 클러스터링 (DBSCAN 비슷한 알고리즘)
     func performDistanceClustering(estates: [EstateGeoLocationDataResponse], distance: Double) -> ClusteringResult {
-        print("📍 ===== DISTANCE CLUSTERING START =====")
-        print("📍 Distance threshold: \(distance)m")
         
         var visited: Set<Int> = []
         var clusters: [EstateCluster] = []
@@ -1567,8 +1485,6 @@ private extension EstateMapManager {
         
         for (index, estate) in estates.enumerated() {
             if visited.contains(index) { continue }
-            
-            print("📍 Starting new cluster search from estate \(index + 1): (\(String(format: "%.4f", estate.geolocation.latitude)), \(String(format: "%.4f", estate.geolocation.longitude)))")
             
             var cluster: [EstateGeoLocationDataResponse] = []
             var toVisit: [Int] = [index]
@@ -1581,8 +1497,6 @@ private extension EstateMapManager {
                 visited.insert(currentIndex)
                 let currentEstate = estates[currentIndex]
                 cluster.append(currentEstate)
-                
-                print("📍   Added estate \(currentIndex + 1) to current cluster")
                 
                 // 인근 매물 찾기
                 for (neighborIndex, neighborEstate) in estates.enumerated() {
@@ -1598,7 +1512,6 @@ private extension EstateMapManager {
                     if dist <= distance {
                         toVisit.append(neighborIndex)
                         neighborsFound += 1
-                        print("📍   Found neighbor: estate \(neighborIndex + 1) at \(String(format: "%.1f", dist))m distance")
                     }
                 }
             }
@@ -1614,15 +1527,10 @@ private extension EstateMapManager {
                     centerPosition: MapPoint(longitude: centerLon, latitude: centerLat)
                 )
                 clusters.append(estateCluster)
-                print("📍 ✅ Created cluster #\(clusterCount) with \(cluster.count) estates at (\(String(format: "%.4f", centerLat)), \(String(format: "%.4f", centerLon)))")
             } else if let singleEstate = cluster.first {
                 individualMarkers.append(singleEstate)
-                print("📍 🏠 Single estate kept as individual marker: (\(String(format: "%.4f", singleEstate.geolocation.latitude)), \(String(format: "%.4f", singleEstate.geolocation.longitude)))")
             }
         }
-        
-        print("📍 ===== DISTANCE CLUSTERING END =====")
-        print("📍 Distance result: \(clusters.count) clusters, \(individualMarkers.count) individual markers")
         
         return ClusteringResult(individualMarkers: individualMarkers, clusters: clusters)
     }
@@ -1648,7 +1556,6 @@ private extension EstateMapManager {
         case 15...16: distance = 250     // 250m (상세)
         default:      distance = 100     // 100m (최대 상세)
         }
-        print("📏 줌 레벨 \(zoomLevel)에 대한 클러스터 거리: \(distance)m")
         return distance
     }
     
@@ -1666,15 +1573,7 @@ private extension EstateMapManager {
     /// - 겹치는 클러스터 병합
     private func mergeOverlappingClusters(result: ClusteringResult, mergeDistance: Double) -> ClusteringResult {
         guard result.clusters.count > 1 else { 
-            print("🔗 클러스터 병합 스킵: 클러스터가 \(result.clusters.count)개뿐")
             return result 
-        }
-        
-        print("🔗 클러스터 병합 시작: \(result.clusters.count)개 클러스터, 병합거리: \(mergeDistance)m")
-        
-        // 모든 클러스터 위치 출력
-        for (index, cluster) in result.clusters.enumerated() {
-            print("🔗   클러스터 \(index): (\(String(format: "%.6f", cluster.centerPosition.wgsCoord.latitude)), \(String(format: "%.6f", cluster.centerPosition.wgsCoord.longitude))) - \(cluster.count)개 매물")
         }
         
         var mergedClusters: [EstateCluster] = []
@@ -1682,8 +1581,6 @@ private extension EstateMapManager {
         
         for (index, cluster) in result.clusters.enumerated() {
             if processedIndices.contains(index) { continue }
-            
-            print("🔗 클러스터 \(index) 기준으로 병합 대상 검색 중...")
             
             // 현재 클러스터를 기준으로 병합할 클러스터들 찾기
             var mergeCandidates: [EstateCluster] = [cluster]
@@ -1699,24 +1596,16 @@ private extension EstateMapManager {
                     lon2: otherCluster.centerPosition.wgsCoord.longitude
                 )
                 
-                print("🔗   클러스터 \(index) ↔ \(otherIndex) 거리: \(String(format: "%.1f", distance))m (병합기준: \(mergeDistance)m)")
-                
                 if distance <= mergeDistance {
                     mergeCandidates.append(otherCluster)
                     processedIndices.insert(otherIndex)
-                    print("🔗 ✅ 클러스터 \(index)와 \(otherIndex) 병합 결정 (거리: \(String(format: "%.1f", distance))m)")
-                } else {
-                    print("🔗 ❌ 클러스터 \(index)와 \(otherIndex) 병합 안함 (거리 초과)")
                 }
             }
             
             // 병합된 클러스터 생성
             let mergedCluster = createMergedCluster(from: mergeCandidates)
             mergedClusters.append(mergedCluster)
-            print("🔗 클러스터 그룹 \(index) 병합 완료: \(mergeCandidates.count)개 클러스터 → 1개 (총 \(mergedCluster.count)개 매물)")
         }
-        
-        print("🔗 클러스터 병합 최종 완료: \(result.clusters.count)개 → \(mergedClusters.count)개")
         
         return ClusteringResult(individualMarkers: result.individualMarkers, clusters: mergedClusters)
     }
@@ -1751,8 +1640,6 @@ private extension EstateMapManager {
         
         let newCenterLat = totalLat / Double(totalCount)
         let newCenterLon = totalLon / Double(totalCount)
-        
-        print("🔗 병합된 클러스터: \(clusters.count)개 클러스터 → \(allEstates.count)개 매물, 중심점: (\(String(format: "%.6f", newCenterLat)), \(String(format: "%.6f", newCenterLon)))")
         
         return EstateCluster(
             estates: allEstates,
@@ -1792,7 +1679,6 @@ private extension EstateMapManager {
     
     /// - 클러스터 마커 탭 이벤트 핸들러
     func onClusterMarkerTapped(_ param: PoiInteractionEventParam) {
-        print("📍 Cluster marker tapped")
         
         // 클러스터 위치는 클러스터 생성 시 저장된 키로 찾아야 함
         if let lodPoi = param.poiItem as? LodPoi {
@@ -1817,7 +1703,6 @@ private extension EstateMapManager {
     
     /// - 매물 마커 탭 이벤트 핸들러
     func onEstateMarkerTapped(_ param: PoiInteractionEventParam) {
-        print("🏠 Estate marker tapped")
         
         // currentEstateMarkers에서 해당 POI의 estateId 찾기
         if let estateId = currentEstateMarkers.first(where: { $0.value === param.poiItem })?.key {
@@ -1856,7 +1741,6 @@ private extension EstateMapManager {
     /// - 특정 매물 마커 업데이트
     func updateEstateMarker(estateId: String, estate: EstateGeoLocationDataResponse) {
         guard let poi = currentEstateMarkers["estate_\(estateId)"] else {
-            print("❌ Estate marker not found: \(estateId)")
             return
         }
         
@@ -1864,7 +1748,6 @@ private extension EstateMapManager {
         let newPriceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
         
         // POI 텍스트 업데이트 로직 (필요시 구현)
-        print("🔄 Updated estate marker \(estateId) with price: \(newPriceText)")
     }
     
     /// - 매물 마커 숨기기/보이기

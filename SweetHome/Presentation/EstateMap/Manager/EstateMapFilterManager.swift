@@ -31,7 +31,6 @@ class EstateMapFilterManager: NSObject {
     weak var delegate: EstateMapFilterManagerDelegate?
     
     deinit {
-        print("EstateMapFilterManager deinit")
     }
     
     // MARK: - Public Methods
@@ -183,8 +182,6 @@ private extension EstateMapFilterManager {
         areaRangeText = "전체"
         priceMonthRangeText = "전체"
         priceRangeText = "전체"
-        
-        print("📱 Filter buttons and sliders configured")
     }
     
     /// - 슬라이더 뷰 토글 (표시/숨김)
