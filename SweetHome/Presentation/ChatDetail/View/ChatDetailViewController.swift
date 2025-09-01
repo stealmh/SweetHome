@@ -95,6 +95,17 @@ class ChatDetailViewController: BaseViewController {
         let sendMessageText = chatInputView.sendButton.rx.tap
             .withLatestFrom(chatInputView.messageTextView.rx.text.orEmpty)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .do(onNext: { _ in
+                self.chatInputView.clearText()
+                self.chatInputView.sendButton.isEnabled = false
+            })
+            .flatMapLatest { message -> Observable<String> in
+                return Observable.just(message)
+                    .delay(.milliseconds(100), scheduler: MainScheduler.instance)
+                    .do(onNext: { _ in
+                        self.chatInputView.sendButton.isEnabled = true
+                    })
+            }
             .share()
         
         let input = ChatDetailViewModel.Input(
@@ -118,11 +129,6 @@ class ChatDetailViewController: BaseViewController {
             .drive(refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
-        output.messageSent
-            .drive(onNext: { [weak self] _ in
-                self?.chatInputView.clearText()
-            })
-            .disposed(by: disposeBag)
         
         output.error
             .drive(onNext: { [weak self] error in
