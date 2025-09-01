@@ -75,7 +75,7 @@ class CustomEstateMarkerView: UIView {
     
     // MARK: - Configuration Methods
     func configure(with estate: EstateGeoLocationDataResponse) {
-        let priceText = formatEstatePrice(deposit: estate.deposit, monthlyRent: estate.monthly_rent)
+        let priceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
         priceLabel.text = priceText
         
         // 썸네일 이미지 로드 (기본 이미지로 fallback)
@@ -112,26 +112,6 @@ class CustomEstateMarkerView: UIView {
         applyStyle()
     }
     
-    private func formatEstatePrice(deposit: Int, monthlyRent: Int) -> String {
-        let depositText: String
-        
-        // 보증금 포맷팅
-        if deposit >= 100000000 {  // 1억 이상
-            depositText = "\(deposit/100000000)억"
-        } else if deposit >= 10000 {  // 1만 이상
-            depositText = "\(deposit/10000)"
-        } else {
-            depositText = "\(deposit)"
-        }
-        
-        // 월세 포맷팅
-        if monthlyRent > 0 {
-            let monthlyText = monthlyRent >= 10000 ? "\(monthlyRent/10000)" : "\(monthlyRent)"
-            return "\(depositText)/\(monthlyText)"
-        } else {
-            return depositText
-        }
-    }
     
     private func applyStyle() {
         // 배경은 투명으로 설정 (draw에서 직접 그리기)

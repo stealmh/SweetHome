@@ -1849,27 +1849,6 @@ private extension EstateMapManager {
         return "estate_custom_default"
     }
     
-    /// - 매물 가격 포맷팅 (개선된 버전)
-    func formatEstatePrice(deposit: Int, monthlyRent: Int) -> String {
-        let depositText: String
-        
-        // 보증금 포맷팅
-        if deposit >= 100000000 {  // 1억 이상
-            depositText = "\(deposit/100000000)억"
-        } else if deposit >= 10000 {  // 1만 이상
-            depositText = "\(deposit/10000)만"
-        } else {
-            depositText = "\(deposit)"
-        }
-        
-        // 월세 포맷팅
-        if monthlyRent > 0 {
-            let monthlyText = monthlyRent >= 10000 ? "\(monthlyRent/10000)만" : "\(monthlyRent)"
-            return "\(depositText)/\(monthlyText)"
-        } else {
-            return depositText
-        }
-    }
     
     /// - 특정 매물 마커 업데이트
     func updateEstateMarker(estateId: String, estate: EstateGeoLocationDataResponse) {
@@ -1879,7 +1858,7 @@ private extension EstateMapManager {
         }
         
         // 가격 텍스트 업데이트
-        let newPriceText = formatEstatePrice(deposit: estate.deposit, monthlyRent: estate.monthly_rent)
+        let newPriceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
         
         // POI 텍스트 업데이트 로직 (필요시 구현)
         print("🔄 Updated estate marker \(estateId) with price: \(newPriceText)")

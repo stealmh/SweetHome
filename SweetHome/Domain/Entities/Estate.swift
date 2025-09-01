@@ -34,7 +34,7 @@ extension Estate {
         if self.monthlyRent == 0 {
             return "전세 \(deposit.formattedPrice)"
         } else {
-            return "월세 \(deposit.formattedPrice)/\(monthlyRent.formattedPrice)"
+            return "전세 \(monthlyRent.formattedPrice)"
         }
     }
 }

@@ -95,9 +95,9 @@ extension DetailEstate {
     /// 월세 표시용 문자열
     var rentDisplayText: String {
         if monthlyRent == 0 {
-            return "전세 \(deposit.formattedPrice)"
+            return "\(deposit.formattedPrice)"
         } else {
-            return "월세 \(deposit.formattedPrice)/\(monthlyRent.formattedPrice)"
+            return "\(deposit.formattedPrice)/\(monthlyRent.formattedPrice)"
         }
     }
     

@@ -194,16 +194,8 @@ class EstateMapViewModel: ViewModelable {
     private func passesMonthlyPriceFilter(_ estate: EstateGeoLocationDataResponse) -> Bool {
         guard let priceFilter = currentFilterValues.priceMonth else { return true }
         
-        let monthlyPrice = Float(estate.monthly_rent)
-        // 다양한 단위 시나리오를 고려한 변환
-        let monthlyPriceManWon: Float
-        if monthlyPrice >= 100000 {
-            // 10만 이상이면 원 단위로 가정 (10만원 = 10 만원)
-            monthlyPriceManWon = monthlyPrice / 10000
-        } else {
-            // 그 이하면 이미 만원 단위로 가정
-            monthlyPriceManWon = monthlyPrice
-        }
+        // 서버에서 1원 단위로 전송되므로 만원 단위로 변환
+        let monthlyPriceManWon = Float(estate.monthly_rent) / 10000
         
         // 최대값(200만원)을 선택했을 때는 그보다 큰 값도 포함
         if priceFilter.1 >= 200 {
@@ -216,16 +208,8 @@ class EstateMapViewModel: ViewModelable {
     private func passesDepositFilter(_ estate: EstateGeoLocationDataResponse) -> Bool {
         guard let depositFilter = currentFilterValues.price else { return true }
         
-        let deposit = Float(estate.deposit)
-        // 다양한 단위 시나리오를 고려한 변환
-        let depositManWon: Float
-        if deposit >= 1000000 {
-            // 100만 이상이면 원 단위로 가정 (100만원 = 100 만원)
-            depositManWon = deposit / 10000
-        } else {
-            // 그 이하면 이미 만원 단위로 가정
-            depositManWon = deposit
-        }
+        // 서버에서 1원 단위로 전송되므로 만원 단위로 변환
+        let depositManWon = Float(estate.deposit) / 10000
         
         // 최대값(1억 = 10000만원)을 선택했을 때는 그보다 큰 값(예: 5억)도 포함
         if depositFilter.1 >= 10000 {
