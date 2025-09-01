@@ -6,15 +6,15 @@
 //
 
 enum TextFieldCase {
-    /// - 잘못된 이메일 형식
+    /// - 이메일 형식이 올바르지 않을 때
     case invalidEmailFormat
-    /// - 비밀번호 형식에 맞지 않음
+    /// - 비밀번호가 보안 요구사항을 충족하지 않을 때
     case weakPassword
-    /// - 빈 필드 값
+    /// - 필수 입력 필드가 비어있을 때
     case emptyRequiredField(String)
-    /// - 잘못된 전화번호 형식
+    /// - 전화번호 형식이 올바르지 않을 때
     case invalidPhoneNumber
-    /// - 닉네임 필드가 비어있음
+    /// - 닉네임이 입력되지 않았을 때
     case emptyNickname
 }
 

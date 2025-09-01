@@ -96,7 +96,8 @@ class EstateMapViewModel: ViewModelable {
                         response.data
                     }
                     .catch { error -> Observable<[EstateGeoLocationDataResponse]> in
-                        errorRelay.onNext(SHError.from(error))
+                        let estateError = SHError.estateError(.geoLocationFailed)
+                        errorRelay.onNext(estateError)
                         return Observable.just([])
                     }
             }
@@ -126,10 +127,8 @@ class EstateMapViewModel: ViewModelable {
                 return self.locationService.getCurrentLocation()
                     .catch { error -> Observable<(latitude: Double, longitude: Double)> in
                         print("❌ Location error: \(error)")
-                        //TODO: Location Error Type 추가하기
-//                        let shError = SHError.customError(error.localizedDescription)
-                        let shError = SHError.from(error)
-                        errorRelay.onNext(shError)
+                        let locationError = SHError.estateError(.invalidLocation)
+                        errorRelay.onNext(locationError)
                         return Observable.empty()
                     }
             }

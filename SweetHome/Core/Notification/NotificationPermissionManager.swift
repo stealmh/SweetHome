@@ -18,7 +18,10 @@ final class NotificationPermissionManager {
             let granted = try await UNUserNotificationCenter.current()
                 .requestAuthorization(options: [.alert, .badge, .sound])
             
-            guard granted else { return false }
+            guard granted else { 
+                print("알림 권한이 거부되었습니다")
+                return false 
+            }
             
             await MainActor.run {
                 UIApplication.shared.registerForRemoteNotifications()

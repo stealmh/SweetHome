@@ -40,6 +40,7 @@ class ChatSocketManager {
 extension ChatSocketManager {
     private func setupSocketManager(with accessToken: String) {
         guard let url = URL(string: baseURL) else {
+            errorSubject.onNext(SHError.socketError(.connectionFailed).message)
             connectionStatusSubject.onNext(.error("Invalid server URL: \(baseURL)"))
             return
         }
@@ -154,16 +155,29 @@ extension ChatSocketManager {
             let response = try decoder.decode(LastChatResponse.self, from: updatedJsonData)
             messageReceivedSubject.onNext(response)
         } catch {
-            errorSubject.onNext("Failed to parse chat message: \(error.localizedDescription)")
+            errorSubject.onNext(SHError.socketError(.messageDecodingFailed).message)
         }
     }
     
     private func handleSocketError(_ errorMessage: String, roomId: String) {
+        let socketError = determineSocketError(errorMessage)
         connectionStatusSubject.onNext(.error(errorMessage))
-        errorSubject.onNext(errorMessage)
+        errorSubject.onNext(socketError.message)
         
         if isAuthenticationError(errorMessage) && !isRefreshingToken {
             handleTokenExpiration(roomId: roomId)
+        }
+    }
+    
+    private func determineSocketError(_ errorMessage: String) -> SHError {
+        if isAuthenticationError(errorMessage) {
+            return .socketError(.authenticationFailed)
+        } else if errorMessage.lowercased().contains("connection") {
+            return .socketError(.connectionFailed)
+        } else if errorMessage.lowercased().contains("room") {
+            return .socketError(.roomJoinFailed(errorMessage))
+        } else {
+            return .socketError(.serverUnavailable)
         }
     }
     
@@ -216,7 +230,8 @@ extension ChatSocketManager {
             completion(.doNotRetryWithError(tokenError))
         }
         
-        connectionStatusSubject.onNext(.error("Token refresh failed. Please login again."))
+        let authError = SHError.socketError(.authenticationFailed)
+        connectionStatusSubject.onNext(.error(authError.message))
         pendingReconnections.removeAll()
     }
     

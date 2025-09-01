@@ -31,7 +31,7 @@ final class BadgeCountManager {
                     }
                 }
             }, onError: { error in
-                print("배지 카운트 계산 실패: \(error)")
+                print("배지 카운트 계산 실패: \(SHError.notificationError(.badgeUpdateFailed).message)")
             })
             .disposed(by: disposeBag)
     }
