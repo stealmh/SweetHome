@@ -17,6 +17,10 @@ class HomeCollectionViewDataSource {
         setupDataSource(collectionView: collectionView)
     }
     
+    deinit {
+        print("HomeCollectionViewDataSource deinit")
+    }
+    
     private func setupDataSource(collectionView: UICollectionView) {
         dataSource = UICollectionViewDiffableDataSource<HomeViewController.Section, HomeViewController.Item>(
             collectionView: collectionView
@@ -81,13 +85,13 @@ class HomeCollectionViewDataSource {
                 if delegate.isRecentEstatesEmpty() {
                     header.configure(title: "최근 검색 매물", hideViewAll: true)
                 } else {
-                    header.configure(title: "최근 검색 매물") {
-                        delegate.viewAllTapped()
+                    header.configure(title: "최근 검색 매물") { [weak delegate] in
+                        delegate?.viewAllTapped()
                     }
                 }
             case .hotEstate:
-                header.configure(title: "HOT 매물") {
-                    delegate.hotEstateViewAllTapped()
+                header.configure(title: "HOT 매물") { [weak delegate] in
+                    delegate?.hotEstateViewAllTapped()
                 }
             case .topic:
                 header.configure(title: "오늘의 부동산 TOPIC", hideViewAll: true)

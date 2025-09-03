@@ -35,7 +35,7 @@ class EstateSectionHeaderView: UICollectionReusableView {
         super.init(frame: frame)
         setupUI()
         setupConstraints()
-        setupActions()
+        setupButtonAction()
     }
     
     required init?(coder: NSCoder) {
@@ -64,12 +64,13 @@ class EstateSectionHeaderView: UICollectionReusableView {
         }
     }
     
-    private func setupActions() {
-        viewAllButton.addTarget(self, action: #selector(viewAllButtonTapped), for: .touchUpInside)
+    // MARK: - Actions
+    private func setupButtonAction() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleViewAllTap))
+        viewAllButton.addGestureRecognizer(tapGesture)
     }
     
-    // MARK: - Actions
-    @objc private func viewAllButtonTapped() {
+    @objc private func handleViewAllTap() {
         onViewAllTapped?()
     }
     

@@ -81,7 +81,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        collectionView.delegate = self
+        setupCollectionViewDelegate()
         navigationController?.setNavigationBarHidden(true, animated: false)
     }
     
@@ -109,7 +109,6 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     
     override func setupUI() {
         view.addSubviews(collectionView, searchBar, pageControl)
-        pageControl.addTarget(self, action: #selector(pageControlValueChanged), for: .valueChanged)
     }
     
     override func setupConstraints() {
@@ -132,6 +131,10 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         }
     }
     
+    private func setupCollectionViewDelegate() {
+        collectionView.rx.setDelegate(self).disposed(by: disposeBag)
+    }
+    
     override func bind() {
         let input = HomeViewModel.Input(
             onAppear: .just(()),
@@ -146,10 +149,10 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
             .drive(onNext: { [weak self] isLoading in
                 guard let self else { return }
                 if isLoading {
-                    collectionView.isHidden = true
+                    self.collectionView.isHidden = true
                     self.showLoading()
                 } else {
-                    collectionView.isHidden = false
+                    self.collectionView.isHidden = false
                     self.hideLoading()
                 }
             })
@@ -176,7 +179,8 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
                 // 데이터가 있고 초기 레이아웃이 완료된 후에만 자동 스크롤 시작
                 if !self.infiniteArray.isEmpty && !estates.isEmpty && !self.isDataLoaded {
                     self.isDataLoaded = true
-                    DispatchQueue.main.async {
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self else { return }
                         // 초기 레이아웃이 완료된 후에만 스크롤 위치 이동
                         if self.isInitialLayoutSet {
                             self.currentAutoScrollIndex = 1
@@ -218,9 +222,28 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
                 self?.updateFullSnapshot()
             })
             .disposed(by: disposeBag)
+        
+        pageControl.rx.controlEvent(.valueChanged)
+            .subscribe(onNext: { [weak self] in
+                self?.pageControlValueChanged()
+            })
+            .disposed(by: disposeBag)
     }
     
-    private func moveToNextPage() {
+    deinit {
+        print("HomeViewController deinit")
+        // UICollectionView delegate 해제
+        collectionView.delegate = nil
+        
+        // LayoutManager와 DataSource delegate 해제
+        layoutManager?.delegate = nil
+        dataSourceManager = nil
+        layoutManager = nil
+    }
+}
+// MARK: - Private Method
+extension HomeViewController {
+    func moveToNextPage() {
         guard !infiniteArray.isEmpty else { return }
         
         currentAutoScrollIndex += 1
@@ -236,7 +259,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         )
     }
     
-    private func createInfiniteArray(_ items: [Estate]) -> [Estate] {
+    func createInfiniteArray(_ items: [Estate]) -> [Estate] {
         guard !items.isEmpty else { return [] }
         
         var infiniteArray: [Estate] = []
@@ -250,7 +273,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     }
     
     
-    @objc private func pageControlValueChanged() {
+    private func pageControlValueChanged() {
         userScrollingSubject.onNext(true)
         
         let targetPage = pageControl.currentPage
@@ -270,7 +293,7 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         }
     }
     
-    private func updatePageControlFromOrthogonal(currentPage: Int) {
+    func updatePageControlFromOrthogonal(currentPage: Int) {
         guard !estates.isEmpty else { return }
         
         let actualPage: Int
@@ -286,24 +309,22 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
         pageControl.currentPage = actualPage
     }
     
-    private func updateFullSnapshot() {
-        // 현재 스크롤 위치 저장
+    func updateFullSnapshot() {
+        /// - 현재 스크롤 위치 저장
         let currentOffset = collectionView.contentOffset
         
-        // 레이아웃 업데이트
+        /// - 레이아웃 업데이트
         collectionView.setCollectionViewLayout(layoutManager.createLayout(), animated: false)
         
-        // 스크롤 위치 복원 (초기 로드가 아닌 경우에만)
+        /// - 스크롤 위치 복원 (초기 로드가 아닌 경우에만)
         if isInitialLayoutSet {
             collectionView.contentOffset = currentOffset
         }
-        
-        // Banner items
+
         let bannerItems = infiniteArray.enumerated().map { index, estate in
             Item.estate(estate, uniqueID: "\(estate.id)_\(index)")
         }
-        
-        // Recent search estate items
+
         let recentItems: [Item]
         if recentEstates.isEmpty {
             recentItems = [.emptyRecentSearch]
@@ -313,18 +334,14 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
             }
         }
         
-        // Hot estate items
         let hotItems = hotEstates.enumerated().map { index, estate in
             Item.hotEstate(estate, uniqueID: "\(estate.id)_hot_\(index)")
         }
         
-        // Topic items
-        let topicItems = topics.map { topic in
-            Item.topic(topic)
-        }
+        let topicItems = topics.map { Item.topic($0) }
         
         dataSourceManager.updateSnapshot(
-            bannerItems: bannerItems, 
+            bannerItems: bannerItems,
             recentItems: recentItems,
             hotItems: hotItems,
             topicItems: topicItems
@@ -351,13 +368,15 @@ extension HomeViewController: HomeCollectionViewLayoutDelegate {
         self.currentAutoScrollIndex = currentPage
         
         if currentPage == 0 && !self.infiniteArray.isEmpty && abs(progress) < 0.1 {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
                 let targetIndex = self.infiniteArray.count - 2
                 self.currentAutoScrollIndex = targetIndex
                 self.collectionView.scrollToItem(at: IndexPath(item: targetIndex, section: 0), at: .left, animated: false)
             }
         } else if currentPage == self.infiniteArray.count - 1 && !self.infiniteArray.isEmpty && abs(progress) < 0.1 {
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
                 self.currentAutoScrollIndex = 1
                 self.collectionView.scrollToItem(at: IndexPath(item: 1, section: 0), at: .left, animated: false)
             }

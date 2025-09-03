@@ -15,8 +15,14 @@ class HomeCollectionViewLayout {
         self.delegate = delegate
     }
     
+    deinit {
+        print("HomeCollectionViewLayout deinit")
+    }
+    
     func createLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { sectionIndex, environment in
+        return UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
+            guard let self else { return NSCollectionLayoutSection(group: NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(0)), subitems: [])) }
+            
             switch HomeViewController.Section.allCases[sectionIndex] {
             case .banner:
                 return self.createBannerSection()
