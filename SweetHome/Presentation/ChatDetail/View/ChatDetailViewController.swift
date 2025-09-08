@@ -17,7 +17,7 @@ class ChatDetailViewController: BaseViewController {
     private let refreshControl = UIRefreshControl()
     private let selectedPhotosRelay = PublishSubject<[Data]>()
     
-    private let navigationBar = ChatDetailNavigationBar()
+    private let navigationBar = SHNavigationBar()
     
     private lazy var collectionView: UICollectionView = {
         let layout = layoutManager.createLayout()
@@ -145,7 +145,7 @@ class ChatDetailViewController: BaseViewController {
         output.otherUserName
             .compactMap { $0 }
             .drive(onNext: { [weak self] name in
-                self?.navigationBar.configure(name: name)
+                self?.navigationBar.configure(title: name)
             })
             .disposed(by: disposeBag)
         
