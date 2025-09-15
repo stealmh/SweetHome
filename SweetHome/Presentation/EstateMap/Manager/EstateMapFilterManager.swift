@@ -30,6 +30,9 @@ class EstateMapFilterManager: NSObject {
     /// - 필터 매니저 델리게이트
     weak var delegate: EstateMapFilterManagerDelegate?
     
+    deinit {
+    }
+    
     // MARK: - Public Methods
     
     /// - 필터 버튼들을 부모 뷰에 추가하고 제약조건 설정
@@ -179,8 +182,6 @@ private extension EstateMapFilterManager {
         areaRangeText = "전체"
         priceMonthRangeText = "전체"
         priceRangeText = "전체"
-        
-        print("📱 Filter buttons and sliders configured")
     }
     
     /// - 슬라이더 뷰 토글 (표시/숨김)

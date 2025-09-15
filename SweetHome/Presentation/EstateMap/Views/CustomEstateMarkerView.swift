@@ -75,33 +75,15 @@ class CustomEstateMarkerView: UIView {
     
     // MARK: - Configuration Methods
     func configure(with estate: EstateGeoLocationDataResponse) {
-        let priceText = formatEstatePrice(deposit: estate.deposit, monthlyRent: estate.monthly_rent)
+        let priceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
         priceLabel.text = priceText
         
         // 썸네일 이미지 로드 (기본 이미지로 fallback)
         if let thumbnailURL = estate.thumbnails.first, !thumbnailURL.isEmpty {
-            print("🖼️ 마커 이미지 로딩 시작: \(thumbnailURL)")
-            
             thumbnailView.setAuthenticatedImage(with: thumbnailURL) { [weak self] in
-                print("✅ 마커 이미지 로딩 콜백 호출")
-                print("🖼️ 썸네일뷰 이미지 확인: \(self?.thumbnailView.image != nil ? "이미지 있음" : "이미지 없음")")
-                
-                if let image = self?.thumbnailView.image {
-                    print("🖼️ 현재 설정된 이미지 크기: \(image.size)")
-                    // SF Symbol인지 확인
-                    if image.isSymbolImage {
-                        print("🔍 현재 이미지는 SF Symbol (기본 이미지)")
-                    } else {
-                        print("🔍 현재 이미지는 실제 로딩된 이미지")
-                    }
-                } else {
-                    print("❌ 썸네일뷰에 이미지가 설정되지 않음")
-                }
-                
                 self?.onImageLoaded?()
             }
         } else {
-            print("🏠 기본 이미지 사용 (썸네일 없음)")
             // 썸네일이 없는 경우 기본 이미지 설정
             thumbnailView.image = SHAsset.Default.defaultEstate
             thumbnailView.tintColor = SHColor.Brand.deepCream
@@ -112,26 +94,6 @@ class CustomEstateMarkerView: UIView {
         applyStyle()
     }
     
-    private func formatEstatePrice(deposit: Int, monthlyRent: Int) -> String {
-        let depositText: String
-        
-        // 보증금 포맷팅
-        if deposit >= 100000000 {  // 1억 이상
-            depositText = "\(deposit/100000000)억"
-        } else if deposit >= 10000 {  // 1만 이상
-            depositText = "\(deposit/10000)"
-        } else {
-            depositText = "\(deposit)"
-        }
-        
-        // 월세 포맷팅
-        if monthlyRent > 0 {
-            let monthlyText = monthlyRent >= 10000 ? "\(monthlyRent/10000)" : "\(monthlyRent)"
-            return "\(depositText)/\(monthlyText)"
-        } else {
-            return depositText
-        }
-    }
     
     private func applyStyle() {
         // 배경은 투명으로 설정 (draw에서 직접 그리기)

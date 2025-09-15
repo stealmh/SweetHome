@@ -17,7 +17,7 @@ class ChatDetailViewController: BaseViewController {
     private let refreshControl = UIRefreshControl()
     private let selectedPhotosRelay = PublishSubject<[Data]>()
     
-    private let navigationBar = ChatDetailNavigationBar()
+    private let navigationBar = SHNavigationBar()
     
     private lazy var collectionView: UICollectionView = {
         let layout = layoutManager.createLayout()
@@ -95,6 +95,17 @@ class ChatDetailViewController: BaseViewController {
         let sendMessageText = chatInputView.sendButton.rx.tap
             .withLatestFrom(chatInputView.messageTextView.rx.text.orEmpty)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .do(onNext: { _ in
+                self.chatInputView.clearText()
+                self.chatInputView.sendButton.isEnabled = false
+            })
+            .flatMapLatest { message -> Observable<String> in
+                return Observable.just(message)
+                    .delay(.milliseconds(100), scheduler: MainScheduler.instance)
+                    .do(onNext: { _ in
+                        self.chatInputView.sendButton.isEnabled = true
+                    })
+            }
             .share()
         
         let input = ChatDetailViewModel.Input(
@@ -118,11 +129,6 @@ class ChatDetailViewController: BaseViewController {
             .drive(refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
-        output.messageSent
-            .drive(onNext: { [weak self] _ in
-                self?.chatInputView.clearText()
-            })
-            .disposed(by: disposeBag)
         
         output.error
             .drive(onNext: { [weak self] error in
@@ -139,7 +145,7 @@ class ChatDetailViewController: BaseViewController {
         output.otherUserName
             .compactMap { $0 }
             .drive(onNext: { [weak self] name in
-                self?.navigationBar.configure(name: name)
+                self?.navigationBar.configure(title: name)
             })
             .disposed(by: disposeBag)
         

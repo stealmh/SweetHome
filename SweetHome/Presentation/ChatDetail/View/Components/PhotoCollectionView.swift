@@ -21,6 +21,8 @@ final class PhotoCollectionView: UIView {
     }()
     
     private var fileUrls: [String] = []
+    private var heightConstraint: Constraint!
+    private var widthConstraint: Constraint!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -36,10 +38,17 @@ final class PhotoCollectionView: UIView {
         collectionView.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
+    }
+    
+    override func didMoveToSuperview() {
+        super.didMoveToSuperview()
+        guard superview != nil else { return }
         
-        snp.makeConstraints {
-            $0.height.equalTo(0)
-            $0.width.equalTo(0)
+        if heightConstraint == nil || widthConstraint == nil {
+            snp.makeConstraints {
+                heightConstraint = $0.height.equalTo(0).constraint
+                widthConstraint = $0.width.equalTo(0).constraint
+            }
         }
     }
     
@@ -77,14 +86,25 @@ final class PhotoCollectionView: UIView {
             let columnCount = min(3, files.count)
             let width = columnCount * 64
             
-            snp.updateConstraints {
-                $0.height.equalTo(height)
-                $0.width.equalTo(width)
+            
+            if heightConstraint != nil && widthConstraint != nil {
+                heightConstraint.update(offset: height)
+                widthConstraint.update(offset: width)
+            } else {
+                snp.makeConstraints {
+                    heightConstraint = $0.height.equalTo(height).constraint
+                    widthConstraint = $0.width.equalTo(width).constraint
+                }
+            }
+            
+            DispatchQueue.main.async {
+                self.layoutIfNeeded()
+                self.superview?.layoutIfNeeded()
             }
         } else {
-            snp.updateConstraints {
-                $0.height.equalTo(0)
-                $0.width.equalTo(0)
+            if heightConstraint != nil && widthConstraint != nil {
+                heightConstraint.update(offset: 0)
+                widthConstraint.update(offset: 0)
             }
         }
     }
@@ -130,6 +150,6 @@ final class PhotoThumbnailCell: UICollectionViewCell {
     }
     
     func configure(with fileUrl: String) {
-        imageView.setAuthenticatedImage(with: fileUrl, defaultImageType: .profile)
+        imageView.setAuthenticatedImage(with: fileUrl, defaultImageType: .estate)
     }
 }

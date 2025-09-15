@@ -52,7 +52,7 @@ class LocationService: NSObject, LocationServiceProtocol {
     func getCurrentLocation() -> Observable<(latitude: Double, longitude: Double)> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(LocationError.serviceUnavailable)
+                observer.onError(SHError.locationError(.serviceUnavailable))
                 return Disposables.create()
             }
             
@@ -67,9 +67,9 @@ class LocationService: NSObject, LocationServiceProtocol {
                         case .authorizedWhenInUse, .authorizedAlways:
                             self.locationManager.requestLocation()
                         case .denied, .restricted:
-                            observer.onError(LocationError.permissionDenied)
+                            observer.onError(SHError.locationError(.permissionDenied))
                         default:
-                            observer.onError(LocationError.unknown)
+                            observer.onError(SHError.locationError(.unknown))
                         }
                     })
                 
@@ -124,7 +124,7 @@ class LocationService: NSObject, LocationServiceProtocol {
     func requestLocationPermission() -> Observable<CLAuthorizationStatus> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(LocationError.serviceUnavailable)
+                observer.onError(SHError.locationError(.serviceUnavailable))
                 return Disposables.create()
             }
             
@@ -172,7 +172,7 @@ extension LocationService: CLLocationManagerDelegate {
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("❌ Location manager failed with error: \(error)")
-        locationSubject.onError(LocationError.locationFailed(error))
+        locationSubject.onError(SHError.locationError(.locationFailed(error)))
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {

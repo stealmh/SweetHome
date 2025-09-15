@@ -1,5 +1,5 @@
 //
-//  ChatDetailNavigationBar.swift
+//  SHNavigationBar.swift
 //  SweetHome
 //
 //  Created by 김민호 on 8/25/25.
@@ -8,7 +8,7 @@
 import UIKit
 import SnapKit
 
-class ChatDetailNavigationBar: UIView {
+class SHNavigationBar: UIView {
     // MARK: - UI Components
     let backButton: UIButton = {
         let v = UIButton()
@@ -17,7 +17,7 @@ class ChatDetailNavigationBar: UIView {
         return v
     }()
     
-    private let userNameLabel: UILabel = {
+    private let titleLabel: UILabel = {
         let v = UILabel()
         v.setFont(.pretendard(.bold), size: .body1)
         v.textColor = SHColor.GrayScale.gray_100
@@ -37,9 +37,9 @@ class ChatDetailNavigationBar: UIView {
     }
 }
 
-private extension ChatDetailNavigationBar {
+private extension SHNavigationBar {
     func setupUI() {
-        addSubviews(userNameLabel, backButton)
+        addSubviews(titleLabel, backButton)
     }
     
     func setupConstraints() {
@@ -50,15 +50,15 @@ private extension ChatDetailNavigationBar {
             $0.bottom.equalToSuperview().inset(12)
         }
         
-        userNameLabel.snp.makeConstraints {
-            $0.top.equalTo(backButton)
+        titleLabel.snp.makeConstraints {
+            $0.top.centerY.equalTo(backButton)
             $0.centerX.equalToSuperview()
         }
     }
 }
 
-extension ChatDetailNavigationBar {
-    func configure(name: String) {
-        userNameLabel.text = name
+extension SHNavigationBar {
+    func configure(title: String) {
+        titleLabel.text = title
     }
 }

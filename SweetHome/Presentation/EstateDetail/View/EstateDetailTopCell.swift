@@ -104,7 +104,7 @@ class EstateDetailTopCell: UICollectionViewCell {
         agoLabel.text = item.daysAgoText
         locationLabel.text = "서울 영등포구 선유로 9길 30"
         locationRentTypeLabel.text = item.rentTypeText
-        locationRentLabel.text = item.deposit.formattedPrice
+        locationRentLabel.text = item.rentDisplayText
         locationFeeAreaLabel.text = "관리비 \(item.formattedMaintenanceFee) • \(item.locationAndAreaText)"
     }
 }

@@ -8,12 +8,14 @@
 import UIKit
 
 class MainTabBarController: UITabBarController {
+    private var currentActiveTab: TabType = .home
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupTabBar()
         setupTabBarAppearance()
         setupNotificationObservers()
+        setupInitialTab()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -26,58 +28,27 @@ class MainTabBarController: UITabBarController {
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
-    private func setupTabBar() {
-        /// - 홈
-        let homeVC = HomeViewController()
-        let homeNavController = UINavigationController(rootViewController: homeVC)
-        homeNavController.tabBarItem = UITabBarItem(
-            title: "홈",
-            image: SHAsset.TabBar.homeEmpty?.resized(to: 28),
-            selectedImage: SHAsset.TabBar.homeFill?.resized(to: 28)
-        )
-        
-        /// - 관심매물
-        let searchVC = HomeViewController()
-        let searchNavController = UINavigationController(rootViewController: searchVC)
-        searchNavController.tabBarItem = UITabBarItem(
-            title: "관심매물",
-            image: SHAsset.TabBar.interestEmpty?.resized(to: 28),
-            selectedImage: SHAsset.TabBar.interestFill?.resized(to: 28)
-        )
-        
-        /// - 채팅
-        let favoritesVC = ChatViewController()
-        let favoritesNavController = UINavigationController(rootViewController: favoritesVC)
-        favoritesNavController.tabBarItem = UITabBarItem(
-            title: "채팅",
-            image: UIImage(systemName: "message")?.resized(to: 28),
-            selectedImage: UIImage(systemName: "message.fill")?.resized(to: 28)
-        )
-        
-        //TODO: SettingVC 구현
-        /// - 세팅
-        let profileVC = HomeViewController()
-        let profileNavController = UINavigationController(rootViewController: profileVC)
-        profileNavController.tabBarItem = UITabBarItem(
-            title: "설정",
-            image: SHAsset.TabBar.settingEmpty?.resized(to: 28),
-            selectedImage: SHAsset.TabBar.settingFill?.resized(to: 28)
-        )
-        
-        viewControllers = [
-            homeNavController,
-            searchNavController,
-            favoritesNavController,
-            profileNavController
-        ]
-        
+}
+
+private extension MainTabBarController {
+    func setupTabBar() {
         tabBar.tintColor = SHColor.GrayScale.gray_100
-        
+    }
+    
+    func setupInitialTab() {
+        let initialControllers = [
+            createViewController(for: .home),
+            createPlaceholder(for: .interest),
+            createPlaceholder(for: .chat),
+            createPlaceholder(for: .setting)
+        ]
+        setViewControllers(initialControllers, animated: false)
+        selectedIndex = TabType.home.rawValue
+        delegate = self
     }
     
     /// - TabBar 폰트 설정
-    private func setupTabBarAppearance() {
+    func setupTabBarAppearance() {
         UITabBarItem.appearance().setTitleTextAttributes([
             .font: SHFont.pretendard(.medium).setSHFont(.caption1) ?? UIFont.systemFont(ofSize: 10)
         ], for: .normal)
@@ -87,8 +58,7 @@ class MainTabBarController: UITabBarController {
         ], for: .selected)
     }
     
-    // MARK: - Notification Setup
-    private func setupNotificationObservers() {
+    func setupNotificationObservers() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleNavigateToChat(_:)),
@@ -97,14 +67,46 @@ class MainTabBarController: UITabBarController {
         )
     }
     
-    @objc private func handleNavigateToChat(_ notification: Notification) {
+    func createViewController(for tabType: TabType) -> UIViewController {
+        let vc: UIViewController
+        
+        switch tabType {
+        case .home:
+            vc = HomeViewController()
+        case .interest:
+            vc = HomeViewController()
+        case .chat:
+            vc = ChatViewController()
+        case .setting:
+            vc = HomeViewController()
+        }
+        
+        let navController = UINavigationController(rootViewController: vc)
+        navController.tabBarItem = UITabBarItem(
+            title: tabType.title,
+            image: tabType.image,
+            selectedImage: tabType.selectedImage
+        )
+        
+        return navController
+    }
+    
+    func createPlaceholder(for tabType: TabType) -> UIViewController {
+        let placeholder = UIViewController()
+        placeholder.tabBarItem = UITabBarItem(
+            title: tabType.title,
+            image: tabType.image,
+            selectedImage: tabType.selectedImage
+        )
+        return placeholder
+    }
+    
+    @objc func handleNavigateToChat(_ notification: Notification) {
         guard let userInfo = notification.userInfo,
               let roomId = userInfo["roomId"] as? String else { return }
         
-        // 채팅 탭으로 이동 (인덱스 2)
-        selectedIndex = 2
+        selectedIndex = TabType.chat.rawValue
         
-        // 채팅 상세 화면으로 이동
         if let navController = selectedViewController as? UINavigationController,
            let chatViewController = navController.topViewController as? ChatViewController {
             
@@ -115,3 +117,28 @@ class MainTabBarController: UITabBarController {
         }
     }
 }
+
+
+// MARK: - UITabBarControllerDelegate
+extension MainTabBarController: UITabBarControllerDelegate {
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        guard let selectedTab = TabType(rawValue: tabBarController.selectedIndex) else { return }
+        
+        if selectedTab != currentActiveTab {
+            var newControllers: [UIViewController] = []
+            
+            for tabType in TabType.allCases {
+                if tabType == selectedTab {
+                    newControllers.append(createViewController(for: tabType))
+                } else {
+                    newControllers.append(createPlaceholder(for: tabType))
+                }
+            }
+            
+            setViewControllers(newControllers, animated: false)
+            self.selectedIndex = selectedTab.rawValue
+            currentActiveTab = selectedTab
+        }
+    }
+}
+

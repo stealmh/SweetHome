@@ -74,12 +74,32 @@ class EstateMapViewController: BaseViewController {
         
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        
+        // 먼저 모든 Subject들 완료 처리하여 새로운 이벤트 방지
+        mapPositionChangedRelay.onCompleted()
+        estateTypeChangedRelay.onCompleted() 
+        estateSelectedRelay.onCompleted()
+        floatButtonTappedRelay.onCompleted()
+        filterChangedRelay.onCompleted()
+        
         mapManager.viewWillDisappear()
+        tabBarController?.tabBar.isHidden = false
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        
+        // Delegate 해제
+        mapManager.delegate = nil
+        filterManager.delegate = nil
+        bottomCollectionManager.delegate = nil
+        floatButton.onClick = nil
+        
+        // ViewModel 정리
+        viewModel.cleanup()
+        
         mapManager.viewDidDisappear()
+        mapManager.cleanup()
     }
     
     override func viewDidLayoutSubviews() {
@@ -89,12 +109,6 @@ class EstateMapViewController: BaseViewController {
         // Float Button이 맨 앞에 있도록 보장
         view.bringSubviewToFront(floatButton)
         
-        // 디버깅: Float Button 상태 확인
-        DispatchQueue.main.async {
-            print("🎯 Layout - Float Button frame: \(self.floatButton.frame)")
-            print("🎯 Layout - Float Button bounds: \(self.floatButton.bounds)")
-            print("🎯 Layout - Float Button superview: \(String(describing: self.floatButton.superview))")
-        }
     }
     
     override func setupUI() {
@@ -142,28 +156,29 @@ class EstateMapViewController: BaseViewController {
             estateTypeChanged: estateTypeChangedRelay.asObservable(),
             estateSelected: estateSelectedRelay.asObservable(),
             floatButtonTapped: floatButtonTappedRelay.asObservable(),
-            filterChanged: filterChangedRelay.asObservable()
+            filterChanged: filterChangedRelay.asObservable(),
+            loadAllEstates: .just(()).asObservable() // 앱 시작 시 즉시 전체 데이터 로드
         )
         
         let output = viewModel.transform(input: input)
         
         output.isLoading
             .drive(onNext: { isLoading in
-                print("🔄 Loading: \(isLoading)")
                 // TODO: 로딩 UI 업데이트
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.estates
             .drive(onNext: { [weak self] estates in
-                print("🏠 Received \(estates.count) estates")
-                self?.mapManager.updateEstateMarkers(with: estates)
+                // 전체 데이터가 로드되지 않은 경우에만 기존 방식 사용
+                if !(self?.mapManager.isAllEstatesLoaded ?? false) {
+                    // 임시로 기존 public 메서드명 사용 (나중에 internal로 변경)
+                    // self?.mapManager.updateEstateMarkersInternal(with: estates)
+                }
                 
                 // Update bottom collection view
                 guard let self = self, let estateType = self.estateType else { return }
                 let currentZoom = self.getCurrentZoomLevel()
-                print("📊 Updating bottom collection view with \(estates.count) estates (zoom: \(currentZoom))")
-                print("🔍 Current isShowingIndividualMarkers: \(self.isShowingIndividualMarkers)")
                 
                 // 매물 데이터를 항상 업데이트
                 if !estates.isEmpty {
@@ -174,47 +189,50 @@ class EstateMapViewController: BaseViewController {
                 let shouldShowCollection = !estates.isEmpty && (currentZoom >= 13 || self.isShowingIndividualMarkers)
                 
                 if shouldShowCollection {
-                    print("🏠 \(estates.count) estates found - showing collection view (zoom: \(currentZoom))")
                     self.bottomCollectionManager.showCollectionView()
                     self.updateFloatButtonPosition(collectionViewVisible: true)
-                    print("✅ Collection view should now be visible: \(!self.bottomCollectionView.isHidden)")
                 } else {
-                    print("🙈 Hiding collection view (zoom: \(currentZoom), markers: \(self.isShowingIndividualMarkers), estates: \(estates.count))")
                     self.bottomCollectionManager.hideCollectionView()
                     self.updateFloatButtonPosition(collectionViewVisible: false)
                 }
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.selectedEstate
             .drive(onNext: { [weak self] estate in
-                print("🏠 Estate selected via ViewModel: \(estate.estate_id)")
-                // TODO: Navigate to estate detail
+                let detailVC = EstateDetailViewController(estate.estate_id)
+                self?.navigationController?.pushViewController(detailVC, animated: true)
+
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.currentLocation
             .drive(onNext: { [weak self] location in
-                print("📍 Current location received in ViewController: \(location.latitude), \(location.longitude)")
                 // TODO: 현재 위치로 지도 이동 또는 다른 액션 수행
                 self?.handleCurrentLocation(latitude: location.latitude, longitude: location.longitude)
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
         
         output.error
             .drive(onNext: { error in
-                print("❌ Error: \(error)")
                 // TODO: 에러 처리 UI
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
+        
+        output.allEstatesLoaded
+            .drive(onNext: { [weak self] estates in
+                self?.mapManager.loadAllEstates(estates)
+            })
+            .disposed(by: disposeBag)
     }
     
     deinit {
-        mapManager.cleanup()
     }
 }
 // MARK: - Private Methods
 private extension EstateMapViewController {
+    
+
     
     /// - 매니저들 설정
     func setupManagers() {
@@ -232,7 +250,6 @@ private extension EstateMapViewController {
         bottomCollectionView.layer.shadowOpacity = 0.1
         bottomCollectionView.layer.shadowRadius = 4
         bottomCollectionView.isHidden = true // 초기에는 숨김
-        print("🔧 Bottom collection view setup completed")
     }
     
     /// - 현재 줌 레벨 가져오기
@@ -258,13 +275,10 @@ private extension EstateMapViewController {
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseInOut]) {
             self.view.layoutIfNeeded()
         }
-        
-        print("🎯 Float button position updated: \(collectionViewVisible ? "above collection" : "bottom right")")
     }
     
     /// - 현재 위치 처리
     private func handleCurrentLocation(latitude: Double, longitude: Double) {
-        print("📍 Handle current location: \(latitude), \(longitude)")
         
         // 지도를 현재 위치로 이동
         mapManager.moveToLocation(latitude: latitude, longitude: longitude)
@@ -280,30 +294,26 @@ private extension EstateMapViewController {
     
     /// - 위치 권한 확인 후 현재 위치로 이동
     private func checkLocationPermissionAndMoveToCurrentLocation() {
-        print("📍 Checking location permission for auto move to current location...")
         
         // LocationService에서 현재 권한 상태 확인
         let locationService = LocationService()
         let currentStatus = locationService.authorizationStatus
         
-        print("📍 Current location authorization status: \(currentStatus.rawValue)")
-        
         switch currentStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             // 권한이 허용되어 있으면 잠시 후 현재 위치 가져오기 (지도 완전 초기화 대기)
-            print("✅ Location permission granted - getting current location automatically")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.floatButtonTappedRelay.onNext(())
             }
             
         case .notDetermined:
-            print("❓ Location permission not determined - waiting for user action")
+            break
             
         case .denied, .restricted:
-            print("❌ Location permission denied or restricted")
+            break
             
         @unknown default:
-            print("❓ Unknown location permission status")
+            break
         }
     }
     
@@ -317,7 +327,6 @@ private extension EstateMapViewController {
     /// - 맵 컨테이너 설정
     func setupMapContainer() {
         guard let mapContainer = mapManager.setupMapContainer(in: view, below: mapSearchView) else {
-            print("❌ Failed to setup map container")
             return
         }
         
@@ -335,14 +344,12 @@ private extension EstateMapViewController {
 extension EstateMapViewController: EstateMapManagerDelegate {
     
     func mapDidFinishSetup() {
-        print("🎯 Map setup finished - ready to use")
         
         // 지도 설정 완료 후 위치 권한 확인하여 자동으로 현재 위치 표시
         checkLocationPermissionAndMoveToCurrentLocation()
     }
     
     func mapDidFailSetup(error: String) {
-        print("❌ Map setup failed: \(error)")
         /// - 맵 설정 실패 시 사용자에게 알림 또는 재시도 로직 구현
     }
     
@@ -351,32 +358,26 @@ extension EstateMapViewController: EstateMapManagerDelegate {
     }
     
     func estateMarkerTapped(estateId: String) {
-        print("🏠 Estate marker tapped: \(estateId)")
-        // 매물 상세 화면으로 이동하는 로직 구현
+        let detailVC = EstateDetailViewController(estateId)
+        navigationController?.pushViewController(detailVC, animated: true)
     }
     
     func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [EstateGeoLocationDataResponse]) {
-        print("📍 Marker cluster tapped: \(markerCount) markers")
         
         // 클러스터 탭 시 해당 매물들로 컬렉션뷰 표시
         guard let estateType = self.estateType else { return }
-        
-        print("🏢 Showing collection view for cluster with \(estates.count) estates")
         bottomCollectionManager.updateEstates(estates, estateType: estateType)
         bottomCollectionManager.showCollectionView()
         updateFloatButtonPosition(collectionViewVisible: true)
     }
     
     func individualMarkersDisplayStateChanged(isDisplaying: Bool) {
-        print("🔄 Individual markers display state changed: \(isDisplaying)")
         isShowingIndividualMarkers = isDisplaying
         
         // 상태 변경 시 컬렉션뷰 표시 여부 재평가
         // 현재 매물 데이터가 있다면 컬렉션뷰 상태를 업데이트
         if isDisplaying {
-            print("✅ Individual markers now showing - collection view will be available")
         } else {
-            print("🚫 Only cluster markers showing - hiding collection view")
             bottomCollectionManager.hideCollectionView()
             updateFloatButtonPosition(collectionViewVisible: false)
         }
@@ -387,16 +388,11 @@ extension EstateMapViewController: EstateMapManagerDelegate {
 extension EstateMapViewController: EstateMapFilterManagerDelegate {
     
     func filterDidToggle(isActive: Bool) {
-        print("🔄 Filter toggled - active: \(isActive)")
         /// - 필터 활성화/비활성화에 따른 추가 로직 구현
     }
     
     func filterValueDidChange() {
         let currentValues = filterManager.getCurrentFilterValues()
-        print("📊 Filter values changed:")
-        print("  - Area: \(String(describing: currentValues.area))")
-        print("  - Monthly Price: \(String(describing: currentValues.priceMonth))")
-        print("  - Deposit: \(String(describing: currentValues.price))")
         
         /// - 필터 값 변경을 ViewModel에 전달하여 필터링된 매물 표시
         filterChangedRelay.onNext(currentValues)
@@ -407,7 +403,6 @@ extension EstateMapViewController: EstateMapFilterManagerDelegate {
 extension EstateMapViewController: EstateMapBottomCollectionManagerDelegate {
     
     func didSelectEstate(_ estate: EstateGeoLocationDataResponse) {
-        print("🏠 Estate selected from bottom list: \(estate.estate_id)")
         estateSelectedRelay.onNext(estate)
     }
 }

@@ -60,7 +60,7 @@ class EstateMapNavigationBar: UIView {
     private func setupUI() {
         addSubviews(locationIconImageView, locationLabel, backButton, menuButton)
         //TODO: Mock
-        locationLabel.text = "문래역, 영등포구"
+        locationLabel.text = "상계동, 노원구"
     }
     
     private func setupConstraints() {

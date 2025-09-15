@@ -110,10 +110,9 @@ class EstateMapBottomCell: UICollectionViewCell {
         estateThumbnailView.setAuthenticatedImage(with: item.thumbnails.first)
         estateCateogryTagView.configure(text: item.category, backgroundColor: SHColor.Brand.brightWood, textColor: .white)
         estateNameLabel.text = item.title
-        // 가격 포맷팅 적용
-        let formattedDeposit = item.deposit.formattedPrice
-        let formattedMonthlyRent = item.monthly_rent.formattedPrice
-        estatePriceInfoLabel.text = "\(type.rawValue) \(formattedDeposit)/\(formattedMonthlyRent)"
+        // 개별 가격 포맷팅 후 조합
+        let priceText = item.monthly_rent > 0 ? "\(item.deposit.formattedPrice)/\(item.monthly_rent.formattedPrice)" : item.deposit.formattedPrice
+        estatePriceInfoLabel.text = "\(type.rawValue) \(priceText)"
         
         estateAreaFloorLabel.text = "\(item.area)m² • \(item.floors)층"
         //TODO: 경도, 위도를 통한 도로명 주소 반환

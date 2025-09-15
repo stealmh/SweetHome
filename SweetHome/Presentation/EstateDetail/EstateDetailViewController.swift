@@ -9,6 +9,8 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import iamport_ios
+import WebKit
 
 class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, EstateDetailCollectionViewLayoutDelegate {
     private let estateID: String
@@ -83,6 +85,13 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         return pc
     }()
     
+    lazy var wkWebView: WKWebView = {
+        var view  = WKWebView()
+        view.backgroundColor = UIColor.clear
+        view.isHidden = true
+        return view
+    }()
+    
     /// - 현재 이미지 인덱스 표시 태그
     private let imageCountTagView = ImageCountTagView()
     
@@ -100,7 +109,9 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     private let brokerChatButtonTappedSubject = PublishSubject<Void>()
     /// - Similar Cell Actions
     private let similarCellTappedSubject = PublishSubject<Estate>()
-
+    /// - Iamport Response
+    private let iamportResponseSubject = PublishSubject<PaymentIamportResponse>()
+    
     
     init(_ id: String) {
         self.estateID = id
@@ -125,7 +136,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     
     override func setupUI() {
         super.setupUI()
-        view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView, bottomView)
+        view.addSubviews(collectionView, detailNavigationBar, pageControl, imageCountTagView, bottomView, wkWebView)
         pageControl.addTarget(self, action: #selector(pageControlValueChanged), for: .valueChanged)
         collectionView.delegate = self
         setupScrollObserver()
@@ -159,6 +170,10 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
             $0.trailing.equalToSuperview().inset(16)
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(56 + 250 - 40) // NavigationBar + 배너 하단 - 40
         }
+        
+        wkWebView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
     }
     
     // MARK: - ViewModel Binding
@@ -173,7 +188,8 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
             reservationButtonTapped: bottomView.reservationButton.rx.tap.asObservable(),
             brokerCallButtonTapped: brokerCallButtonTappedSubject.asObservable(),
             brokerChatButtonTapped: brokerChatButtonTappedSubject.asObservable(),
-            similarCellTapped: similarCellTappedSubject.asObservable()
+            similarCellTapped: similarCellTappedSubject.asObservable(),
+            iamportResponse: iamportResponseSubject.asObservable()
         )
         
         let output = viewModel.transform(input: input)
@@ -194,6 +210,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 guard let detail else { return }
                 self?.detailNavigationBar.configure(detail)
                 self?.bottomView.configure(detail.isLiked)
+                self?.bottomView.configureReservationStatus(detail.isReserved)
                 self?.setupBannerSectionItem(detail.thumbnails, likeCount: detail.likeCount)
                 self?.setupTopInfoSection(detail)
                 self?.setupOptionsSection(detail.options, parkingCount: detail.parkingCount)
@@ -202,7 +219,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.isInitialLoad = false
             })
             .disposed(by: disposeBag)
-            
+        
         /// - 좋아요 상태 변경만 처리
         output.estateDetail
             .filter { _ in !self.isInitialLoad }
@@ -212,14 +229,14 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
                 self?.bottomView.configure(detail.isLiked)
             })
             .disposed(by: disposeBag)
-            
+        
         /// - 유사한 매물 정보 처리
         output.similarEstates
             .drive(onNext: { [weak self] estates in
                 self?.setupSimilarSection(estates)
             })
             .disposed(by: disposeBag)
-            
+        
         /// - 이미지 개수 정보 처리
         output.thumbnailsCount
             .drive(onNext: { [weak self] count in
@@ -235,9 +252,8 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         
         /// - 예약하기 버튼 눌렀을 때
         output.reservationButtonTappedResult
-            .drive(onNext: { [weak self] _ in
-                // TODO: 예약하기 화면으로 이동
-                print("예약하기 화면 이동")
+            .drive(onNext: { [weak self] response, estateName in
+                self?.handleReservationButtonTapped(orderResponse: response, estateName: estateName)
             })
             .disposed(by: disposeBag)
         
@@ -260,8 +276,25 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         /// - 유사한 매물 셀 눌렀을 때
         output.similarCellTappedResult
             .drive(onNext: { [weak self] estate in
-                // TODO: 유사한 매물 상세 화면으로 이동
-                print("유사한 매물 상세 화면 이동: \(estate.title)")
+                let detailVC = EstateDetailViewController(estate.id)
+                self?.navigationController?.pushViewController(detailVC, animated: true)
+                
+            })
+            .disposed(by: disposeBag)
+        
+        /// - 결제 검증 성공 처리
+        output.paymentResult
+            .compactMap { $0 }
+            .drive(onNext: { [weak self] paymentResult in
+                self?.handlePaymentSuccess(paymentResult)
+            })
+            .disposed(by: disposeBag)
+        
+        /// - 결제 에러 처리
+        output.paymentError
+            .compactMap { $0 }
+            .drive(onNext: { [weak self] error in
+                self?.handlePaymentFailure(error)
             })
             .disposed(by: disposeBag)
         
@@ -274,8 +307,79 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     }
 }
 
+// MARK: - Payment Handling
 extension EstateDetailViewController {
-    private func setupBannerSectionItem(_ images: [String], likeCount: Int = 0) {
+    
+    /// 예약하기 버튼 탭 처리
+    private func handleReservationButtonTapped(orderResponse: OrderResponse, estateName: String) {
+        showPaymentWebView(for: orderResponse, estateName: estateName)
+    }
+    
+    /// 결제 WebView 표시
+    private func showPaymentWebView(for orderResponse: OrderResponse, estateName: String) {
+        wkWebView.isHidden = false
+        let payment = createPaymentData(with: orderResponse, estateName)
+        
+        Iamport.shared.paymentWebView(
+            webViewMode: wkWebView,
+            userCode: "imp14511373",
+            payment: payment
+        ) { [weak self] iamportResponse in
+            self?.processIamportResponse(iamportResponse)
+        }
+    }
+    
+    /// Iamport 응답 처리
+    private func processIamportResponse(_ response: IamportResponse?) {
+        let paymentResponse = PaymentIamportResponse(
+            success: response?.success,
+            imp_uid: response?.imp_uid,
+            merchant_uid: response?.merchant_uid,
+            error_msg: response?.error_msg,
+            error_code: response?.error_code
+        )
+        iamportResponseSubject.onNext(paymentResponse)
+    }
+    
+    /// 결제 성공 처리
+    private func handlePaymentSuccess(_ paymentResult: PaymentValidationResponse) {
+        hidePaymentWebView()
+        bottomView.configureReservationStatus(true)
+        print("✅ 결제 검증 완료: \(paymentResult.payment_id)")
+        // TODO: 결제 완료 UI 처리 (예: 성공 알림, 화면 전환 등)
+    }
+    
+    /// 결제 실패 처리
+    private func handlePaymentFailure(_ error: SHError) {
+        hidePaymentWebView()
+        showAlert(for: error)
+    }
+    
+    /// 결제 WebView 숨김
+    private func hidePaymentWebView() {
+        wkWebView.isHidden = true
+    }
+    
+    /// 결제 데이터 생성
+    private func createPaymentData(with orderResponse: OrderResponse, _ estateName: String) -> IamportPayment {
+        let userCode = "imp14511373"
+        return IamportPayment(
+            pg: PG.html5_inicis.makePgRawName(pgId: "INIpayTest"),
+            merchant_uid: orderResponse.order_code,
+            amount: "\(orderResponse.total_price)"
+        ).then {
+            $0.pay_method = PayMethod.card.rawValue
+            $0.name = estateName
+            $0.buyer_name = "김민호"
+            $0.app_scheme = "sesac"
+        }
+    }
+}
+
+// MARK: - Data Setup
+private extension EstateDetailViewController {
+    /// - 배너 섹션 아이템 설정
+    func setupBannerSectionItem(_ images: [String], likeCount: Int = 0) {
         /// - PageControl 설정 (ViewModel에서 개수 관리)
         self.pageControl.numberOfPages = images.count
         self.pageControl.currentPage = 0
@@ -289,31 +393,40 @@ extension EstateDetailViewController {
         dataSourceManager.updateSnapshot(bannerItems: bannerItems, likeCount: likeCount)
     }
     
-    private func setupTopInfoSection(_ detail: DetailEstate) {
+    /// - 상단 정보 섹션 설정
+    func setupTopInfoSection(_ detail: DetailEstate) {
         let topInfoItem = Item.topInfo(detail)
         dataSourceManager.updateTopInfoSnapshot(topInfoItem: topInfoItem)
     }
     
-    private func setupOptionsSection(_ options: EstateOptions, parkingCount: Int) {
+    /// - 옵션 섹션 설정
+    func setupOptionsSection(_ options: EstateOptions, parkingCount: Int) {
         let optionsItem = Item.options(options)
         dataSourceManager.updateOptionsSnapshot(optionsItem: optionsItem, parkingCount: parkingCount)
     }
     
-    private func setupDescriptionSection(_ description: String) {
+    /// - 설명 섹션 설정
+    func setupDescriptionSection(_ description: String) {
         let descriptionItem = Item.description(description)
         dataSourceManager.updateDescriptionSnapshot(descriptionItem: descriptionItem)
     }
     
-    private func setupBrokerSection(_ detail: DetailEstate) {
+    /// - 중개사 섹션 설정
+    func setupBrokerSection(_ detail: DetailEstate) {
         let brokerItem = Item.broker(detail)
         dataSourceManager.updateBrokerSnapshot(brokerItem: brokerItem)
     }
     
-    private func setupSimilarSection(_ estates: [Estate]) {
+    /// - 유사한 매물 섹션 설정
+    func setupSimilarSection(_ estates: [Estate]) {
         let similarItems = estates.map { Item.similarEstate($0) }
         dataSourceManager.updateSimilarSnapshot(similarItems: similarItems)
     }
-    
+}
+
+// MARK: - User Interactions
+extension EstateDetailViewController {
+    /// PageControl 값 변경 처리
     @objc private func pageControlValueChanged() {
         /// - PageControl 탭 시 해당 이미지로 스크롤
         let targetPage = pageControl.currentPage

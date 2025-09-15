@@ -32,7 +32,6 @@ class EstateTypeButton: UIView {
         return v
     }()
     
-    private var tapGesture: UITapGestureRecognizer!
     var onTapped: (() -> Void)?
     
     init(type: BannerEstateType) {
@@ -73,12 +72,14 @@ class EstateTypeButton: UIView {
     }
     
     private func setupTapGesture() {
-        tapGesture = UITapGestureRecognizer(target: self, action: #selector(viewTapped))
-        addGestureRecognizer(tapGesture)
         isUserInteractionEnabled = true
+        
+        let tapGesture = UITapGestureRecognizer()
+        tapGesture.addTarget(self, action: #selector(handleTap))
+        addGestureRecognizer(tapGesture)
     }
     
-    @objc private func viewTapped() {
+    @objc private func handleTap() {
         onTapped?()
     }
 }

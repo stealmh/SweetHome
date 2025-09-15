@@ -15,8 +15,14 @@ class HomeCollectionViewLayout {
         self.delegate = delegate
     }
     
+    deinit {
+        print("HomeCollectionViewLayout deinit")
+    }
+    
     func createLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { sectionIndex, environment in
+        return UICollectionViewCompositionalLayout { [weak self] sectionIndex, environment in
+            guard let self else { return NSCollectionLayoutSection(group: NSCollectionLayoutGroup.horizontal(layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(0)), subitems: [])) }
+            
             switch HomeViewController.Section.allCases[sectionIndex] {
             case .banner:
                 return self.createBannerSection()
@@ -78,13 +84,13 @@ class HomeCollectionViewLayout {
     
     private func createNormalRecentSearchSection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(190),
+            widthDimension: .absolute(220),
             heightDimension: .absolute(88)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
         let groupSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(190),
+            widthDimension: .absolute(220),
             heightDimension: .absolute(88)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])

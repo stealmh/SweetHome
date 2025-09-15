@@ -11,7 +11,7 @@ import RxCocoa
 import CoreLocation
 
 class EstateMapViewModel: ViewModelable {
-    let disposeBag = DisposeBag()
+    var disposeBag = DisposeBag()
     
     struct Input {
         let mapPositionChanged: Observable<(latitude: Double, longitude: Double, maxDistance: Int)>
@@ -19,6 +19,7 @@ class EstateMapViewModel: ViewModelable {
         let estateSelected: Observable<EstateGeoLocationDataResponse>
         let floatButtonTapped: Observable<Void>
         let filterChanged: Observable<(area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?)>
+        let loadAllEstates: Observable<Void> // 전체 데이터 로드 트리거
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
@@ -27,6 +28,7 @@ class EstateMapViewModel: ViewModelable {
         let selectedEstate: Driver<EstateGeoLocationDataResponse>
         let currentLocation: Driver<(latitude: Double, longitude: Double)>
         let error: Driver<SHError>
+        let allEstatesLoaded: Driver<[EstateGeoLocationDataResponse]> // 전체 데이터 로드 완료
     }
     
     // MARK: - Properties
@@ -42,16 +44,65 @@ class EstateMapViewModel: ViewModelable {
         self.locationService = locationService
     }
     
+    deinit {
+    }
+    
+    // MARK: - Cleanup
+    func cleanup() {
+        // 모든 진행 중인 Observable 체인 중단
+        disposeBag = DisposeBag()
+        
+        // 저장된 데이터 정리
+        allEstates.removeAll()
+        currentFilterValues = (nil, nil, nil)
+    }
+    
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
         let estatesRelay = BehaviorSubject<[EstateGeoLocationDataResponse]>(value: [])
         let selectedEstateRelay = PublishSubject<EstateGeoLocationDataResponse>()
         let currentLocationRelay = PublishSubject<(latitude: Double, longitude: Double)>()
         let errorRelay = PublishSubject<SHError>()
+        let allEstatesLoadedRelay = PublishSubject<[EstateGeoLocationDataResponse]>()
         
         input.estateTypeChanged
             .subscribe(onNext: { [weak self] estateType in
                 self?.currentEstateType = estateType
+            })
+            .disposed(by: disposeBag)
+        
+        // 전체 매물 데이터 로드 (한반도 전체 범위로 maxDistance 설정)
+        input.loadAllEstates
+            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+            .flatMapLatest { [weak self] _ -> Observable<[EstateGeoLocationDataResponse]> in
+                guard let self else {
+                    return Observable.error(SHError.commonError(.weakSelfFailure))
+                }
+                
+                // 한반도 중심 좌표 (대한민국 중심부)
+                let koreaCenter = (latitude: 36.5, longitude: 127.5)
+                let maxDistance = 500000 // 500km (한반도 전체 커버)
+                
+                let request = EstateGeoLocationRequest(
+                    category: self.currentEstateType.rawValue,
+                    longitude: String(koreaCenter.longitude),
+                    latitude: String(koreaCenter.latitude),
+                    maxDistance: maxDistance
+                )
+                
+                return self.apiClient
+                    .requestObservable(EstateEndpoint.geoLocation(parameter: request))
+                    .map { (response: EstateGeoLocationResponse) -> [EstateGeoLocationDataResponse] in
+                        response.data
+                    }
+            }
+            .subscribe(onNext: { [weak self] estates in
+                self?.allEstates = estates
+                allEstatesLoadedRelay.onNext(estates)
+                isLoadingRelay.onNext(false)
+            }, onError: { error in
+                errorRelay.onNext(SHError.networkError(.connectionFailed("fail")))
+                isLoadingRelay.onNext(false)
             })
             .disposed(by: disposeBag)
         
@@ -82,7 +133,8 @@ class EstateMapViewModel: ViewModelable {
                         response.data
                     }
                     .catch { error -> Observable<[EstateGeoLocationDataResponse]> in
-                        errorRelay.onNext(SHError.from(error))
+                        let estateError = SHError.estateError(.geoLocationFailed)
+                        errorRelay.onNext(estateError)
                         return Observable.just([])
                     }
             }
@@ -111,18 +163,14 @@ class EstateMapViewModel: ViewModelable {
                 
                 return self.locationService.getCurrentLocation()
                     .catch { error -> Observable<(latitude: Double, longitude: Double)> in
-                        print("❌ Location error: \(error)")
-                        //TODO: Location Error Type 추가하기
-//                        let shError = SHError.customError(error.localizedDescription)
-                        let shError = SHError.from(error)
-                        errorRelay.onNext(shError)
+                        let locationError = SHError.estateError(.invalidLocation)
+                        errorRelay.onNext(locationError)
                         return Observable.empty()
                     }
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(
                 onNext: { location in
-                    print("📍 Current location received: \(location.latitude), \(location.longitude)")
                     currentLocationRelay.onNext(location)
                 },
                 onError: { error in
@@ -137,7 +185,8 @@ class EstateMapViewModel: ViewModelable {
             estates: estatesRelay.asDriver(onErrorDriveWith: .empty()),
             selectedEstate: selectedEstateRelay.asDriver(onErrorDriveWith: .empty()),
             currentLocation: currentLocationRelay.asDriver(onErrorDriveWith: .empty()),
-            error: errorRelay.asDriver(onErrorDriveWith: .empty())
+            error: errorRelay.asDriver(onErrorDriveWith: .empty()),
+            allEstatesLoaded: allEstatesLoadedRelay.asDriver(onErrorDriveWith: .empty())
         )
     }
     
@@ -181,16 +230,8 @@ class EstateMapViewModel: ViewModelable {
     private func passesMonthlyPriceFilter(_ estate: EstateGeoLocationDataResponse) -> Bool {
         guard let priceFilter = currentFilterValues.priceMonth else { return true }
         
-        let monthlyPrice = Float(estate.monthly_rent)
-        // 다양한 단위 시나리오를 고려한 변환
-        let monthlyPriceManWon: Float
-        if monthlyPrice >= 100000 {
-            // 10만 이상이면 원 단위로 가정 (10만원 = 10 만원)
-            monthlyPriceManWon = monthlyPrice / 10000
-        } else {
-            // 그 이하면 이미 만원 단위로 가정
-            monthlyPriceManWon = monthlyPrice
-        }
+        // 서버에서 1원 단위로 전송되므로 만원 단위로 변환
+        let monthlyPriceManWon = Float(estate.monthly_rent) / 10000
         
         // 최대값(200만원)을 선택했을 때는 그보다 큰 값도 포함
         if priceFilter.1 >= 200 {
@@ -203,16 +244,8 @@ class EstateMapViewModel: ViewModelable {
     private func passesDepositFilter(_ estate: EstateGeoLocationDataResponse) -> Bool {
         guard let depositFilter = currentFilterValues.price else { return true }
         
-        let deposit = Float(estate.deposit)
-        // 다양한 단위 시나리오를 고려한 변환
-        let depositManWon: Float
-        if deposit >= 1000000 {
-            // 100만 이상이면 원 단위로 가정 (100만원 = 100 만원)
-            depositManWon = deposit / 10000
-        } else {
-            // 그 이하면 이미 만원 단위로 가정
-            depositManWon = deposit
-        }
+        // 서버에서 1원 단위로 전송되므로 만원 단위로 변환
+        let depositManWon = Float(estate.deposit) / 10000
         
         // 최대값(1억 = 10000만원)을 선택했을 때는 그보다 큰 값(예: 5억)도 포함
         if depositFilter.1 >= 10000 {

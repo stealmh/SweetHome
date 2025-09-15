@@ -19,6 +19,16 @@ enum SHError: Error {
     case clientError(ClientError)
     /// - 네트워크/서버를 통해 발생한 에러
     case networkError(NetworkError)
+    /// - 소켓/채팅 관련 에러
+    case socketError(SocketError)
+    /// - 매물/지도 관련 에러
+    case estateError(EstateError)
+    /// - CoreData 관련 에러
+    case coreDataError(CoreDataError)
+    /// - 알림 관련 에러
+    case notificationError(NotificationError)
+    /// - 위치 관련 에러
+    case locationError(LocationError)
     
     var message: String {
         switch self {
@@ -30,6 +40,21 @@ enum SHError: Error {
             
         case let .networkError(error):
             return error.message
+            
+        case let .socketError(error):
+            return error.message
+            
+        case let .estateError(error):
+            return error.message
+            
+        case let .coreDataError(error):
+            return error.message
+            
+        case let .notificationError(error):
+            return error.message
+            
+        case let .locationError(error):
+            return error.errorDescription ?? "위치 오류가 발생했습니다."
         }
     }
     
@@ -42,6 +67,16 @@ enum SHError: Error {
             return error.displayType
         case .networkError(let error):
             return error.displayType
+        case .socketError(let error):
+            return error.displayType
+        case .estateError(let error):
+            return error.displayType
+        case .coreDataError(let error):
+            return error.displayType
+        case .notificationError(let error):
+            return error.displayType
+        case .locationError(_):
+            return .toast
         }
     }
     

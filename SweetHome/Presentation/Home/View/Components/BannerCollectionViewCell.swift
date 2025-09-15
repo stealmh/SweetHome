@@ -32,7 +32,7 @@ class BannerCollectionViewCell: UICollectionViewCell {
     private let introductionLabel: UILabel = {
         let v = UILabel()
         v.font = SHFont.yeongdeok.setSHFont(.caption1)
-        v.textColor = SHColor.GrayScale.gray_60
+        v.textColor = SHColor.GrayScale.gray_15
         v.numberOfLines = 0
         return v
     }()

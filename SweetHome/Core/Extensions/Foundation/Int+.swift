@@ -17,27 +17,24 @@ extension Int {
         return formatter.string(from: NSNumber(value: self)) ?? "\(self)"
     }
     
-    /// 가격을 만원/억 단위로 포맷팅
-    /// - 만원 단위: 숫자만 표시 (예: 530000 → "53")
-    /// - 억 단위: 소수점 첫째자리까지 표시 (예: 130000000 → "1.3억")
+    /// 가격을 만원/억 단위로 포맷팅 (숫자만 or 억 단위)
+    /// - 1억 미만: 숫자만 표시 (예: 30000000 → "300")
+    /// - 1억 이상: 억 단위 표시 (예: 110000000 → "1.1억")
     var formattedPrice: String {
-        let manWonUnit = self / 10000  // 만원 단위로 변환
-        
-        if manWonUnit >= 10000 {
-            // 억 단위
-            let eokUnit = Double(manWonUnit) / 10000.0
+        if self >= 100_000_000 {
+            // 1억 이상: 억 단위 표시
+            let eokUnit = Double(self) / 100_000_000.0
             if eokUnit == floor(eokUnit) {
-                // 소수점이 없는 경우
                 return "\(Int(eokUnit))억"
             } else {
-                // 소수점 첫째자리까지 표시
                 return String(format: "%.1f억", eokUnit)
             }
         } else {
-            // 만원 단위
-            return "\(manWonUnit)"
+            // 1억 미만: 만원 단위 숫자만
+            return "\(self / 10_000)"
         }
     }
+    
     
     /// 가격을 전체 단위로 포맷팅 (만원/억 표시 포함)
     /// - 만원 단위: "53만" 형태로 표시

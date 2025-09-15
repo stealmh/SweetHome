@@ -85,23 +85,9 @@ final class OtherMessageFileCell: UICollectionViewCell {
             profileImageView.setAuthenticatedImage(with: message.sender.profileImageURL, defaultImageType: .profile)
             profileImageView.isHidden = false
             nameLabel.isHidden = false
-            
-            photoCollectionView.snp.remakeConstraints {
-                $0.top.equalTo(nameLabel.snp.bottom).offset(4)
-                $0.bottom.equalToSuperview().inset(4)
-                $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
-                $0.trailing.lessThanOrEqualToSuperview().inset(60)
-            }
         } else {
             profileImageView.isHidden = true
             nameLabel.isHidden = true
-            
-            photoCollectionView.snp.remakeConstraints {
-                $0.top.equalToSuperview().inset(4)
-                $0.bottom.equalToSuperview().inset(4)
-                $0.leading.equalToSuperview().inset(56)
-                $0.trailing.lessThanOrEqualToSuperview().inset(60)
-            }
         }
     }
 }

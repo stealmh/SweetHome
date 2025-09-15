@@ -35,6 +35,9 @@ class EstateMapBottomCollectionManager: NSObject {
         super.init()
     }
     
+    deinit {
+    }
+    
     // MARK: - Setup Methods
     func setupCollectionView(in parentView: UIView) -> UICollectionView {
         let layout = createCompositionalLayout()
@@ -103,35 +106,26 @@ class EstateMapBottomCollectionManager: NSObject {
         self.estates = estates
         self.currentEstateType = estateType
         
-        print("📋 Updating data source with \(estates.count) estates")
-        
         var snapshot = NSDiffableDataSourceSnapshot<Section, EstateGeoLocationDataResponse>()
         snapshot.appendSections([.main])
         snapshot.appendItems(estates, toSection: .main)
         
         DispatchQueue.main.async { [weak self] in
-            self?.dataSource.apply(snapshot, animatingDifferences: true) {
-                print("✅ Data source update completed")
-            }
+            self?.dataSource.apply(snapshot, animatingDifferences: true)
         }
     }
     
     func hideCollectionView() {
-        print("🙈 Hiding collection view")
         DispatchQueue.main.async { [weak self] in
             self?.collectionView.isHidden = true
         }
     }
     
     func showCollectionView() {
-        print("😎 Showing collection view")
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.collectionView.isHidden = false
             self.collectionView.superview?.bringSubviewToFront(self.collectionView)
-            print("✅ Collection view visibility: \(!self.collectionView.isHidden)")
-            print("📝 Collection view frame: \(self.collectionView.frame)")
-            print("📝 Collection view bounds: \(self.collectionView.bounds)")
         }
     }
 }

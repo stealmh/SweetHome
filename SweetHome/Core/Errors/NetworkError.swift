@@ -8,12 +8,19 @@
 import AuthenticationServices
 
 enum NetworkError {
+    /// - 네트워크 연결이 실패했을 때
     case connectionFailed(String)
+    /// - 서버에서 에러를 반환했을 때
     case serverError(statusCode: Int, message: String)
+    /// - JSON 디코딩이 실패했을 때
     case decodingError
+    /// - 액세스 토큰이 만료되었을 때
     case tokenExpired
+    /// - 리프레시 토큰이 만료되었을 때
     case refreshTokenExpired
+    /// - 알 수 없는 네트워크 에러가 발생했을 때
     case unknown(statusCode: Int?, message: String)
+    /// - Apple 로그인에서 에러가 발생했을 때
     case apple(ASAuthorizationError.Code)
 }
 

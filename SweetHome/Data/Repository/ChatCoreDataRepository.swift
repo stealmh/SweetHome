@@ -43,7 +43,7 @@ extension ChatCoreDataRepository {
     func saveChatRoom(_ chatRoom: ChatRoom) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -73,7 +73,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -85,7 +85,7 @@ extension ChatCoreDataRepository {
     func fetchChatRooms() -> Observable<[ChatRoom]> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -107,7 +107,7 @@ extension ChatCoreDataRepository {
                 observer.onNext(chatRooms)
                 observer.onCompleted()
             } catch {
-                observer.onError(error)
+                observer.onError(SHError.coreDataError(.fetchFailed("ChatRoom")))
             }
             
             return Disposables.create()
@@ -117,7 +117,7 @@ extension ChatCoreDataRepository {
     func updateChatRoomUnreadCount(roomId: String, count: Int) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -136,12 +136,12 @@ extension ChatCoreDataRepository {
                         }
                     } else {
                         DispatchQueue.main.async {
-                            observer.onError(NSError(domain: "ChatCoreDataRepository", code: -2, userInfo: [NSLocalizedDescriptionKey: "Chat room not found"]))
+                            observer.onError(SHError.coreDataError(.entityNotFound("ChatRoom")))
                         }
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -153,7 +153,7 @@ extension ChatCoreDataRepository {
     func deleteChatRoom(roomId: String) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -177,7 +177,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -191,7 +191,7 @@ extension ChatCoreDataRepository {
     func saveChatMessage(_ message: LastChat) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -224,7 +224,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -236,7 +236,7 @@ extension ChatCoreDataRepository {
     func saveChatMessages(_ messages: [LastChat]) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -270,7 +270,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -282,7 +282,7 @@ extension ChatCoreDataRepository {
     func fetchChatMessages(for roomId: String) -> Observable<[LastChat]> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -298,7 +298,7 @@ extension ChatCoreDataRepository {
                 observer.onNext(messages)
                 observer.onCompleted()
             } catch {
-                observer.onError(error)
+                observer.onError(SHError.coreDataError(.fetchFailed("ChatRoom")))
             }
             
             return Disposables.create()
@@ -308,7 +308,7 @@ extension ChatCoreDataRepository {
     func updateMessageReadStatus(chatId: String, isRead: Bool) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -332,7 +332,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -344,7 +344,7 @@ extension ChatCoreDataRepository {
     func deleteChatMessages(for roomId: String) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -366,7 +366,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -380,7 +380,7 @@ extension ChatCoreDataRepository {
     func incrementUnreadCount(for roomId: String) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -404,7 +404,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -422,7 +422,7 @@ extension ChatCoreDataRepository {
     func getLastMessageDate(for roomId: String) -> Observable<Date?> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -440,7 +440,7 @@ extension ChatCoreDataRepository {
                 }
                 observer.onCompleted()
             } catch {
-                observer.onError(error)
+                observer.onError(SHError.coreDataError(.fetchFailed("ChatRoom")))
             }
             
             return Disposables.create()
@@ -450,7 +450,7 @@ extension ChatCoreDataRepository {
     func markMessagesAsRead(for roomId: String, upTo lastReadChatId: String) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -482,7 +482,7 @@ extension ChatCoreDataRepository {
                     }
                 } catch {
                     DispatchQueue.main.async {
-                        observer.onError(error)
+                        observer.onError(SHError.coreDataError(.saveFailed("ChatRoom")))
                     }
                 }
             }
@@ -514,7 +514,7 @@ extension ChatCoreDataRepository {
     func fetchChatMessages(for roomId: String, limit: Int) -> Observable<[LastChat]> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             
@@ -531,7 +531,7 @@ extension ChatCoreDataRepository {
                 observer.onNext(Array(messages))
                 observer.onCompleted()
             } catch {
-                observer.onError(error)
+                observer.onError(SHError.coreDataError(.fetchFailed("ChatRoom")))
             }
             
             return Disposables.create()
@@ -542,7 +542,7 @@ extension ChatCoreDataRepository {
     func getLatestMessageForRoom(roomId: String) -> Observable<LastChat?> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
-                observer.onError(NSError(domain: "ChatCoreDataRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Repository deallocated"]))
+                observer.onError(SHError.coreDataError(.contextUnavailable))
                 return Disposables.create()
             }
             

@@ -7,6 +7,7 @@
 
 import UIKit
 import KakaoSDKAuth
+import iamport_ios
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -31,6 +32,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         if let url = URLContexts.first?.url {
+            Iamport.shared.receivedURL(url)
             if AuthApi.isKakaoTalkLoginUrl(url) {
                 _ = AuthController.handleOpenUrl(url: url)
             }

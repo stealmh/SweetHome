@@ -44,28 +44,31 @@ class HomeViewModel: ViewModelable {
         let topicsRelay = BehaviorSubject<[EstateTopic]>(value: [])
         let errorRelay = PublishSubject<SHError>()
         
-        let _ = input.onAppear
-            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+        input.onAppear
+            .take(1)
+            .do(onNext: { [weak isLoadingRelay] _ in isLoadingRelay?.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<Void> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
                 
                 let todayEstatesObservable = self.apiClient
                     .requestObservable(EstateEndpoint.todayEstates)
                     .map { (response: BaseEstateResponse) -> [Estate] in
-                        response.data.map { $0.toDomain }
+//                        response.data.map { $0.toDomain }
+                        Estate.topEstateMock
                     }
-                    .catch { error -> Observable<[Estate]> in
-                        errorRelay.onNext(SHError.from(error))
+                    .catch { [weak errorRelay] error -> Observable<[Estate]> in
+                        errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
                 
                 let hotEstatesObservable = self.apiClient
                     .requestObservable(EstateEndpoint.hotEstates)
                     .map { (response: BaseEstateResponse) -> [Estate] in
-                        response.data.map { $0.toDomain }
+//                        response.data.map { $0.toDomain }
+                        Estate.hotEstateMock
                     }
-                    .catch { error -> Observable<[Estate]> in
-                        errorRelay.onNext(SHError.from(error))
+                    .catch { [weak errorRelay] error -> Observable<[Estate]> in
+                        errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
                 
@@ -74,8 +77,8 @@ class HomeViewModel: ViewModelable {
                     .map { (response: EstateTopicResponse) -> [EstateTopic] in
                         response.data.map { $0.toDomain }
                     }
-                    .catch { error -> Observable<[EstateTopic]> in
-                        errorRelay.onNext(SHError.from(error))
+                    .catch { [weak errorRelay] error -> Observable<[EstateTopic]> in
+                        errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
                 
@@ -83,18 +86,18 @@ class HomeViewModel: ViewModelable {
                     todayEstatesObservable,
                     hotEstatesObservable,
                     topicsObservable
-                ) { todayEstates, hotEstates, topics in
+                ) { [weak todayEstatesRelay, weak hotEstatesRelay, weak topicsRelay, weak isLoadingRelay] todayEstates, hotEstates, topics in
                     
-                    todayEstatesRelay.onNext(todayEstates)
-                    hotEstatesRelay.onNext(hotEstates)
-                    topicsRelay.onNext(topics)
-                    isLoadingRelay.onNext(false)
+                    todayEstatesRelay?.onNext(todayEstates)
+                    hotEstatesRelay?.onNext(hotEstates)
+                    topicsRelay?.onNext(topics)
+                    isLoadingRelay?.onNext(false)
                     return ()
                 }
             }
-            .subscribe(onError: { error in
-                isLoadingRelay.onNext(false)
-                errorRelay.onNext(SHError.from(error))
+            .subscribe(onError: { [weak isLoadingRelay, weak errorRelay] error in
+                isLoadingRelay?.onNext(false)
+                errorRelay?.onNext(SHError.from(error))
             })
             .disposed(by: disposeBag)
         
@@ -150,6 +153,7 @@ class HomeViewModel: ViewModelable {
     }
     
     deinit {
+        print("HomeViewModel deinit")
         stopAutoScroll()
     }
 }
