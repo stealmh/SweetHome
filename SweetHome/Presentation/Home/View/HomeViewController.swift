@@ -136,6 +136,20 @@ class HomeViewController: BaseViewController, UICollectionViewDelegate {
     }
     
     override func bind() {
+        searchBar.onSearchCompleted = { [weak self] searchText in
+            guard let self else { return }
+            
+            let searchVC = EstateSearchViewController(searchText: searchText)
+            
+            let transition = CATransition()
+            transition.duration = 0.3
+            transition.type = .fade
+            transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            
+            self.navigationController?.view.layer.add(transition, forKey: kCATransition)
+            self.navigationController?.pushViewController(searchVC, animated: false)
+        }
+        
         let input = HomeViewModel.Input(
             onAppear: .just(()),
             startAutoScroll: startAutoScrollSubject.asObservable(),

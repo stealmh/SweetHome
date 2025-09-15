@@ -84,13 +84,13 @@ class HomeCollectionViewLayout {
     
     private func createNormalRecentSearchSection() -> NSCollectionLayoutSection {
         let itemSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(190),
+            widthDimension: .absolute(220),
             heightDimension: .absolute(88)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
         let groupSize = NSCollectionLayoutSize(
-            widthDimension: .absolute(190),
+            widthDimension: .absolute(220),
             heightDimension: .absolute(88)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
