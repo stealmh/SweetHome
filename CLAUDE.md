@@ -131,6 +131,34 @@ final class PropertyListViewModel {
 }
 ```
 
+### 주석 컨벤션
+- **일반 주석**은 `/// - ...` 형식으로 통일합니다.
+- **MARK 주석**은 extension에서만 `//MARK: - ...` 형식으로 사용합니다.
+
+**예시:**
+```swift
+/// - HomeViewModel: 홈 화면의 비즈니스 로직을 담당
+/// - Input/Output 패턴으로 구현
+final class HomeViewModel {
+    /// - 뷰에서 전달되는 이벤트들
+    struct Input {
+        let viewDidLoad: Observable<Void>
+    }
+
+    /// - 뷰모델에서 방출하는 데이터 스트림들
+    struct Output {
+        let properties: Observable<[Property]>
+    }
+}
+
+//MARK: - ViewModelable
+extension HomeViewModel: ViewModelable {
+    func transform(input: Input) -> Output {
+        // 구현
+    }
+}
+```
+
 ## Development Notes
 - iOS 최소 버전 확인 필요
 - Kakao Maps API 키 설정 확인
