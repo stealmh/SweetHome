@@ -164,3 +164,30 @@ extension HomeViewModel: ViewModelable {
 - Kakao Maps API 키 설정 확인
 - Firebase 설정 파일 (GoogleService-Info.plist) 확인
 - 결제 모듈 테스트 시 샌드박스 환경 사용
+
+## Xcode 최적화 팁
+### 인덱싱 문제 해결
+```bash
+# DerivedData 정리
+rm -rf ~/Library/Developer/Xcode/DerivedData
+
+# Xcode 캐시 정리
+rm -rf ~/Library/Caches/com.apple.dt.Xcode*
+
+# 프로젝트 클린 빌드
+xcodebuild clean -scheme SweetHome
+```
+
+### 테스트 실행
+```bash
+# SweetHomeTests 스킴으로 테스트 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)'
+
+# 특정 테스트만 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/HomeViewModelTests
+```
+
+### Xcode 설정 권장사항
+- Xcode → Preferences → Locations → Derived Data → Advanced → Relative to Derived Data 선택
+- Editor → Minimap 비활성화 (대용량 프로젝트에서 성능 향상)
+- 불필요한 시뮬레이터 제거
