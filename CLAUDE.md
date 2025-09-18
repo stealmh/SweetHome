@@ -191,3 +191,64 @@ xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name
 - Xcode → Preferences → Locations → Derived Data → Advanced → Relative to Derived Data 선택
 - Editor → Minimap 비활성화 (대용량 프로젝트에서 성능 향상)
 - 불필요한 시뮬레이터 제거
+
+## Extensions 테스트
+프로젝트의 Core/Extensions에 있는 Extension들에 대한 포괄적인 테스트가 구현되어 있습니다.
+
+### 테스트된 Extensions
+
+#### Foundation Extensions
+- **StringExtensionTests** (`SweetHomeTests/Extensions/StringExtensionTests.swift`)
+  - 이메일 유효성 검사 (`isValidEmail`)
+  - 전화번호 유효성 검사 (`isValidPhone`)
+  - 비밀번호 유효성 검사 (`isValidPassword`, `passwordValidationMessage`)
+  - ISO8601 날짜 변환 (`toISO8601Date`)
+
+- **IntExtensionTests** (`SweetHomeTests/Extensions/IntExtensionTests.swift`)
+  - 천단위 콤마 포맷팅 (`formattedWithComma`)
+  - 가격 포맷팅 (`formattedPrice`) - 만원/억 단위 변환
+  - 단위 포함 가격 포맷팅 (`formattedPriceWithUnit`)
+  - **주의사항**: `formattedPrice`에서 반올림 정확성 개선 (1억1원 → "1억")
+
+- **EncodableExtensionTests** (`SweetHomeTests/Extensions/EncodableExtensionTests.swift`)
+  - Codable 구조체를 Dictionary로 변환 (`toDictionary`)
+  - 중첩 객체, 배열, 옵셔널 값 처리 검증
+
+#### UIKit Extensions
+- **UIViewExtensionTests** (`SweetHomeTests/Extensions/UIViewExtensionTests.swift`)
+  - 다중 서브뷰 추가 (`addSubviews`)
+  - 캡슐 모양 스타일링 (`makeCapsule`, `updateCapsuleShape`)
+  - UIStackView arranged subviews 추가 (`addArrangeSubviews`)
+
+- **UIColorExtensionTests** (`SweetHomeTests/Extensions/UIColorExtensionTests.swift`)
+  - Hex 문자열로 UIColor 생성 (`init(hex:)`)
+  - 3자리, 6자리, 8자리 hex 지원
+  - 대소문자, 프리픽스(#, 0x) 처리
+  - 브랜드 색상 및 실제 사용 케이스 테스트
+
+#### RxSwift Extensions
+- **ObservableTypeExtensionTests** (`SweetHomeTests/Extensions/ObservableTypeExtensionTests.swift`)
+  - SHError 변환 (`catchSHError`)
+  - 에러 로깅 (`logError`)
+  - 네트워크 에러 처리 시나리오 테스트
+
+### 테스트 실행 명령어
+```bash
+# Extension 테스트만 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/StringExtensionTests
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/IntExtensionTests
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/UIViewExtensionTests
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/UIColorExtensionTests
+
+# 모든 Extension 테스트 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/Extensions
+```
+
+### Extension 개발 가이드라인
+1. **테스트 우선 개발**: Extension 수정 시 관련 테스트를 먼저 확인하고 업데이트
+2. **경계값 테스트**: 특히 숫자/문자열 처리에서 경계값과 예외 케이스 검증 필수
+3. **성능 테스트**: 반복 호출이 많은 Extension은 성능 테스트 포함
+4. **실제 사용 케이스**: 브랜드 색상, 실제 가격 등 현실적인 테스트 데이터 사용
+
+### 알려진 이슈
+- **formattedPrice 반올림 정확성**: 기존 부동소수점 정확도 문제를 해결하여 1억1원이 "1.0억" 대신 "1억"으로 표시되도록 수정됨

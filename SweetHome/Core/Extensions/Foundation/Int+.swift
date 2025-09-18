@@ -24,10 +24,15 @@ extension Int {
         if self >= 100_000_000 {
             // 1억 이상: 억 단위 표시
             let eokUnit = Double(self) / 100_000_000.0
-            if eokUnit == floor(eokUnit) {
-                return "\(Int(eokUnit))억"
+
+            /// - 소수점 첫째자리에서 반올림
+            let rounded = round(eokUnit * 10) / 10
+
+            /// - 반올림된 값이 정수인지 확인
+            if rounded == floor(rounded) {
+                return "\(Int(rounded))억"
             } else {
-                return String(format: "%.1f억", eokUnit)
+                return String(format: "%.1f억", rounded)
             }
         } else {
             // 1억 미만: 만원 단위 숫자만
