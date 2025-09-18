@@ -85,12 +85,22 @@ final class EncodableExtensionTests: XCTestCase {
 
         XCTAssertEqual(dictionary["id"] as? Int, 789)
         XCTAssertEqual(dictionary["name"] as? String, "이영희")
-        XCTAssertTrue(dictionary.keys.contains("nickname"), "nickname 키는 존재해야 함")
-        XCTAssertTrue(dictionary.keys.contains("age"), "age 키는 존재해야 함")
 
-        /// - nil 값들이 NSNull로 변환되는지 확인
-        XCTAssertTrue(dictionary["nickname"] is NSNull, "nil nickname은 NSNull이어야 함")
-        XCTAssertTrue(dictionary["age"] is NSNull, "nil age는 NSNull이어야 함")
+        /// - JSONEncoder는 nil 옵셔널 값을 JSON에서 완전히 제외함
+        XCTAssertFalse(dictionary.keys.contains("nickname"), "nil nickname 키는 JSON에서 제외됨")
+        XCTAssertFalse(dictionary.keys.contains("age"), "nil age 키는 JSON에서 제외됨")
+
+        /// - 키가 존재하지 않으므로 nil 반환
+        XCTAssertNil(dictionary["nickname"], "nickname 키가 없으므로 nil 반환")
+        XCTAssertNil(dictionary["age"], "age 키가 없으므로 nil 반환")
+
+        /// - 전체 키 개수 확인 (id, name만 있어야 함)
+        XCTAssertEqual(dictionary.keys.count, 2, "nil 값들은 제외되어 2개의 키만 있어야 함")
+
+        /// - 실제 키 목록 확인
+        let expectedKeys = Set(["id", "name"])
+        let actualKeys = Set(dictionary.keys)
+        XCTAssertEqual(actualKeys, expectedKeys, "키 목록이 예상과 일치해야 함")
     }
 
     // MARK: - Nested Objects Tests
