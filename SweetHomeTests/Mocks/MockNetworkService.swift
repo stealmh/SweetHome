@@ -60,7 +60,6 @@ extension MockNetworkService: NetworkServiceProtocol {
     /// - 일반 API 요청 Mock 구현 (TestScheduler 호환을 위한 동기식)
     func request<T: Decodable>(_ target: TargetType) async throws -> T {
         let endpointPath = target.path
-        print("🔍 MockNetworkService request - Path: \(endpointPath), Expected Type: \(T.self)")
 
         /// - 호출 횟수 업데이트 (동기식으로 변경)
         callCountsQueue.sync(flags: .barrier) {
@@ -69,7 +68,6 @@ extension MockNetworkService: NetworkServiceProtocol {
 
         /// - 에러 시나리오 시뮬레이션
         if shouldReturnError {
-            print("❌ Throwing error: \(errorToReturn)")
             throw errorToReturn
         }
 
@@ -78,17 +76,11 @@ extension MockNetworkService: NetworkServiceProtocol {
             return _mockResponses[endpointPath]
         }
 
-        print("🔍 Available mock responses: \(_mockResponses.keys.sorted())")
-        print("🔍 Looking for: \(endpointPath)")
-        print("🔍 Found response: \(mockResponse != nil)")
-
         guard let typedResponse = mockResponse as? T else {
             let errorMessage = "Mock response not found for \(endpointPath). Expected type: \(T.self). Available: \(_mockResponses.keys.sorted())"
-            print("❌ \(errorMessage)")
             throw SHError.networkError(.unknown(statusCode: 404, message: errorMessage))
         }
 
-        print("✅ Mock response found for \(endpointPath)")
         return typedResponse
     }
 

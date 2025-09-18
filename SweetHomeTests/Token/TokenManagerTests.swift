@@ -14,8 +14,11 @@ final class TokenManagerTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockKeychainManager = TestableKeychainManager()
-        sut = TokenManager(keychainManager: mockKeychainManager)
         mockNetworkService = MockNetworkService()
+        sut = TokenManager(
+            keychainManager: mockKeychainManager,
+            refreshNetworkService: mockNetworkService
+        )
     }
 
     override func tearDown() async throws {
