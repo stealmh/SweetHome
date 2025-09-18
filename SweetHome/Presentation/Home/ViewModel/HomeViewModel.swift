@@ -53,8 +53,7 @@ class HomeViewModel: ViewModelable {
                 let todayEstatesObservable = self.apiClient
                     .requestObservable(EstateEndpoint.todayEstates)
                     .map { (response: BaseEstateResponse) -> [Estate] in
-//                        response.data.map { $0.toDomain }
-                        Estate.topEstateMock
+                        response.data.map { $0.toDomain }
                     }
                     .catch { [weak errorRelay] error -> Observable<[Estate]> in
                         errorRelay?.onNext(SHError.from(error))
@@ -64,8 +63,7 @@ class HomeViewModel: ViewModelable {
                 let hotEstatesObservable = self.apiClient
                     .requestObservable(EstateEndpoint.hotEstates)
                     .map { (response: BaseEstateResponse) -> [Estate] in
-//                        response.data.map { $0.toDomain }
-                        Estate.hotEstateMock
+                        response.data.map { $0.toDomain }
                     }
                     .catch { [weak errorRelay] error -> Observable<[Estate]> in
                         errorRelay?.onNext(SHError.from(error))
