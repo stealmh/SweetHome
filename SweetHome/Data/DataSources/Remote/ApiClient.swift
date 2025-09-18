@@ -8,6 +8,12 @@
 import Foundation
 import RxSwift
 
+// MARK: - ApiClient Protocol
+protocol ApiClientProtocol {
+    func requestObservable<T: Decodable>(_ endpoint: TargetType) -> Observable<T>
+    func uploadObservable(_ endpoint: TargetType) -> Observable<ChatUploadResponse>
+}
+
 // MARK: - ApiClient Class
 class ApiClient {
     private let network: NetworkServiceProtocol
@@ -89,3 +95,6 @@ class ApiClient {
 extension ApiClient {
     static let shared = ApiClient()
 }
+
+// MARK: - ApiClientProtocol Conformance
+extension ApiClient: ApiClientProtocol {}

@@ -29,11 +29,11 @@ class HomeViewModel: ViewModelable {
         let topics: Driver<[EstateTopic]>
     }
     
-    private let apiClient: ApiClient
+    private let apiClient: ApiClientProtocol
     private var autoScrollTimer: Timer?
     private let autoScrollTriggerRelay = PublishSubject<Void>()
-    
-    init(apiClient: ApiClient = ApiClient.shared) {
+
+    init(apiClient: ApiClientProtocol = ApiClient.shared) {
         self.apiClient = apiClient
     }
     
