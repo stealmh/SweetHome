@@ -252,3 +252,74 @@ xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name
 
 ### 알려진 이슈
 - **formattedPrice 반올림 정확성**: 기존 부동소수점 정확도 문제를 해결하여 1억1원이 "1.0억" 대신 "1억"으로 표시되도록 수정됨
+
+## Token 관련 테스트
+JWT 액세스/리프레시 토큰 관리와 Alamofire 인터셉터 기능에 대한 포괄적인 테스트가 구현되어 있습니다.
+
+### 테스트된 Token 모듈들
+
+#### TokenManager Tests (`SweetHomeTests/Token/TokenManagerTests.swift`)
+**핵심 토큰 상태 관리 및 갱신 로직 테스트**
+- **상태 관리**: 초기 상태, 갱신 중 상태, 토큰 만료 상태 관리
+- **토큰 갱신**: startRefresh(), finishRefresh(), 중복 갱신 방지
+- **대기 요청 관리**: pendingRequests 추가/처리/취소
+- **HTTP 헤더 관리**: Authorization 헤더 자동 추가
+- **에러별 재시도 로직**:
+  - `419`: 액세스 토큰 만료 → 토큰 갱신 시도
+  - `401, 403, 418`: 리프레시 토큰 만료 → 로그아웃 처리
+  - 기타: 재시도하지 않음
+- **통합 플로우**: 전체 토큰 갱신 프로세스 검증
+
+#### TokenInterceptor Tests (`SweetHomeTests/Token/TokenInterceptorTests.swift`)
+**Alamofire RequestInterceptor 구현 테스트**
+- **Request Adapter**: HTTP 요청에 Authorization 헤더 자동 추가
+- **Request Retry**: HTTP 응답 상태 코드별 재시도 로직
+- **TokenManager 위임**: 모든 토큰 로직을 TokenManager에게 위임
+- **Edge Cases**: HTTP 응답 없음, 잘못된 요청 처리
+- **Mock 테스트**: Alamofire Request/Response 모킹
+- **Singleton 패턴**: TokenInterceptor.shared 인스턴스 관리
+
+#### AuthTokenManager Tests (`SweetHomeTests/Token/AuthTokenManagerTests.swift`)
+**토큰 캐싱 및 편의 기능 테스트**
+- **토큰 캐싱**: 키체인에서 로딩 후 메모리 캐싱으로 성능 최적화
+- **SeSAC Key 관리**: API 상수 키 캐싱
+- **캐시 관리**: refreshCache(), clearCache() 동작
+- **알림 처리**: 토큰 만료 알림 수신 시 캐시 자동 클리어
+- **성능 테스트**: 반복 조회 시 캐싱 효과 검증
+- **Singleton vs Custom**: shared instance와 커스텀 인스턴스 비교
+
+### Token 아키텍처
+```
+TokenInterceptor (Alamofire 계층)
+    ↓ 위임
+TokenManager (비즈니스 로직)
+    ↓ 의존성
+AuthTokenManager (캐싱 계층)
+    ↓ 의존성
+KeyChainManager (저장소 계층)
+```
+
+### 테스트 실행 명령어
+```bash
+# Token 관련 테스트만 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/TokenManagerTests
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/TokenInterceptorTests
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/AuthTokenManagerTests
+
+# 모든 Token 테스트 실행
+xcodebuild test -scheme SweetHomeTests -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' -only-testing:SweetHomeTests/Token
+```
+
+### Token 테스트 특징
+1. **Actor 기반 동시성**: TokenManager의 actor 구현 테스트
+2. **비동기 처리**: async/await를 활용한 토큰 갱신 테스트
+3. **Alamofire 모킹**: 실제 네트워크 없이 인터셉터 동작 검증
+4. **키체인 모킹**: MockKeychainManager로 저장소 계층 분리
+5. **알림 테스트**: NotificationCenter 기반 토큰 만료 처리
+6. **성능 테스트**: 캐싱 효과와 반복 조회 성능 측정
+
+### Token 보안 고려사항
+- **토큰 만료 처리**: 자동 갱신 및 로그아웃 플로우
+- **메모리 보안**: 캐시 클리어 시 민감 정보 제거
+- **동시성 안전**: Actor를 통한 스레드 안전 보장
+- **재시도 제한**: 무한 재시도 방지 로직
