@@ -42,12 +42,12 @@ class EstateDetailViewModel: ViewModelable {
     }
     
     // MARK: - Properties
-    private let apiClient: ApiClient
+    private let apiClient: ApiClientProtocol
     private let estateDetailRelay = BehaviorSubject<DetailEstate?>(value: nil)
     private let similarEstatesRelay = BehaviorSubject<[Estate]>(value: [])
     
     // MARK: - Initialization
-    init(apiClient: ApiClient = ApiClient.shared) {
+    init(apiClient: ApiClientProtocol = ApiClient.shared) {
         self.apiClient = apiClient
     }
     
