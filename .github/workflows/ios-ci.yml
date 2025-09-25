@@ -34,11 +34,6 @@ jobs:
           -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
 
-
-    - name: Generate Code Coverage Report
-      run: |
-        xcrun xccov view --report --json DerivedData/Logs/Test/*.xcresult > coverage.json
-
     - name: Upload Coverage Reports
       uses: codecov/codecov-action@v3
       with:
