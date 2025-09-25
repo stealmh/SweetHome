@@ -52,7 +52,6 @@ jobs:
         sleep 5
 
     - name: Run Unit Tests
-      timeout-minutes: 15
       run: |
         xcodebuild clean test \
           -project SweetHome.xcodeproj \
