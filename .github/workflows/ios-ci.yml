@@ -32,7 +32,7 @@ jobs:
         xcodebuild build \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
 
 
     - name: Generate Code Coverage Report
@@ -84,7 +84,7 @@ jobs:
         xcodebuild \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
           -configuration Debug \
           -derivedDataPath DerivedData \
           -quiet \
