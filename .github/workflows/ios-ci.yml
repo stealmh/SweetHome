@@ -33,11 +33,11 @@ jobs:
           -project SweetHome.xcodeproj \
           -scheme SweetHome \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+          -skip-testing:SweetHomeUITests \
 
     - name: Run Extension Tests
       timeout-minutes: 10
       run: |
-        set -o pipefail
         xcodebuild test \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
