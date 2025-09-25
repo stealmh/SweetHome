@@ -17,8 +17,12 @@ jobs:
 
     - name: Create Config Files
       run: |
+        mkdir -p SweetHome/XCConfig
+        mkdir -p SweetHome/Resources
+
         echo '${{ secrets.XCCONFIG_CONTENT }}' > SweetHome/XCConfig/xcconfig.xcconfig
         echo '${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}' > SweetHome/Resources/GoogleService-Info.plist
+
         echo "Config files created successfully"
 
     - name: Setup Xcode
