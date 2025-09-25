@@ -47,7 +47,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild \
-          -workspace SweetHome.xcodeproj \
+          -project SweetHome.xcodeproj \
           -scheme SweetHome \
           -destination 'platform=iOS Simulator,name=iPhone 15' \
           -derivedDataPath DerivedData \
@@ -58,7 +58,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild test \
-          -workspace SweetHome.xcodeproj \
+          -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -only-testing:SweetHomeTests/Extensions \
@@ -68,7 +68,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild test \
-          -workspace SweetHome.xcodeproj \
+          -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -only-testing:SweetHomeTests/Token \
@@ -120,7 +120,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild \
-          -workspace SweetHome.xcodeproj \
+          -project SweetHome.xcodeproj \
           -scheme SweetHome \
           -destination 'platform=iOS Simulator,name=iPhone 15' \
           -configuration Debug \
@@ -131,7 +131,7 @@ jobs:
       run: |
         set -o pipefail
         xcodebuild \
-          -workspace SweetHome.xcodeproj \
+          -project SweetHome.xcodeproj \
           -scheme SweetHome \
           -configuration Release \
           -derivedDataPath DerivedData \
