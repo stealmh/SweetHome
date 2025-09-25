@@ -26,30 +26,13 @@ jobs:
     - name: Show Available Simulators
       run: xcrun xctrace list devices
 
-    - name: Cache Dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/Library/Developer/Xcode/DerivedData
-          ~/.cocoapods
-        key: ${{ runner.os }}-xcode-${{ hashFiles('**/Podfile.lock', '**/*.xcodeproj') }}
-        restore-keys: |
-          ${{ runner.os }}-xcode-
-
-    - name: Install Dependencies (if using CocoaPods)
-      run: |
-        if [ -f Podfile ]; then
-          gem install cocoapods
-          pod install --repo-update
-        fi
-
     - name: Run Unit Tests
       timeout-minutes: 15
       run: |
         set -o pipefail
         xcodebuild \
           -project SweetHome.xcodeproj \
-          -scheme SweetHomeTests \
+          -scheme SweetHome \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
