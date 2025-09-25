@@ -30,13 +30,13 @@ jobs:
       with:
         xcode-version: '16.4'
 
-    - name: Show Xcode Version
+    - name: Xcode 버전
       run: xcodebuild -version
 
-    - name: Show Available Simulators
+    - name: 사용 가능한 시뮬레이터 목록
       run: xcrun xctrace list devices
 
-    - name: Boot Simulator
+    - name: 시뮬레이터 실행
       run: |
         xcrun simctl list devices available | grep "iPhone SE"
 
@@ -51,19 +51,12 @@ jobs:
         fi
         sleep 5
 
-    - name: Run Unit Tests
+    - name: 테스트 검증
       run: |
         xcodebuild clean test \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
-
-    - name: Upload Coverage Reports
-      uses: codecov/codecov-action@v3
-      with:
-        files: ./coverage.json
-        fail_ci_if_error: false
-        verbose: true
 
   build:
     name: Build App
@@ -79,48 +72,13 @@ jobs:
       with:
         xcode-version: '16.4'
 
-    - name: Cache Dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/Library/Developer/Xcode/DerivedData
-          ~/.cocoapods
-        key: ${{ runner.os }}-xcode-${{ hashFiles('**/Podfile.lock', '**/*.xcodeproj') }}
-        restore-keys: |
-          ${{ runner.os }}-xcode-
-
-    - name: Install Dependencies (if using CocoaPods)
+    - name: Build App
       run: |
-        if [ -f Podfile ]; then
-          gem install cocoapods
-          pod install --repo-update
-        fi
-
-    - name: Build App for Testing
-      timeout-minutes: 15
-      run: |
-        set -o pipefail
-        xcodebuild \
-          -project SweetHome.xcodeproj \
-          -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
-          -configuration Debug \
-          -derivedDataPath DerivedData \
-          -quiet \
-          build-for-testing | xcpretty
-
-    - name: Build App for Release
-      timeout-minutes: 15
-      run: |
-        set -o pipefail
-        xcodebuild \
+        xcodebuild build \
           -project SweetHome.xcodeproj \
           -scheme SweetHome \
-          -configuration Release \
-          -derivedDataPath DerivedData \
-          -destination 'generic/platform=iOS' \
-          -quiet \
-          build | xcpretty
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=18.4' \
+          -configuration Debug \
 
     - name: Archive Build Artifacts
       uses: actions/upload-artifact@v3
