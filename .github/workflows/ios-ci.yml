@@ -1,0 +1,143 @@
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -switch /Applications/Xcode_15.0.app/Contents/Developer
+
+    - name: Show Xcode Version
+      run: xcodebuild -version
+
+    - name: Show Available Simulators
+      run: xcrun xctrace list devices
+
+    - name: Cache Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          ~/.cocoapods
+        key: ${{ runner.os }}-xcode-${{ hashFiles('**/Podfile.lock', '**/*.xcodeproj') }}
+        restore-keys: |
+          ${{ runner.os }}-xcode-
+
+    - name: Install Dependencies (if using CocoaPods)
+      run: |
+        if [ -f Podfile ]; then
+          gem install cocoapods
+          pod install --repo-update
+        fi
+
+    - name: Run Unit Tests
+      run: |
+        set -o pipefail
+        xcodebuild \
+          -workspace SweetHome.xcodeproj \
+          -scheme SweetHome \
+          -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.0' \
+          -derivedDataPath DerivedData \
+          -enableCodeCoverage YES \
+          clean test | xcpretty
+
+    - name: Run Extension Tests
+      run: |
+        set -o pipefail
+        xcodebuild test \
+          -workspace SweetHome.xcodeproj \
+          -scheme SweetHomeTests \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+          -only-testing:SweetHomeTests/Extensions \
+          -derivedDataPath DerivedData | xcpretty
+
+    - name: Run Token Tests
+      run: |
+        set -o pipefail
+        xcodebuild test \
+          -workspace SweetHome.xcodeproj \
+          -scheme SweetHomeTests \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
+          -only-testing:SweetHomeTests/Token \
+          -derivedDataPath DerivedData | xcpretty
+
+    - name: Generate Code Coverage Report
+      run: |
+        xcrun xccov view --report --json DerivedData/Logs/Test/*.xcresult > coverage.json
+
+    - name: Upload Coverage Reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.json
+        fail_ci_if_error: false
+        verbose: true
+
+  build:
+    name: Build App
+    runs-on: macos-latest
+    needs: test
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -switch /Applications/Xcode_15.0.app/Contents/Developer
+
+    - name: Cache Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          ~/.cocoapods
+        key: ${{ runner.os }}-xcode-${{ hashFiles('**/Podfile.lock', '**/*.xcodeproj') }}
+        restore-keys: |
+          ${{ runner.os }}-xcode-
+
+    - name: Install Dependencies (if using CocoaPods)
+      run: |
+        if [ -f Podfile ]; then
+          gem install cocoapods
+          pod install --repo-update
+        fi
+
+    - name: Build App for Testing
+      run: |
+        set -o pipefail
+        xcodebuild \
+          -workspace SweetHome.xcodeproj \
+          -scheme SweetHome \
+          -destination 'platform=iOS Simulator,name=iPhone 15' \
+          -configuration Debug \
+          -derivedDataPath DerivedData \
+          build-for-testing | xcpretty
+
+    - name: Build App for Release
+      run: |
+        set -o pipefail
+        xcodebuild \
+          -workspace SweetHome.xcodeproj \
+          -scheme SweetHome \
+          -configuration Release \
+          -derivedDataPath DerivedData \
+          -destination 'generic/platform=iOS' \
+          build | xcpretty
+
+    - name: Archive Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: DerivedData/Build/Products/
+        retention-days: 7
+
