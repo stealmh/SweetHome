@@ -67,6 +67,9 @@ class ChatRoomCell: UICollectionViewCell {
 
 private extension ChatRoomCell {
     func setupUI() {
+        profileImageView.layer.cornerRadius = 28
+        profileImageView.clipsToBounds = true
+
         messageCountContainerView.backgroundColor = .systemRed
         messageCountContainerView.layer.cornerRadius = 10
         messageCountContainerView.clipsToBounds = true
