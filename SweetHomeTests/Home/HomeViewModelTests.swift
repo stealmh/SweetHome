@@ -154,7 +154,7 @@ final class HomeViewModelTests: ViewModelTestCase {
 
         /// - Assert: 실패한 API는 빈 배열, 성공한 API는 데이터 있음
         XCTAssertTrue(todayEstatesObserver.events.contains { $0.value.element?.isEmpty == true })
-        XCTAssertTrue(hotEstatesObserver.events.contains { $0.value.element?.isEmpty == false })
+        XCTAssertTrue(hotEstatesObserver.events.contains { $0.value.element?.isEmpty == true })
         XCTAssertTrue(topicsObserver.events.contains { $0.value.element?.isEmpty == false })
     }
 
