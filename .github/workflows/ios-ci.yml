@@ -29,15 +29,10 @@ jobs:
     - name: Run Unit Tests
       timeout-minutes: 15
       run: |
-        set -o pipefail
-        xcodebuild \
+        xcodebuild clean test \
           -project SweetHome.xcodeproj \
           -scheme SweetHome \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
-          -derivedDataPath DerivedData \
-          -enableCodeCoverage YES \
-          -quiet \
-          test | xcpretty
 
     - name: Run Extension Tests
       timeout-minutes: 10
