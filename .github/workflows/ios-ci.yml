@@ -31,32 +31,9 @@ jobs:
       run: |
         xcodebuild clean test \
           -project SweetHome.xcodeproj \
-          -scheme SweetHome \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
-          -skip-testing:SweetHomeUITests \
-
-    - name: Run Extension Tests
-      timeout-minutes: 10
-      run: |
-        xcodebuild test \
-          -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
-          -only-testing:SweetHomeTests/Extensions \
-          -derivedDataPath DerivedData \
-          -quiet | xcpretty
 
-    - name: Run Token Tests
-      timeout-minutes: 10
-      run: |
-        set -o pipefail
-        xcodebuild test \
-          -project SweetHome.xcodeproj \
-          -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
-          -only-testing:SweetHomeTests/Token \
-          -derivedDataPath DerivedData \
-          -quiet | xcpretty
 
     - name: Generate Code Coverage Report
       run: |
@@ -106,7 +83,7 @@ jobs:
         set -o pipefail
         xcodebuild \
           -project SweetHome.xcodeproj \
-          -scheme SweetHome \
+          -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -configuration Debug \
           -derivedDataPath DerivedData \
