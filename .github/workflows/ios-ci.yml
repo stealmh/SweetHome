@@ -49,12 +49,10 @@ jobs:
         set -o pipefail
         xcodebuild \
           -project SweetHome.xcodeproj \
-          -scheme SweetHome \
+          -scheme SweetHomeTests \
           -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
-          -only-testing:SweetHomeTests \
-          -skip-testing:SweetHomeUITests \
           -quiet \
           test | xcpretty
 
