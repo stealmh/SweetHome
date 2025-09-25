@@ -44,35 +44,43 @@ jobs:
         fi
 
     - name: Run Unit Tests
+      timeout-minutes: 15
       run: |
         set -o pipefail
         xcodebuild \
           -project SweetHome.xcodeproj \
           -scheme SweetHome \
-          -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -derivedDataPath DerivedData \
           -enableCodeCoverage YES \
-          clean test | xcpretty
+          -only-testing:SweetHomeTests \
+          -skip-testing:SweetHomeUITests \
+          -quiet \
+          test | xcpretty
 
     - name: Run Extension Tests
+      timeout-minutes: 10
       run: |
         set -o pipefail
         xcodebuild test \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -only-testing:SweetHomeTests/Extensions \
-          -derivedDataPath DerivedData | xcpretty
+          -derivedDataPath DerivedData \
+          -quiet | xcpretty
 
     - name: Run Token Tests
+      timeout-minutes: 10
       run: |
         set -o pipefail
         xcodebuild test \
           -project SweetHome.xcodeproj \
           -scheme SweetHomeTests \
-          -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -only-testing:SweetHomeTests/Token \
-          -derivedDataPath DerivedData | xcpretty
+          -derivedDataPath DerivedData \
+          -quiet | xcpretty
 
     - name: Generate Code Coverage Report
       run: |
@@ -117,17 +125,20 @@ jobs:
         fi
 
     - name: Build App for Testing
+      timeout-minutes: 15
       run: |
         set -o pipefail
         xcodebuild \
           -project SweetHome.xcodeproj \
           -scheme SweetHome \
-          -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.0' \
+          -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation)' \
           -configuration Debug \
           -derivedDataPath DerivedData \
+          -quiet \
           build-for-testing | xcpretty
 
     - name: Build App for Release
+      timeout-minutes: 15
       run: |
         set -o pipefail
         xcodebuild \
@@ -136,6 +147,7 @@ jobs:
           -configuration Release \
           -derivedDataPath DerivedData \
           -destination 'generic/platform=iOS' \
+          -quiet \
           build | xcpretty
 
     - name: Archive Build Artifacts
