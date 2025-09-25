@@ -30,7 +30,7 @@ jobs:
       run: |
         xcrun simctl list devices available | grep "iPhone SE"
 
-        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | sed -n 's/.*(\([^)]*\)).*/\1/p')
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | grep -oE '\([A-F0-9-]{36}\)' | tr -d '()')
         if [ ! -z "$SIMULATOR_ID" ]; then
           echo "Booting simulator: $SIMULATOR_ID"
           xcrun simctl boot $SIMULATOR_ID || true
