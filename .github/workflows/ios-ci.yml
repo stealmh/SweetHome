@@ -28,12 +28,18 @@ jobs:
 
     - name: Boot Simulator
       run: |
-        # iPhone SE (3rd generation) iOS 18.4 시뮬레이터 찾기 및 부팅
-        SIMULATOR_ID=$(xcrun simctl list devices | grep "iPhone SE (3rd generation)" | grep "18.4" | head -1 | grep -E -o '\([0-9A-F-]{36}\)' | tr -d '()')
-        echo "Using simulator: $SIMULATOR_ID"
-        xcrun simctl boot $SIMULATOR_ID || true
-        xcrun simctl bootstatus $SIMULATOR_ID -b
-        sleep 10
+        xcrun simctl list devices available | grep "iPhone SE"
+
+        SIMULATOR_ID=$(xcrun simctl list devices available | grep "iPhone SE (3rd generation)" | head -1 | sed -n 's/.*(\([^)]*\)).*/\1/p')
+        if [ ! -z "$SIMULATOR_ID" ]; then
+          echo "Booting simulator: $SIMULATOR_ID"
+          xcrun simctl boot $SIMULATOR_ID || true
+          xcrun simctl bootstatus $SIMULATOR_ID -b
+          echo "Simulator booted successfully"
+        else
+          echo "No iPhone SE simulator found, using default"
+        fi
+        sleep 5
 
     - name: Run Unit Tests
       timeout-minutes: 15
