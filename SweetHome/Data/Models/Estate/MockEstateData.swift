@@ -259,6 +259,129 @@ struct MockEstateData {
     ]
 }
 
+// MARK: - BaseEstateDataResponse Mock Data
+extension BaseEstateDataResponse {
+    static let mockTodayEstates: [BaseEstateDataResponse] = [
+        BaseEstateDataResponse(
+            estate_id: "6822b4cd3013b77fe7469e1f",
+            category: "아파트",
+            title: "신반포역 도보3분\n역세권 아파트",
+            introduction: "반포한강공원, 종합운동장이 위치해 산책하기 좋은 곳",
+            thumbnails: [
+                "/data/estates/example_1_1747104960999.jpg",
+                "/data/estates/example_2_1747104961017.jpg",
+                "/data/estates/example_3_1747104961024.jpg"
+            ],
+            deposit: 8500000000,
+            monthly_rent: 4500000,
+            built_year: "2022-05-15",
+            area: 84.5,
+            floors: 25,
+            geolocation: BaseGeolocationResponse(longitude: 127.043553, latitude: 37.650158),
+            distance: nil,
+            like_count: 1,
+            is_safe_estate: true,
+            is_recommended: true,
+            created_at: "2025-05-13T02:56:13.816Z",
+            updated_at: "2025-08-09T12:25:12.503Z"
+        ),
+        BaseEstateDataResponse(
+            estate_id: "6822b5fd3013b77fe7469e2c",
+            category: "오피스텔",
+            title: "펜트하우스 오피스텔",
+            introduction: "최고층 프라이빗 테라스 포함",
+            thumbnails: [
+                "/data/estates/francesca-tosolini-w1RE0lBbREo-unsplash_1747105244716.jpg",
+                "/data/estates/michael-oxendine-GHCVUtBECuY-unsplash_1747105244880.jpg",
+                "/data/estates/spacejoy-umAXneH4GhA-unsplash_1747105245035.jpg"
+            ],
+            deposit: 7200000000,
+            monthly_rent: 3800000,
+            built_year: "2021-11-20",
+            area: 76.2,
+            floors: 32,
+            geolocation: BaseGeolocationResponse(longitude: 127.043553, latitude: 37.650158),
+            distance: nil,
+            like_count: 1,
+            is_safe_estate: true,
+            is_recommended: false,
+            created_at: "2025-05-13T03:01:17.826Z",
+            updated_at: "2025-09-12T12:58:01.698Z"
+        ),
+        BaseEstateDataResponse(
+            estate_id: "6822b6963013b77fe7469e39",
+            category: "빌라",
+            title: "창동 프리미엄 타운하우스",
+            introduction: "정원과 테라스를 갖춘 고급 주택",
+            thumbnails: [
+                "/data/estates/aaron-huber-G7sE2S4Lab4-unsplash_1747105359870.jpg",
+                "/data/estates/collov-home-design-4_jQL4JCS98-unsplash_1747105359959.jpg"
+            ],
+            deposit: 6500000000,
+            monthly_rent: 3200000,
+            built_year: "2023-02-10",
+            area: 92.4,
+            floors: 4,
+            geolocation: BaseGeolocationResponse(longitude: 127.048421, latitude: 37.657372),
+            distance: nil,
+            like_count: 0,
+            is_safe_estate: true,
+            is_recommended: false,
+            created_at: "2025-05-13T03:03:50.844Z",
+            updated_at: "2025-07-31T08:25:22.782Z"
+        )
+    ]
+
+    static let mockHotEstates: [BaseEstateDataResponse] = [
+        BaseEstateDataResponse(
+            estate_id: "68235da61a1032c4e2d9c3be",
+            category: "빌라",
+            title: "공원 근처 쾌적한 환경",
+            introduction: "24시간 보안 시스템!",
+            thumbnails: [
+                "/data/estates/house9_1747146288414.png",
+                "/data/estates/house8_1747146288397.png",
+                "/data/estates/house11_1747146326584.png"
+            ],
+            deposit: 200000000,
+            monthly_rent: 600000,
+            built_year: "2011-05-22",
+            area: 21.3,
+            floors: 12,
+            geolocation: BaseGeolocationResponse(longitude: 127.063002, latitude: 37.616007),
+            distance: nil,
+            like_count: 0,
+            is_safe_estate: true,
+            is_recommended: false,
+            created_at: "2025-05-13T14:56:38.696Z",
+            updated_at: "2025-05-13T14:56:38.696Z"
+        ),
+        BaseEstateDataResponse(
+            estate_id: "6822fefc1a1032c4e2d9b414",
+            category: "아파트",
+            title: "푸르지오 아파트",
+            introduction: "짐만 오면 OK! 풀옵션 + 채광 좋은 신축 남향",
+            thumbnails: [
+                "/data/estates/roberto-nickson-rEJxpBskj3Q-unsplash_1747107238994.jpg",
+                "/data/estates/michael-oxendine-BfkTFeysp34-unsplash_1747107239103.jpg",
+                "/data/estates/spacejoy-nEtpvJjnPVo-unsplash_1747107239209.jpg"
+            ],
+            deposit: 150000000,
+            monthly_rent: 3000000,
+            built_year: "2022-05-15",
+            area: 84,
+            floors: 9,
+            geolocation: BaseGeolocationResponse(longitude: 127.05191994611108, latitude: 37.653585669845036),
+            distance: nil,
+            like_count: 0,
+            is_safe_estate: true,
+            is_recommended: false,
+            created_at: "2025-05-13T08:12:44.741Z",
+            updated_at: "2025-05-13T08:12:44.741Z"
+        )
+    ]
+}
+
 // MARK: - Mock Response Data
 extension DetailEstateResponse {
     static let mockResponseData: [DetailEstateResponse] = [

@@ -19,7 +19,9 @@
 		162105C72E38B9E1006ACD9E /* RxKakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 162105C62E38B9E1006ACD9E /* RxKakaoSDKUser */; };
 		163CB4FC2E53422B0070F130 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 163CB4FB2E53422B0070F130 /* FirebaseMessaging */; };
 		163CB5002E5348260070F130 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 163CB4FF2E5348260070F130 /* FirebaseCore */; };
+		164AAA3E2E7BFD1C002DA68B /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 164AAA3D2E7BFD1C002DA68B /* Alamofire */; };
 		16B8C8CF2E41D0B600CA762B /* KakaoMapsSDK-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 16B8C8CE2E41D0B600CA762B /* KakaoMapsSDK-SPM */; };
+		16F116762E7B344400B96384 /* RxTest in Frameworks */ = {isa = PBXBuildFile; productRef = 16F116752E7B344400B96384 /* RxTest */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +103,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				16F116762E7B344400B96384 /* RxTest in Frameworks */,
+				164AAA3E2E7BFD1C002DA68B /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -120,6 +124,7 @@
 				162B30672E30D38900412FB9 /* SweetHome */,
 				162B30812E30D38B00412FB9 /* SweetHomeTests */,
 				162B308B2E30D38B00412FB9 /* SweetHomeUITests */,
+				164AAA3C2E7BFD1C002DA68B /* Frameworks */,
 				162B30662E30D38900412FB9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -132,6 +137,13 @@
 				162B30882E30D38B00412FB9 /* SweetHomeUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		164AAA3C2E7BFD1C002DA68B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -190,6 +202,8 @@
 			);
 			name = SweetHomeTests;
 			packageProductDependencies = (
+				16F116752E7B344400B96384 /* RxTest */,
+				164AAA3D2E7BFD1C002DA68B /* Alamofire */,
 			);
 			productName = SweetHomeTests;
 			productReference = 162B307E2E30D38B00412FB9 /* SweetHomeTests.xctest */;
@@ -523,8 +537,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -542,8 +556,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -560,7 +574,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
-				GENERATE_INFOPLIST_FILE = NO;
+				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -577,7 +591,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 69AX92X75M;
-				GENERATE_INFOPLIST_FILE = NO;
+				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mino.sweethome.SweetHomeUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -765,10 +779,20 @@
 			package = 163CB4FA2E53422B0070F130 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
 		};
+		164AAA3D2E7BFD1C002DA68B /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162105B52E38B7B3006ACD9E /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
 		16B8C8CE2E41D0B600CA762B /* KakaoMapsSDK-SPM */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 16B8C8CD2E41D0B600CA762B /* XCRemoteSwiftPackageReference "KakaoMapsSDK-SPM" */;
 			productName = "KakaoMapsSDK-SPM";
+		};
+		16F116752E7B344400B96384 /* RxTest */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 162105AD2E38B78E006ACD9E /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxTest;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

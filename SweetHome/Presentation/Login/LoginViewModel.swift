@@ -33,18 +33,12 @@ class LoginViewModel: ViewModelable {
     
     
     // MARK: - Dependencies
-    private let apiClient: ApiClient
-    private let loginSession: LoginSessionProtocol
-    private let keychainManager: KeyChainManagerProtocol
-    
+    private let loginUseCase: LoginUseCase
+
     init(
-        apiClient: ApiClient = ApiClient.shared,
-        loginSession: LoginSessionProtocol = LoginSession(),
-        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared
+        loginUseCase: LoginUseCase = LoginUseCaseImpl()
     ) {
-        self.apiClient = apiClient
-        self.loginSession = loginSession
-        self.keychainManager = keychainManager
+        self.loginUseCase = loginUseCase
     }
     
     func transform(input: Input) -> Output {
@@ -58,61 +52,44 @@ class LoginViewModel: ViewModelable {
             .withLatestFrom(Observable.combineLatest(input.email, input.password))
             .flatMap { [weak self] (email, password) -> Observable<Void> in
                 guard let self else { return Observable.empty() }
-                
-                // 유효성 검사
-                if let validationError = self.validateLoginData(email: email, password: password) {
-                    loginErrorRelay.onNext(validationError)
-                    return Observable.empty()
-                }
-                
+
                 isLoadingRelay.onNext(true)
-                
-                let deviceToken = KeyChainManager.shared.read(.fcmToken)
-                
-                let requestModel = EmailLoginRequest(
-                    email: email,
-                    password: password,
-                    deviceToken: deviceToken
-                )
-                
-                return self.performEmailLogin(
-                    requestModel: requestModel,
-                    isLoadingRelay: isLoadingRelay,
-                    loginErrorRelay: loginErrorRelay,
-                    navigateToMainSubject: navigateToMainSubject
-                )
+
+                return self.loginUseCase.loginWithEmail(email: email, password: password)
+                    .do(
+                        onNext: { _ in
+                            isLoadingRelay.onNext(false)
+                            navigateToMainSubject.onNext(())
+                        },
+                        onError: { error in
+                            isLoadingRelay.onNext(false)
+                            let shError = SHError.from(error)
+                            loginErrorRelay.onNext(shError)
+                        }
+                    )
+                    .catchAndReturn(())
             }
             .subscribe()
             .disposed(by: disposeBag)
         
         input.kakaoLoginTapped
             .withUnretained(self)
-            .flatMapLatest { owner, _ -> Observable<SocialLoginResponse> in
+            .flatMapLatest { owner, _ -> Observable<Void> in
                 isLoadingRelay.onNext(true)
-                return owner.loginSession.performKakaoLogin()
-            }
-            .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
-                guard let self else { return Observable.empty() }
 
-                let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
-                
-                let requestModel = KakaoLoginRequest(
-                    oauthToken: socialLoginResponse.idToken,
-                    deviceToken: deviceToken
-                )
-                
-                return self.performKakaoLogin(
-                    requestModel: requestModel,
-                    isLoadingRelay: isLoadingRelay,
-                    loginErrorRelay: loginErrorRelay,
-                    navigateToMainSubject: navigateToMainSubject
-                )
-            }
-            .catch { error -> Observable<Void> in
-                isLoadingRelay.onNext(false)
-                let shError = SHError.from(error)
-                loginErrorRelay.onNext(shError)
-                return Observable.empty()
+                return owner.loginUseCase.loginWithKakao()
+                    .do(
+                        onNext: { _ in
+                            isLoadingRelay.onNext(false)
+                            navigateToMainSubject.onNext(())
+                        },
+                        onError: { error in
+                            isLoadingRelay.onNext(false)
+                            let shError = SHError.from(error)
+                            loginErrorRelay.onNext(shError)
+                        }
+                    )
+                    .catchAndReturn(())
             }
             .subscribe()
             .disposed(by: disposeBag)
@@ -121,50 +98,39 @@ class LoginViewModel: ViewModelable {
         
         input.appleLoginTapped
             .withUnretained(self)
-            .flatMapLatest { owner, presentationContext -> Observable<SocialLoginResponse> in
+            .flatMapLatest { owner, presentationContext -> Observable<Void> in
                 isLoadingRelay.onNext(true)
-                return owner.loginSession.performAppleLogin(presentationContext: presentationContext)
-            }
-            .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
-                guard let self = self else { return Observable.empty() }
-                
-                print("🔥 애플 로그인 성공, 서버 인증 시작")
-                let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
-                
-                let requestModel = AppleLoginRequest(
-                    idToken: socialLoginResponse.idToken,
-                    deviceToken: deviceToken,
-                    nick: socialLoginResponse.name ?? ""
-                )
-                
-                return self.performAppleLogin(
-                    requestModel: requestModel,
-                    isLoadingRelay: isLoadingRelay,
-                    loginErrorRelay: loginErrorRelay,
-                    navigateToMainSubject: navigateToMainSubject
-                )
-            }
-            .catch { error -> Observable<Void> in
-                isLoadingRelay.onNext(false)
-                let shError = SHError.from(error)
-                loginErrorRelay.onNext(shError)
-                return Observable.empty()
+
+                return owner.loginUseCase.loginWithApple(presentationContext: presentationContext)
+                    .do(
+                        onNext: { _ in
+                            isLoadingRelay.onNext(false)
+                            navigateToMainSubject.onNext(())
+                        },
+                        onError: { error in
+                            isLoadingRelay.onNext(false)
+                            let shError = SHError.from(error)
+                            loginErrorRelay.onNext(shError)
+                        }
+                    )
+                    .catchAndReturn(())
             }
             .subscribe()
             .disposed(by: disposeBag)
         
-        let appleLoginError = loginSession.getAppleLoginError()
+        let appleLoginError = loginUseCase.getAppleLoginError()
             .do(onNext: { error in
                 isLoadingRelay.onNext(false)
-                loginErrorRelay.onNext(SHError.from(error))
+                loginErrorRelay.onNext(error)
             })
             .map { _ in () }
         
         let shouldNavigateToMain = navigateToMainSubject.asObservable()
         
         let loginButtonEnable = Observable.combineLatest(input.email, input.password)
-            .map { (email, password) -> Bool in
-                return email.isValidEmail && password.isValidPassword
+            .map { [weak self] (email, password) -> Bool in
+                guard let self = self else { return false }
+                return self.loginUseCase.validateLoginData(email: email, password: password) == nil
             }
             .startWith(false)
             .distinctUntilChanged()
@@ -179,173 +145,4 @@ class LoginViewModel: ViewModelable {
     }
 }
 
-private extension LoginViewModel {
-    /// 이메일 로그인 데이터 유효성 검사
-    func validateLoginData(email: String, password: String) -> SHError? {
-        /// 🚨 Case [1]. 잘못된 이메일 형식
-        guard email.isValidEmail else { return .clientError(.textfield(.invalidEmailFormat)) }
-        /// 🚨 Case [2]. 잘못된 비밀번호 형식
-        guard password.isValidPassword else { return .clientError(.textfield(.invalidEmailFormat)) }
-        
-        return nil
-    }
-    
-    /// 이메일 로그인 네트워크 요청 수행
-    func performEmailLogin(
-        requestModel: EmailLoginRequest,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) -> Observable<Void> {
-        
-        return apiClient.requestObservable(UserEndpoint.emailLogin(requestModel))
-            .do(
-                onNext: { [weak self] (response: LoginResponse) in
-                    self?.handleLoginSuccess(
-                        response: response,
-                        isLoadingRelay: isLoadingRelay,
-                        navigateToMainSubject: navigateToMainSubject
-                    )
-                },
-                onError: { error in
-                    self.handleLoginError(
-                        error: error,
-                        isLoadingRelay: isLoadingRelay,
-                        loginErrorRelay: loginErrorRelay
-                    )
-                }
-            )
-            .map { _ in () }
-            .catchAndReturn(())
-    }
-    
-    /// 이메일 로그인 성공 처리
-    func handleLoginSuccess(
-        response: LoginResponse,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) {
-        print("✅ 이메일 로그인 성공")
-        isLoadingRelay.onNext(false)
-        
-        // 토큰 저장
-        keychainManager.save(.accessToken, value: response.accessToken)
-        keychainManager.save(.refreshToken, value: response.refreshToken)
-        keychainManager.save(.userID, value: response.user_id)
-        keychainManager.save(.lastLoginStatus, value: "email")
-        
-        // 메인 화면으로 이동
-        navigateToMainSubject.onNext(())
-    }
-    
-    /// 이메일 로그인 실패 처리
-    func handleLoginError(
-        error: Error,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError>
-    ) {
-        print("❌ 이메일 로그인 실패: \(error)")
-        isLoadingRelay.onNext(false)
-        
-        // SHError.from을 사용하여 통합 에러 처리
-        let shError = SHError.from(error)
-        
-        // 특별한 경우 처리
-        loginErrorRelay.onNext(shError)
-    }
-    
-    /// 카카오 로그인 네트워크 요청 수행
-    func performKakaoLogin(
-        requestModel: KakaoLoginRequest,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) -> Observable<Void> {
-        
-        return apiClient.requestObservable(UserEndpoint.kakaoLogin(requestModel))
-            .do(
-                onNext: { [weak self] (response: LoginResponse) in
-                    self?.handleSocialLoginSuccess(
-                        response: response,
-                        loginType: "kakao",
-                        isLoadingRelay: isLoadingRelay,
-                        navigateToMainSubject: navigateToMainSubject
-                    )
-                },
-                onError: { error in
-                    self.handleSocialLoginError(
-                        error: error,
-                        loginType: "kakao",
-                        isLoadingRelay: isLoadingRelay,
-                        loginErrorRelay: loginErrorRelay
-                    )
-                }
-            )
-            .map { _ in () }
-            .catchAndReturn(())
-    }
-    
-    /// 애플 로그인 네트워크 요청 수행
-    func performAppleLogin(
-        requestModel: AppleLoginRequest,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) -> Observable<Void> {
-        return apiClient.requestObservable(UserEndpoint.appleLogin(requestModel))
-            .do(
-                onNext: { [weak self] (response: LoginResponse) in
-                    self?.handleSocialLoginSuccess(
-                        response: response,
-                        loginType: "apple",
-                        isLoadingRelay: isLoadingRelay,
-                        navigateToMainSubject: navigateToMainSubject
-                    )
-                },
-                onError: { error in
-                    self.handleSocialLoginError(
-                        error: error,
-                        loginType: "apple",
-                        isLoadingRelay: isLoadingRelay,
-                        loginErrorRelay: loginErrorRelay
-                    )
-                }
-            )
-            .map { _ in () }
-            .catchAndReturn(())
-    }
-    
-    /// 소셜 로그인 성공 처리
-    func handleSocialLoginSuccess(
-        response: LoginResponse,
-        loginType: String,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) {
-        print("✅ \(loginType) 로그인 성공")
-        isLoadingRelay.onNext(false)
-        
-        // 토큰 저장
-        keychainManager.save(.accessToken, value: response.accessToken)
-        keychainManager.save(.refreshToken, value: response.refreshToken)
-        keychainManager.save(.userID, value: response.user_id)
-        keychainManager.save(.lastLoginStatus, value: loginType)
-        
-        // 메인 화면으로 이동
-        navigateToMainSubject.onNext(())
-    }
-    
-    /// 소셜 로그인 실패 처리
-    func handleSocialLoginError(
-        error: Error,
-        loginType: String,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        loginErrorRelay: PublishSubject<SHError>
-    ) {
-        print("❌ \(loginType) 로그인 실패: \(error)")
-        isLoadingRelay.onNext(false)
-        let shError = SHError.from(error)
-        loginErrorRelay.onNext(shError)
-    }
-}
 

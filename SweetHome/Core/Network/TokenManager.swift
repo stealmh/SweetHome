@@ -24,9 +24,12 @@ actor TokenManager {
     private var pendingRequests: [RequestRetryCompletion] = []
     
     // MARK: - Initialization
-    init(keychainManager: KeyChainManagerProtocol = KeyChainManager.shared) {
+    init(
+        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared,
+        refreshNetworkService: NetworkServiceProtocol? = nil
+    ) {
         self.keychainManager = keychainManager
-        self.refreshNetworkService = NetworkService(interceptor: nil)
+        self.refreshNetworkService = refreshNetworkService ?? NetworkService(interceptor: nil)
     }
 }
 //MARK: - Public Method
@@ -52,6 +55,8 @@ extension TokenManager {
     }
     
     /// - 토큰 갱신 시작 (이미 진행중이거나 토큰이 만료된 경우 실패)
+    /// - 더 이상 사용하지 않음: handleTokenRefresh에서 원자적으로 처리
+    @available(*, deprecated, message: "Use atomic check in handleTokenRefresh instead")
     func startRefresh() -> Bool {
         guard !isRefreshing && !isTokenExpired else {
             return false
@@ -65,11 +70,11 @@ extension TokenManager {
         let completions = pendingRequests
         isRefreshing = false
         pendingRequests.removeAll()
-        
+
         if success {
             isTokenExpired = false
         }
-        
+
         return completions
     }
     
@@ -103,11 +108,7 @@ extension TokenManager {
         switch statusCode {
         case 419:
             /// - 액세스 토큰 만료 시 토큰 갱신 처리
-            await handleTokenRefresh(
-                completion: completion,
-                keychainManager: keychainManager,
-                refreshNetworkService: refreshNetworkService
-            )
+            await handleTokenRefreshInternal(completion: completion)
         case 401, 403, 418:
             /// - 리프레시 토큰 만료 시 토큰 만료 처리
             let completions = await handleTokenExpired(keychainManager: keychainManager)
@@ -125,26 +126,55 @@ extension TokenManager {
     }
     
     // MARK: - Token Business Logic
-    
-    /// - 토큰 갱신을 처리하고 대기 중인 요청들을 관리
-    func handleTokenRefresh(
-        completion: @escaping RequestRetryCompletion,
-        keychainManager: KeyChainManagerProtocol,
-        refreshNetworkService: NetworkServiceProtocol
-    ) async {
+
+    /// - 내부 토큰 갱신 처리 (단일 진입점)
+    private func handleTokenRefreshInternal(completion: @escaping RequestRetryCompletion) async {
         /// - 토큰이 이미 만료된 경우 즉시 실패 처리
         if isTokenExpired {
             completion(.doNotRetryWithError(SHError.networkError(.refreshTokenExpired)))
             return
         }
-        
-        /// - 현재 요청을 대기 큐에 추가
+
+        /// - 무조건 대기 큐에 추가
         addPendingRequest(completion)
-        
-        /// - 토큰 갱신을 시작할 수 있는지 확인하고 실행
-        if startRefresh() {
-            await performTokenRefresh(keychainManager: keychainManager, refreshNetworkService: refreshNetworkService)
+
+        /// - 원자적 compare-and-swap 패턴으로 갱신 시작 체크
+        if !isRefreshing {
+            isRefreshing = true
+            await performSingleTokenRefresh()
         }
+    }
+
+    /// - 단일 토큰 갱신 수행 (재진입 불가)
+    private func performSingleTokenRefresh() async {
+        guard let refreshToken = keychainManager.read(.refreshToken) else {
+            await handleRefreshFailure(SHError.networkError(.tokenExpired))
+            return
+        }
+
+        do {
+            let tokenResponse: ReIssueResponse = try await refreshNetworkService.request(
+                AuthEndpoint.refresh(refreshToken: refreshToken, keychainManager: keychainManager)
+            )
+
+            keychainManager.save(.accessToken, value: tokenResponse.accessToken)
+            keychainManager.save(.refreshToken, value: tokenResponse.refreshToken)
+
+            await handleRefreshSuccess()
+
+        } catch {
+            await handleRefreshFailure(error)
+        }
+    }
+
+    /// - 토큰 갱신을 처리하고 대기 중인 요청들을 관리 (외부 API용 - Deprecated)
+    @available(*, deprecated, message: "Use handleTokenRefreshInternal instead")
+    func handleTokenRefresh(
+        completion: @escaping RequestRetryCompletion,
+        keychainManager: KeyChainManagerProtocol,
+        refreshNetworkService: NetworkServiceProtocol
+    ) async {
+        await handleTokenRefreshInternal(completion: completion)
     }
     
     /// - 토큰 만료 상태 처리
@@ -166,33 +196,6 @@ extension TokenManager {
 }
 //MARK: - Private Method
 private extension TokenManager {
-    /// - 실제 토큰 갱신 네트워크 요청 수행
-    func performTokenRefresh(
-        keychainManager: KeyChainManagerProtocol,
-        refreshNetworkService: NetworkServiceProtocol
-    ) async {
-        do {
-            /// - 키체인에서 리프레시 토큰 읽기
-            guard let refreshToken = keychainManager.read(.refreshToken) else {
-                await handleRefreshFailure(SHError.networkError(.tokenExpired))
-                return
-            }
-            
-            /// - 토큰 갱신 API 호출
-            let tokenResponse: ReIssueResponse = try await refreshNetworkService.request(
-                AuthEndpoint.refresh(refreshToken: refreshToken, keychainManager: keychainManager)
-            )
-            
-            /// - 새 토큰들을 키체인에 저장
-            keychainManager.save(.accessToken, value: tokenResponse.accessToken)
-            keychainManager.save(.refreshToken, value: tokenResponse.refreshToken)
-            
-            await handleRefreshSuccess()
-            
-        } catch {
-            await handleRefreshFailure(error)
-        }
-    }
     
     /// - 토큰 갱신 성공 처리
     func handleRefreshSuccess() async {
