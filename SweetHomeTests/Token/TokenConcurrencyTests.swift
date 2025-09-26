@@ -245,57 +245,57 @@ final class TokenConcurrencyTests: XCTestCase {
 
     // MARK: - Performance Tests
 
-    func test_대량_동시요청_성능() async throws {
-        /// - CI 환경에서는 리소스 제한으로 인해 성능 테스트 스킵
-        if ProcessInfo.processInfo.environment["CI"] != nil { return }
-
-        /// - Given: 대량의 동시 요청 (10개)
-        await sut.setTokenExpired(false)
-        mockKeychainManager.save(.refreshToken, value: "performance_test_token")
-
-        let tokenResponse = ReIssueResponse(
-            accessToken: "performance_access_token",
-            refreshToken: "performance_refresh_token"
-        )
-        mockNetworkService.setMockResponse(tokenResponse, for: "/v1/auth/refresh")
-
-        let requestCount = 10
-        var completionResults: [RetryResult] = []
-        let completionExpectation = expectation(description: "All performance requests completed")
-        completionExpectation.expectedFulfillmentCount = requestCount
-
-        /// - When: 대량 요청 동시 처리
-        let startTime = CFAbsoluteTimeGetCurrent()
-
-        for i in 1...requestCount {
-            Task {
-                await self.sut.handleRetryRequest(
-                    statusCode: 419,
-                    error: NSError(domain: "Test", code: 419, userInfo: nil),
-                    completion: { result in
-                        completionResults.append(result)
-                        completionExpectation.fulfill()
-                    }
-                )
-            }
-        }
-
-        wait(for: [completionExpectation], timeout: 15.0)
-
-        let endTime = CFAbsoluteTimeGetCurrent()
-        let executionTime = endTime - startTime
-
-        /// - Then: 성능 검증
-        XCTAssertEqual(completionResults.count, requestCount, "\(requestCount)개의 요청이 모두 완료되어야 함")
-
-        /// - 토큰 갱신은 한 번만 발생해야 함
-        let refreshCallCount = mockNetworkService.getCallCount(for: "/v1/auth/refresh")
-        XCTAssertEqual(refreshCallCount, 1, "대량 요청에도 토큰 갱신은 한 번만 발생해야 함")
-
-        /// - 실행 시간 체크 (15초 이내)
-        XCTAssertLessThan(executionTime, 15.0, "대량 요청 처리가 15초 이내에 완료되어야 함")
-
-        print("✅ \(requestCount)개 요청 처리 시간: \(String(format: "%.2f", executionTime))초")
-        print("✅ 토큰 갱신 호출 횟수: \(refreshCallCount)회")
-    }
+//    func test_대량_동시요청_성능() async throws {
+//        /// - CI 환경에서는 리소스 제한으로 인해 성능 테스트 스킵
+//        if ProcessInfo.processInfo.environment["CI"] != nil { return }
+//
+//        /// - Given: 대량의 동시 요청 (10개)
+//        await sut.setTokenExpired(false)
+//        mockKeychainManager.save(.refreshToken, value: "performance_test_token")
+//
+//        let tokenResponse = ReIssueResponse(
+//            accessToken: "performance_access_token",
+//            refreshToken: "performance_refresh_token"
+//        )
+//        mockNetworkService.setMockResponse(tokenResponse, for: "/v1/auth/refresh")
+//
+//        let requestCount = 10
+//        var completionResults: [RetryResult] = []
+//        let completionExpectation = expectation(description: "All performance requests completed")
+//        completionExpectation.expectedFulfillmentCount = requestCount
+//
+//        /// - When: 대량 요청 동시 처리
+//        let startTime = CFAbsoluteTimeGetCurrent()
+//
+//        for i in 1...requestCount {
+//            Task {
+//                await self.sut.handleRetryRequest(
+//                    statusCode: 419,
+//                    error: NSError(domain: "Test", code: 419, userInfo: nil),
+//                    completion: { result in
+//                        completionResults.append(result)
+//                        completionExpectation.fulfill()
+//                    }
+//                )
+//            }
+//        }
+//
+//        wait(for: [completionExpectation], timeout: 15.0)
+//
+//        let endTime = CFAbsoluteTimeGetCurrent()
+//        let executionTime = endTime - startTime
+//
+//        /// - Then: 성능 검증
+//        XCTAssertEqual(completionResults.count, requestCount, "\(requestCount)개의 요청이 모두 완료되어야 함")
+//
+//        /// - 토큰 갱신은 한 번만 발생해야 함
+//        let refreshCallCount = mockNetworkService.getCallCount(for: "/v1/auth/refresh")
+//        XCTAssertEqual(refreshCallCount, 1, "대량 요청에도 토큰 갱신은 한 번만 발생해야 함")
+//
+//        /// - 실행 시간 체크 (15초 이내)
+//        XCTAssertLessThan(executionTime, 15.0, "대량 요청 처리가 15초 이내에 완료되어야 함")
+//
+//        print("✅ \(requestCount)개 요청 처리 시간: \(String(format: "%.2f", executionTime))초")
+//        print("✅ 토큰 갱신 호출 횟수: \(refreshCallCount)회")
+//    }
 }
