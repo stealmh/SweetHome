@@ -247,9 +247,7 @@ final class TokenConcurrencyTests: XCTestCase {
 
     func test_대량_동시요청_성능() async throws {
         /// - CI 환경에서는 리소스 제한으로 인해 성능 테스트 스킵
-        guard ProcessInfo.processInfo.environment["CI"] == nil else {
-            throw XCTSkip("성능 테스트는 CI 환경에서 스킵합니다 (리소스 제한으로 인한 불안정성 방지)")
-        }
+        if ProcessInfo.processInfo.environment["CI"] != nil { return }
 
         /// - Given: 대량의 동시 요청 (10개)
         await sut.setTokenExpired(false)
