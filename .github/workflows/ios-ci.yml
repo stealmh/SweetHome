@@ -52,6 +52,8 @@ jobs:
         sleep 5
 
     - name: 테스트 검증
+      env:
+        CI: true
       run: |
         xcodebuild clean test \
           -project SweetHome.xcodeproj \
