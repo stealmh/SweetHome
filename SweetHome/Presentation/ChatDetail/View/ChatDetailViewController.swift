@@ -151,7 +151,7 @@ class ChatDetailViewController: BaseViewController {
         
         output.showPhotoPicker
             .drive(onNext: { [weak self] _ in
-                self?.presentPhotoPicker()
+                self?.showAttachmentOptions()
             })
             .disposed(by: disposeBag)
         
@@ -230,14 +230,55 @@ private extension ChatDetailViewController {
         }
     }
     
+    private func showAttachmentOptions() {
+        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        /// - 앨범 선택
+        let photoAction = UIAlertAction(title: "앨범", style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        }
+        photoAction.setValue(UIImage(systemName: "photo.on.rectangle"), forKey: "image")
+
+        /// - 녹음 선택
+        let recordAction = UIAlertAction(title: "녹음", style: .default) { [weak self] _ in
+            self?.presentRecordingView()
+        }
+        recordAction.setValue(UIImage(systemName: "mic"), forKey: "image")
+
+        /// - 취소
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        alertController.addAction(photoAction)
+        alertController.addAction(recordAction)
+        alertController.addAction(cancelAction)
+
+        /// - iPad에서 popover 설정
+        if let popoverController = alertController.popoverPresentationController {
+            popoverController.sourceView = chatInputView.addPhotoButton
+            popoverController.sourceRect = chatInputView.addPhotoButton.bounds
+            popoverController.permittedArrowDirections = [.up]
+        }
+
+        present(alertController, animated: true)
+    }
+
     private func presentPhotoPicker() {
         var configuration = PHPickerConfiguration()
         configuration.selectionLimit = 5
         configuration.filter = .images
-        
+
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
         present(picker, animated: true)
+    }
+
+    private func presentRecordingView() {
+        /// - 녹음 기능 구현
+        print("녹음 기능 - 추후 구현 예정")
+
+        let alert = UIAlertController(title: "녹음", message: "녹음 기능은 추후 구현 예정입니다.", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
 }
 
