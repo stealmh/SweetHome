@@ -29,6 +29,8 @@ enum SHError: Error {
     case notificationError(NotificationError)
     /// - 위치 관련 에러
     case locationError(LocationError)
+    /// - 음성 녹음 관련 에러
+    case voiceRecordingError(VoiceRecordingError)
     
     var message: String {
         switch self {
@@ -55,6 +57,9 @@ enum SHError: Error {
             
         case let .locationError(error):
             return error.errorDescription ?? "위치 오류가 발생했습니다."
+
+        case let .voiceRecordingError(error):
+            return error.errorDescription ?? "음성 녹음 오류가 발생했습니다."
         }
     }
     
@@ -77,6 +82,8 @@ enum SHError: Error {
             return error.displayType
         case .locationError(_):
             return .toast
+        case .voiceRecordingError(_):
+            return .toast
         }
     }
     
@@ -86,10 +93,35 @@ enum SHError: Error {
     }
 }
 
+/// - VoiceRecordingError: 음성 녹음 관련 에러
+enum VoiceRecordingError: Error, LocalizedError {
+    case permissionDenied        /// - 마이크 권한 거부
+    case recordingFailed         /// - 녹음 실패
+    case playbackFailed          /// - 재생 실패
+    case fileNotFound            /// - 녹음 파일을 찾을 수 없음
+    case invalidFormat           /// - 지원하지 않는 오디오 포맷
+
+    var errorDescription: String? {
+        switch self {
+        case .permissionDenied:
+            return "마이크 사용 권한이 필요합니다."
+        case .recordingFailed:
+            return "녹음에 실패했습니다."
+        case .playbackFailed:
+            return "재생에 실패했습니다."
+        case .fileNotFound:
+            return "녹음 파일을 찾을 수 없습니다."
+        case .invalidFormat:
+            return "지원하지 않는 오디오 포맷입니다."
+        }
+    }
+}
+
 extension SHError {
     /// - Error to SHError
     static func from(_ error: Error) -> SHError {
         if let shError = error as? SHError { return shError }
+        if let voiceError = error as? VoiceRecordingError { return .voiceRecordingError(voiceError) }
         return .networkError(.unknown(statusCode: nil, message: "잠시후 다시 시도해주세요."))
     }
 }
