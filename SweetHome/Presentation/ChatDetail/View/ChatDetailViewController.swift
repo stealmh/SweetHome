@@ -16,6 +16,7 @@ class ChatDetailViewController: BaseViewController {
     private let roomId: String
     private let refreshControl = UIRefreshControl()
     private let selectedPhotosRelay = PublishSubject<[Data]>()
+    private let selectedVoiceRelay = PublishSubject<VoiceMessageData>()
     
     private let navigationBar = SHNavigationBar()
     
@@ -114,6 +115,7 @@ class ChatDetailViewController: BaseViewController {
             sendMessage: sendMessageText,
             sendPhotos: chatInputView.addPhotoButton.rx.tap.asObservable(),
             selectedPhotos: selectedPhotosRelay.asObservable(),
+            selectedVoice: selectedVoiceRelay.asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         
@@ -276,12 +278,8 @@ private extension ChatDetailViewController {
         let voiceRecordingBottomSheet = VoiceRecordingBottomSheet()
 
         /// - 음성 데이터 완료 시 콜백 설정
-        voiceRecordingBottomSheet.onVoiceDataReady = { [weak self] audioData in
-            /// - 추후 채팅 메시지로 음성 데이터 전송 로직 구현
-            print("음성 데이터 준비 완료: \(audioData.count) bytes")
-
-            /// - 현재는 콘솔 출력만 하고, 실제 전송 로직은 추후 구현
-            /// - selectedPhotosRelay.onNext([audioData]) 형태로 전송 가능
+        voiceRecordingBottomSheet.onVoiceDataReady = { [weak self] voiceData in
+            self?.handleVoiceMessageSend(voiceData)
         }
 
         /// - 바텀시트 닫힘 콜백 설정
@@ -293,6 +291,14 @@ private extension ChatDetailViewController {
         voiceRecordingBottomSheet.modalPresentationStyle = .overFullScreen
         voiceRecordingBottomSheet.modalTransitionStyle = .crossDissolve
         present(voiceRecordingBottomSheet, animated: true)
+    }
+
+    private func handleVoiceMessageSend(_ voiceData: VoiceMessageData) {
+        /// - 음성 메시지 전송 로직
+        print("음성 메시지 전송 - 파일명: \(voiceData.generatedFileName), 길이: \(String(format: "%.1f", voiceData.duration))초, 크기: \(voiceData.audioData.count) bytes")
+
+        /// - ViewModel로 음성 데이터 전달
+        selectedVoiceRelay.onNext(voiceData)
     }
 }
 

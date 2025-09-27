@@ -119,9 +119,10 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
     private var stateUpdateTimer: Timer?
 
+
     // MARK: - Closures
 
-    var onVoiceDataReady: ((Data) -> Void)?
+    var onVoiceDataReady: ((VoiceMessageData) -> Void)?
     var onDismiss: (() -> Void)?
 
     // MARK: - Lifecycle
@@ -347,8 +348,29 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
     private func handleSendTapped() {
         do {
+            // 음성 데이터 가져오기
             let audioData = try voiceRecordingManager.getRecordedAudioData()
-            onVoiceDataReady?(audioData)
+
+            // 현재 상태에서 녹음 길이 가져오기
+            let duration: TimeInterval
+            switch currentState {
+            case .completed(let completedDuration):
+                duration = completedDuration
+            case .playing(_, let totalDuration):
+                duration = totalDuration
+            case .paused(_, let totalDuration):
+                duration = totalDuration
+            default:
+                duration = 0
+            }
+
+            // VoiceMessageData 구조체로 전달 (파일명은 자동 생성)
+            let voiceData = VoiceMessageData(
+                audioData: audioData,
+                duration: duration
+            )
+
+            onVoiceDataReady?(voiceData)
             dismiss(animated: true) {
                 self.onDismiss?()
             }
