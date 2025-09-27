@@ -279,11 +279,11 @@ final class VoiceRecordingBottomSheet: UIViewController {
         let levels = voiceRecordingManager.getAudioLevels()
 
         switch currentState {
-        case .recording:
+        case .recording(_):
             if let lastLevel = levels.last {
                 waveformView.updateWithRealTimeLevel(lastLevel.level)
             }
-        case .completed:
+        case .completed(_):
             waveformView.updateWithCompletedLevels(levels)
         default:
             break
@@ -301,12 +301,18 @@ final class VoiceRecordingBottomSheet: UIViewController {
                     if hasPermission {
                         try voiceRecordingManager.startRecording()
                     }
-                case .recording:
+                case .recording(_):
                     try voiceRecordingManager.stopRecording()
-                case .completed:
+                case .completed(_):
                     voiceRecordingManager.resetRecording()
-                default:
-                    break
+                case .playing(_, _):
+                    /// - 재생 중일 때 녹음 버튼을 누르면 재설정
+                    voiceRecordingManager.stopPlayback()
+                    voiceRecordingManager.resetRecording()
+                case .paused(_, _):
+                    /// - 일시정지 상태에서 녹음 버튼을 누르면 재설정
+                    voiceRecordingManager.stopPlayback()
+                    voiceRecordingManager.resetRecording()
                 }
             } catch {
                 if case SHError.voiceRecordingError(.permissionDenied) = SHError.from(error) {
@@ -325,11 +331,11 @@ final class VoiceRecordingBottomSheet: UIViewController {
     private func handlePlayTapped() {
         do {
             switch currentState {
-            case .completed:
+            case .completed(_):
                 try voiceRecordingManager.startPlayback()
-            case .playing:
+            case .playing(_, _):
                 voiceRecordingManager.pausePlayback()
-            case .paused:
+            case .paused(_, _):
                 try voiceRecordingManager.startPlayback()
             default:
                 break
@@ -409,14 +415,14 @@ final class VoiceRecordingBottomSheet: UIViewController {
         switch state {
         case .idle:
             waveformView.reset()
-        case .recording:
+        case .recording(_):
             waveformView.startRecordingAnimation()
-        case .completed:
+        case .completed(_):
             waveformView.stopRecordingAnimation()
         case .playing(let currentTime, let totalDuration):
             let progress = Float(currentTime / totalDuration)
             waveformView.updatePlaybackProgress(progress)
-        case .paused:
+        case .paused(_, _):
             break
         }
     }
