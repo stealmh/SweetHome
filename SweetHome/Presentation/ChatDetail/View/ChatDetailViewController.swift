@@ -273,12 +273,26 @@ private extension ChatDetailViewController {
     }
 
     private func presentRecordingView() {
-        /// - 녹음 기능 구현
-        print("녹음 기능 - 추후 구현 예정")
+        let voiceRecordingBottomSheet = VoiceRecordingBottomSheet()
 
-        let alert = UIAlertController(title: "녹음", message: "녹음 기능은 추후 구현 예정입니다.", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
-        present(alert, animated: true)
+        /// - 음성 데이터 완료 시 콜백 설정
+        voiceRecordingBottomSheet.onVoiceDataReady = { [weak self] audioData in
+            /// - 추후 채팅 메시지로 음성 데이터 전송 로직 구현
+            print("음성 데이터 준비 완료: \(audioData.count) bytes")
+
+            /// - 현재는 콘솔 출력만 하고, 실제 전송 로직은 추후 구현
+            /// - selectedPhotosRelay.onNext([audioData]) 형태로 전송 가능
+        }
+
+        /// - 바텀시트 닫힘 콜백 설정
+        voiceRecordingBottomSheet.onDismiss = { [weak self] in
+            print("음성 녹음 바텀시트 닫힘")
+        }
+
+        /// - 바텀시트 표시
+        voiceRecordingBottomSheet.modalPresentationStyle = .overFullScreen
+        voiceRecordingBottomSheet.modalTransitionStyle = .crossDissolve
+        present(voiceRecordingBottomSheet, animated: true)
     }
 }
 
