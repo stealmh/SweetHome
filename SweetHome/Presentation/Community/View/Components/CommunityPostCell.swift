@@ -80,6 +80,8 @@ final class CommunityPostCell: UICollectionViewCell {
         button.configurationUpdateHandler = { [weak self] button in
             var config = button.configuration
             config?.image = button.isSelected ? SHAsset.Icon.likeFill : SHAsset.Icon.likeEmpty
+            config?.background.backgroundColor = .clear
+            config?.background.backgroundColorTransformer = UIConfigurationColorTransformer { _ in .clear }
             button.configuration = config
         }
         button.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
@@ -94,6 +96,8 @@ final class CommunityPostCell: UICollectionViewCell {
         config.imagePadding = 4
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         config.titlePadding = 0
+        config.background.backgroundColor = .clear
+        config.background.backgroundColorTransformer = UIConfigurationColorTransformer { _ in .clear }
 
         let button = UIButton(configuration: config)
         button.contentHorizontalAlignment = .leading
@@ -195,7 +199,7 @@ final class CommunityPostCell: UICollectionViewCell {
 
         /// - 이미지 영역 (1:1.3)
         imageView.snp.makeConstraints {
-            $0.top.equalTo(contentLabel.snp.bottom).offset(12)
+            $0.top.equalTo(contentLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
             $0.height.equalTo(imageView.snp.width).multipliedBy(1.3)
         }

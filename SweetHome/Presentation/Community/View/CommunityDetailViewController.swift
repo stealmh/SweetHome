@@ -109,6 +109,8 @@ class CommunityDetailViewController: BaseViewController {
         button.configurationUpdateHandler = { [weak self] button in
             var config = button.configuration
             config?.image = button.isSelected ? SHAsset.Icon.likeFill : SHAsset.Icon.likeEmpty
+            config?.background.backgroundColor = .clear
+            config?.background.backgroundColorTransformer = UIConfigurationColorTransformer { _ in .clear }
             button.configuration = config
         }
         return button
@@ -122,6 +124,8 @@ class CommunityDetailViewController: BaseViewController {
         config.imagePadding = 4
         config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         config.titlePadding = 0
+        config.background.backgroundColor = .clear
+        config.background.backgroundColorTransformer = UIConfigurationColorTransformer { _ in .clear }
 
         let button = UIButton(configuration: config)
         button.contentHorizontalAlignment = .leading
@@ -139,7 +143,7 @@ class CommunityDetailViewController: BaseViewController {
     private let commentsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = 1
+        stackView.spacing = 8
         return stackView
     }()
 
@@ -496,7 +500,7 @@ class CommunityDetailViewController: BaseViewController {
         let profileImageView = UIImageView()
         profileImageView.image = SHAsset.Default.defaultImage
         profileImageView.tintColor = SHColor.GrayScale.gray_90
-        profileImageView.layer.cornerRadius = 16
+        profileImageView.layer.cornerRadius = 14
         profileImageView.clipsToBounds = true
 
         let nicknameLabel = UILabel()
@@ -515,14 +519,11 @@ class CommunityDetailViewController: BaseViewController {
         commentLabel.textColor = SHColor.GrayScale.gray_90
         commentLabel.numberOfLines = 0
 
-        let separatorView = UIView()
-        separatorView.backgroundColor = SHColor.GrayScale.gray_30
-
-        containerView.addSubviews(profileImageView, nicknameLabel, timeLabel, commentLabel, separatorView)
+        containerView.addSubviews(profileImageView, nicknameLabel, timeLabel, commentLabel)
 
         profileImageView.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().offset(16)
-            $0.width.height.equalTo(32)
+            $0.top.leading.equalToSuperview().offset(8)
+            $0.width.height.equalTo(28)
         }
 
         nicknameLabel.snp.makeConstraints {
@@ -536,15 +537,9 @@ class CommunityDetailViewController: BaseViewController {
         }
 
         commentLabel.snp.makeConstraints {
-            $0.top.equalTo(profileImageView.snp.bottom).offset(8)
+            $0.top.equalTo(profileImageView.snp.bottom).offset(4)
             $0.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        separatorView.snp.makeConstraints {
-            $0.top.equalTo(commentLabel.snp.bottom).offset(16)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(1)
-            $0.bottom.equalToSuperview()
+            $0.bottom.equalToSuperview().inset(8)
         }
 
         return containerView
