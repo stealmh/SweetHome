@@ -18,28 +18,28 @@ final class CommunityCollectionViewLayout {
 
     /// - 커뮤니티 게시글 목록 섹션
     private func createCommunityListSection() -> NSCollectionLayoutSection {
-        /// - 아이템 설정
+        /// - 아이템 설정 (셀 가로는 슈퍼뷰와 동일)
         let itemSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(120)
+            heightDimension: .estimated(180)
         )
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
         /// - 그룹 설정
         let groupSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(120)
+            heightDimension: .estimated(180)
         )
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
-        /// - 섹션 설정
+        /// - 섹션 설정 (각 항목 간 1의 간격)
         let section = NSCollectionLayoutSection(group: group)
-        section.interGroupSpacing = 8
+        section.interGroupSpacing = 1
         section.contentInsets = NSDirectionalEdgeInsets(
-            top: 16,
-            leading: 20,
-            bottom: 20,
-            trailing: 20
+            top: 0,
+            leading: 0,
+            bottom: 0,
+            trailing: 0
         )
 
         return section

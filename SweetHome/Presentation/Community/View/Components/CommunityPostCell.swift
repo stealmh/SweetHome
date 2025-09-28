@@ -18,11 +18,6 @@ final class CommunityPostCell: UICollectionViewCell {
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .white
-        view.layer.cornerRadius = 12
-        view.layer.shadowColor = UIColor.black.cgColor
-        view.layer.shadowOffset = CGSize(width: 0, height: 2)
-        view.layer.shadowRadius = 4
-        view.layer.shadowOpacity = 0.1
         return view
     }()
 
@@ -87,12 +82,18 @@ final class CommunityPostCell: UICollectionViewCell {
         return button
     }()
 
-    private let imageCountLabel: UILabel = {
+    private let commentCountLabel: UILabel = {
         let label = UILabel()
         label.font = SHFont.pretendard(.medium).setSHFont(.caption1)
         label.textColor = SHColor.GrayScale.gray_60
-        label.isHidden = true
+        label.text = "💬 0"
         return label
+    }()
+
+    private let separatorView: UIView = {
+        let view = UIView()
+        view.backgroundColor = SHColor.GrayScale.gray_75
+        return view
     }()
 
     override init(frame: CGRect) {
@@ -109,14 +110,15 @@ final class CommunityPostCell: UICollectionViewCell {
     private func setupUI() {
         contentView.addSubview(containerView)
         containerView.addSubviews(
-            categoryLabel,
-            titleLabel,
-            contentLabel,
             profileImageView,
             nicknameLabel,
             timeLabel,
+            categoryLabel,
+            titleLabel,
+            contentLabel,
             likeButton,
-            imageCountLabel
+            commentCountLabel,
+            separatorView
         )
     }
 
@@ -126,27 +128,10 @@ final class CommunityPostCell: UICollectionViewCell {
             $0.edges.equalToSuperview()
         }
 
-        categoryLabel.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().offset(16)
-            $0.height.equalTo(20)
-            $0.width.greaterThanOrEqualTo(40)
-        }
-
-        titleLabel.snp.makeConstraints {
-            $0.top.equalTo(categoryLabel.snp.bottom).offset(8)
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-
-        contentLabel.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(4)
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-
+        /// - 상단 프로필 영역
         profileImageView.snp.makeConstraints {
-            $0.top.equalTo(contentLabel.snp.bottom).offset(12)
-            $0.leading.equalToSuperview().offset(16)
+            $0.top.leading.equalToSuperview().offset(16)
             $0.width.height.equalTo(32)
-            $0.bottom.lessThanOrEqualToSuperview().inset(16)
         }
 
         nicknameLabel.snp.makeConstraints {
@@ -159,16 +144,43 @@ final class CommunityPostCell: UICollectionViewCell {
             $0.centerY.equalTo(profileImageView)
         }
 
-        likeButton.snp.makeConstraints {
+        categoryLabel.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
             $0.centerY.equalTo(profileImageView)
+            $0.height.equalTo(20)
+            $0.width.greaterThanOrEqualTo(40)
+        }
+
+        /// - 콘텐츠 영역
+        titleLabel.snp.makeConstraints {
+            $0.top.equalTo(profileImageView.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        contentLabel.snp.makeConstraints {
+            $0.top.equalTo(titleLabel.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        /// - 하단 액션 영역
+        likeButton.snp.makeConstraints {
+            $0.top.equalTo(contentLabel.snp.bottom).offset(12)
+            $0.leading.equalToSuperview().offset(16)
             $0.width.equalTo(60)
             $0.height.equalTo(32)
         }
 
-        imageCountLabel.snp.makeConstraints {
-            $0.trailing.equalTo(likeButton.snp.leading).inset(-8)
-            $0.centerY.equalTo(profileImageView)
+        commentCountLabel.snp.makeConstraints {
+            $0.leading.equalTo(likeButton.snp.trailing).offset(12)
+            $0.centerY.equalTo(likeButton)
+        }
+
+        /// - 구분선
+        separatorView.snp.makeConstraints {
+            $0.top.equalTo(likeButton.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1)
+            $0.bottom.equalToSuperview()
         }
     }
 
@@ -184,13 +196,8 @@ final class CommunityPostCell: UICollectionViewCell {
         likeButton.isSelected = post.isLike
         likeButton.setTitle(" \(post.likeCount)", for: .normal)
 
-        /// - 이미지 개수 표시
-        if let fileCountText = post.fileCountText {
-            imageCountLabel.text = fileCountText
-            imageCountLabel.isHidden = false
-        } else {
-            imageCountLabel.isHidden = true
-        }
+        /// - 댓글 개수 설정 (임시로 0으로 설정)
+        commentCountLabel.text = "💬 0"
 
         /// - 프로필 이미지 설정 (기본 이미지 사용)
         profileImageView.image = UIImage(systemName: "person.circle.fill")

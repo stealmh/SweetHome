@@ -39,7 +39,7 @@ private extension MainTabBarController {
         let initialControllers = [
             createViewController(for: .home),
             createPlaceholder(for: .interest),
-            createPlaceholder(for: .community),
+            createViewController(for: .community),
             createPlaceholder(for: .chat),
             createPlaceholder(for: .setting)
         ]
