@@ -111,6 +111,7 @@ final class VoiceMessagePlayerView: UIView {
                 self?.updateUI(for: state)
             })
             .disposed(by: disposeBag)
+
     }
 
     // MARK: - Public Methods

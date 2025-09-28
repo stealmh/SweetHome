@@ -17,6 +17,7 @@ class ChatDetailViewController: BaseViewController {
     private let refreshControl = UIRefreshControl()
     private let selectedPhotosRelay = PublishSubject<[Data]>()
     private let selectedVoiceRelay = PublishSubject<VoiceMessageData>()
+    private let voicePlaybackSubject = PublishSubject<VoiceMessageData>()
     
     private let navigationBar = SHNavigationBar()
     
@@ -52,6 +53,10 @@ class ChatDetailViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        dataSourceManager.delegate = self
+
+        /// - 잘못된 캐시 파일 정리
+        VoiceFileDownloader.shared.clearInvalidCache()
     }
     
     private let viewWillDisappearSubject = PublishSubject<Void>()
@@ -179,6 +184,21 @@ class ChatDetailViewController: BaseViewController {
                 self?.keyboardWillHide(notification)
             })
             .disposed(by: disposeBag)
+
+        /// - 음성 재생 이벤트 처리
+        voicePlaybackSubject
+            .subscribe(onNext: { [weak self] voiceData in
+                self?.handleVoicePlayback(voiceData)
+            })
+            .disposed(by: disposeBag)
+
+        /// - 음성 재생 상태 변화 구독
+        VoicePlaybackManager.shared.playbackStates
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] states in
+                self?.updateVoiceMessageCells(with: states)
+            })
+            .disposed(by: disposeBag)
     }
 }
 //MARK: - Private Method
@@ -212,6 +232,67 @@ private extension ChatDetailViewController {
         }
     }
     
+    func handleVoicePlayback(_ voiceData: VoiceMessageData, relativePath: String? = nil) {
+        print("🎵 ChatDetailViewController: Voice playback requested for file: \(voiceData.generatedFileName), path: \(relativePath ?? "none")")
+
+        /// - 항상 다운로드 후 재생 방식 사용
+        if voiceData.audioData.isEmpty, let relativePath = relativePath {
+            print("📥 ChatDetailViewController: Downloading voice file from server")
+            VoiceFileDownloader.shared.downloadVoiceFile(from: relativePath)
+                .observeOn(MainScheduler.instance)
+                .subscribe(
+                    onNext: { [weak self] audioData in
+                        let updatedVoiceData = VoiceMessageData(
+                            audioData: audioData,
+                            duration: voiceData.duration,
+                            fileName: voiceData.fileName
+                        )
+                        print("✅ ChatDetailViewController: Downloaded \(audioData.count) bytes, starting playback")
+                        VoicePlaybackManager.shared.togglePlayback(for: updatedVoiceData)
+                    },
+                    onError: { error in
+                        print("❌ ChatDetailViewController: Failed to download voice file - \(error)")
+                    }
+                )
+                .disposed(by: disposeBag)
+        } else if !voiceData.audioData.isEmpty {
+            /// - 이미 다운로드된 데이터가 있는 경우 바로 재생
+            print("✅ ChatDetailViewController: Using cached data (\(voiceData.audioData.count) bytes)")
+            VoicePlaybackManager.shared.togglePlayback(for: voiceData)
+        } else {
+            print("❌ ChatDetailViewController: No audio data and no path available")
+        }
+    }
+
+    func updateVoiceMessageCells(with states: [String: VoiceRecordingState]) {
+        /// - 현재 보이는 셀들 중 음성 메시지 셀들을 찾아서 상태 업데이트
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            if let cell = collectionView.cellForItem(at: indexPath) as? MyVoiceMessageCell {
+                if let voiceData = dataSourceManager.getVoiceData(for: indexPath) {
+                    let fileName = voiceData.generatedFileName
+                    if let state = states[fileName] {
+                        cell.updatePlaybackState(state)
+                        if case .playing(let currentTime, _) = state {
+                            let progress = Float(currentTime / voiceData.duration)
+                            cell.updateProgress(progress, currentTime: currentTime)
+                        }
+                    }
+                }
+            } else if let cell = collectionView.cellForItem(at: indexPath) as? OtherVoiceMessageCell {
+                if let voiceData = dataSourceManager.getVoiceData(for: indexPath) {
+                    let fileName = voiceData.generatedFileName
+                    if let state = states[fileName] {
+                        cell.updatePlaybackState(state)
+                        if case .playing(let currentTime, _) = state {
+                            let progress = Float(currentTime / voiceData.duration)
+                            cell.updateProgress(progress, currentTime: currentTime)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func scrollToBottom(animated: Bool) {
         guard collectionView.numberOfSections > 0 else { return }
         let lastSection = collectionView.numberOfSections - 1
@@ -220,7 +301,17 @@ private extension ChatDetailViewController {
         let indexPath = IndexPath(item: lastItem, section: lastSection)
         collectionView.scrollToItem(at: indexPath, at: .bottom, animated: animated)
     }
-    
+}
+
+//MARK: - ChatDetailDataSourceDelegate
+extension ChatDetailViewController: ChatDetailDataSourceDelegate {
+    func didTapVoicePlayButton(voiceData: VoiceMessageData, relativePath: String?) {
+        handleVoicePlayback(voiceData, relativePath: relativePath)
+    }
+}
+
+//MARK: - SocketConnectionStatusDelegate
+extension ChatDetailViewController {
     func updateConnectionStatus(_ status: SocketConnectionStatus) {
         switch status {
         case .connected:

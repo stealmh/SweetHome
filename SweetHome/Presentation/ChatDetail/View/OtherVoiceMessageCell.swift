@@ -48,7 +48,7 @@ final class OtherVoiceMessageCell: UICollectionViewCell {
 
     // MARK: - Properties
 
-    private var disposeBag = DisposeBag()
+    private(set) var disposeBag = DisposeBag()
 
     /// - 재생/일시정지 버튼 탭 이벤트 (외부에서 구독)
     var playPauseButtonTapped: Observable<VoiceMessageData?> {
