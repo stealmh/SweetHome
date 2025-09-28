@@ -28,6 +28,7 @@ final class AudioWaveformView: UIView {
     private var audioLevels: [AudioLevel] = []
     private var maxBars = 60  /// - 최대 표시할 막대 개수
     private var isAnimating = false
+    private var currentBarColor: UIColor = .systemBlue /// - 현재 막대 색상
 
     private let minBarHeight: CGFloat = 2
     private let maxBarHeight: CGFloat = 40
@@ -69,7 +70,7 @@ final class AudioWaveformView: UIView {
 
     private func createBarView(height: CGFloat) -> UIView {
         let bar = UIView()
-        bar.backgroundColor = .systemBlue
+        bar.backgroundColor = currentBarColor
         bar.layer.cornerRadius = barWidth / 2
 
         bar.snp.makeConstraints {
@@ -129,7 +130,7 @@ final class AudioWaveformView: UIView {
             if index <= progressIndex {
                 bar.backgroundColor = .systemGreen  /// - 재생된 부분
             } else {
-                bar.backgroundColor = .systemBlue   /// - 아직 재생되지 않은 부분
+                bar.backgroundColor = currentBarColor   /// - 아직 재생되지 않은 부분
             }
         }
     }
@@ -192,5 +193,28 @@ extension AudioWaveformView {
     /// - 녹음 중지 시 애니메이션
     func stopRecordingAnimation() {
         isAnimating = false
+    }
+}
+
+// MARK: - Theme Extensions
+
+extension AudioWaveformView {
+    /// - 흰색 테마 설정 (내 메시지용)
+    func setWhiteTheme() {
+        currentBarColor = .white
+        updateAllBarsColor(.white)
+    }
+
+    /// - 기본 테마 설정 (상대방 메시지용)
+    func setDefaultTheme() {
+        currentBarColor = .systemBlue
+        updateAllBarsColor(.systemBlue)
+    }
+
+    /// - 모든 막대의 색상 업데이트
+    private func updateAllBarsColor(_ color: UIColor) {
+        stackView.arrangedSubviews.forEach { view in
+            view.backgroundColor = color
+        }
     }
 }

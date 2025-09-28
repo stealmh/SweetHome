@@ -120,6 +120,9 @@ final class OtherVoiceMessageCell: UICollectionViewCell {
 
         /// - 컴팩트 모드로 설정
         voicePlayerView.setCompactMode(true)
+
+        /// - 기본 테마 적용 (회색 배경에서 파란색 버튼/웨이브)
+        voicePlayerView.setDefaultTheme()
     }
 
     // MARK: - Public Methods

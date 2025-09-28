@@ -233,4 +233,20 @@ extension VoiceMessagePlayerView {
             durationLabel.font = .systemFont(ofSize: 12, weight: .medium)
         }
     }
+
+    /// - 색상 테마 설정 (내 메시지용 흰색 테마)
+    func setWhiteTheme() {
+        playPauseButton.tintColor = .white
+        currentTimeLabel.textColor = .white
+        durationLabel.textColor = .white
+        waveformView.setWhiteTheme()
+    }
+
+    /// - 색상 테마 설정 (상대방 메시지용 기본 테마)
+    func setDefaultTheme() {
+        playPauseButton.tintColor = .systemBlue
+        currentTimeLabel.textColor = .label
+        durationLabel.textColor = .secondaryLabel
+        waveformView.setDefaultTheme()
+    }
 }

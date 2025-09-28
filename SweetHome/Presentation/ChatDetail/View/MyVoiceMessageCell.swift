@@ -93,6 +93,9 @@ final class MyVoiceMessageCell: UICollectionViewCell {
 
         /// - 컴팩트 모드로 설정
         voicePlayerView.setCompactMode(true)
+
+        /// - 흰색 테마 적용 (파란 배경에서 보이도록)
+        voicePlayerView.setWhiteTheme()
     }
 
     // MARK: - Public Methods
