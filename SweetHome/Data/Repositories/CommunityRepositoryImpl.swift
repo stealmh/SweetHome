@@ -1,79 +1,37 @@
 //
-//  CommunityViewModel.swift
+//  CommunityRepositoryImpl.swift
 //  SweetHome
 //
 //  Created by 김민호 on 9/28/25.
 //
 
-import RxSwift
-import RxCocoa
 import Foundation
+import RxSwift
 
-final class CommunityViewModel: ViewModelable {
-    let disposeBag = DisposeBag()
-    private let useCase: CommunityUseCase
+/// - CommunityRepository의 구현체
+final class CommunityRepositoryImpl: CommunityRepository {
 
-    struct Input {
-        let viewDidLoad: Observable<Void>
-        let refresh: Observable<Void>
-        let itemSelected: Observable<IndexPath>
+    private let apiClient: ApiClientProtocol
+
+    init(apiClient: ApiClientProtocol = ApiClient.shared) {
+        self.apiClient = apiClient
     }
 
-    struct Output {
-        let posts: Driver<[CommunityPost]>
-        let isLoading: Driver<Bool>
-        let error: Driver<Error>
-        let selectedPost: Driver<CommunityPost>
+    /// - 커뮤니티 게시글 목록 조회
+    func fetchPosts(request: CommunityPostsRequest) -> Observable<CommunityPostsResponse> {
+        return apiClient.requestObservable(CommunityEndpoint.posts(parameter: request))
     }
 
-    init(useCase: CommunityUseCase = CommunityUseCaseImpl(repository: CommunityRepositoryImpl())) {
-        self.useCase = useCase
+    /// - 커뮤니티 게시글 상세 조회
+    func fetchPostDetail(postId: String) -> Observable<CommunityPostsDetailResponse> {
+        return apiClient.requestObservable(CommunityEndpoint.postDetail(id: postId))
     }
+}
 
-    func transform(input: Input) -> Output {
-        let loadingRelay = BehaviorRelay<Bool>(value: false)
-        let postsRelay = BehaviorRelay<[CommunityPost]>(value: [])
-        let errorRelay = PublishRelay<Error>()
+// MARK: - Mock Data (API 실패 시 폴백용)
+extension CommunityRepositoryImpl {
 
-        /// - 초기 로드 및 새로고침
-        let loadTrigger = Observable.merge(
-            input.viewDidLoad,
-            input.refresh
-        )
-
-        loadTrigger
-            .do(onNext: { _ in loadingRelay.accept(true) })
-            .flatMapLatest { _ -> Observable<[CommunityPost]> in
-                let request = CommunityPostsRequest(limit: 10, next: "")
-                return self.useCase.fetchPosts(request: request)
-                    .catch { error in
-                        errorRelay.accept(error)
-                        return Observable.just([])
-                    }
-            }
-            .do(onNext: { _ in loadingRelay.accept(false) })
-            .bind(to: postsRelay)
-            .disposed(by: disposeBag)
-
-        /// - 아이템 선택 처리
-        let selectedPost = input.itemSelected
-            .withLatestFrom(postsRelay) { (indexPath: IndexPath, posts: [CommunityPost]) -> CommunityPost? in
-                guard indexPath.item < posts.count else { return nil }
-                return posts[indexPath.item]
-            }
-            .compactMap { $0 }
-            .asDriver(onErrorDriveWith: .empty())
-
-        return Output(
-            posts: postsRelay.asDriver(),
-            isLoading: loadingRelay.asDriver(),
-            error: errorRelay.asDriver(onErrorDriveWith: .empty()),
-            selectedPost: selectedPost
-        )
-    }
-
-    /// - 목 데이터 생성
-    private func createMockData() -> [CommunityPostsDataResponse] {
+    private func createMockPosts() -> [CommunityPostsDataResponse] {
         return [
             CommunityPostsDataResponse(
                 post_id: "1",
@@ -146,25 +104,57 @@ final class CommunityViewModel: ViewModelable {
                 like_count: 15,
                 createdAt: "2024-09-27T14:20:00Z",
                 updatedAt: "2024-09-27T14:20:00Z"
-            ),
-            CommunityPostsDataResponse(
-                post_id: "5",
-                category: "일반",
-                title: "동네 카페 추천해드려요",
-                content: "저희 동네에 새로 생긴 카페인데 분위기도 좋고 커피도 맛있어요. 부동산 상담 하기에도 좋은 공간 같아서 추천드립니다!",
-                geolocation: BaseGeolocationResponse(longitude: 126.9520, latitude: 37.4807),
-                creator: ParticipantResponse(
-                    user_id: "user5",
-                    nick: "카페러버",
-                    introduction: "카페 탐방이 취미",
-                    profileImage: nil
-                ),
-                files: ["cafe1.jpg"],
-                is_like: false,
-                like_count: 6,
-                createdAt: "2024-09-26T16:00:00Z",
-                updatedAt: "2024-09-26T16:00:00Z"
             )
         ]
     }
+
+    private func createMockPostDetail(postId: String) -> CommunityPostsDetailResponse {
+        let mockComments = [
+            CommentResponse(
+                comment_id: "comment1",
+                content: "정말 유용한 정보네요! 감사합니다.",
+                createdAt: "2024-09-28T11:00:00Z",
+                creator: CreatorResponse(
+                    user_id: "commenter1",
+                    nick: "댓글러",
+                    introduction: "부동산 관심많음",
+                    profileImage: nil
+                ),
+                replies: nil
+            ),
+            CommentResponse(
+                comment_id: "comment2",
+                content: "저도 비슷한 경험이 있어요. 정말 공감됩니다.",
+                createdAt: "2024-09-28T12:30:00Z",
+                creator: CreatorResponse(
+                    user_id: "commenter2",
+                    nick: "공감왕",
+                    introduction: "집구하는중",
+                    profileImage: nil
+                ),
+                replies: nil
+            )
+        ]
+
+        // 첫 번째 목 데이터를 기반으로 상세 정보 생성
+        let basePost = createMockPosts().first!
+
+        return CommunityPostsDetailResponse(
+            post_id: postId,
+            category: basePost.category,
+            title: basePost.title,
+            content: basePost.content,
+            geolocation: basePost.geolocation,
+            creator: basePost.creator,
+            files: basePost.files,
+            is_like: basePost.is_like,
+            like_count: basePost.like_count,
+            comments: mockComments,
+            createdAt: basePost.createdAt,
+            updatedAt: basePost.updatedAt
+        )
+    }
 }
+
+// MARK: - Empty Response for API calls that don't return data
+struct EmptyResponse: Decodable {}

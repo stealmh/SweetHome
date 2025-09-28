@@ -12,14 +12,15 @@ import Foundation
 final class CommunityDetailViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     private let initialPost: CommunityPost
-    
+    private let useCase: CommunityUseCase
+
     struct Input {
         let viewDidLoad: Observable<Void>
         let likeButtonTapped: Observable<Void>
         let commentText: Observable<String>
         let sendComment: Observable<Void>
     }
-    
+
     struct Output {
         let postDetail: Driver<CommunityPostDetail>
         let isLoading: Driver<Bool>
@@ -29,8 +30,9 @@ final class CommunityDetailViewModel: ViewModelable {
         let commentSent: Driver<Void>
     }
 
-    init(post: CommunityPost) {
+    init(post: CommunityPost, useCase: CommunityUseCase = CommunityUseCaseImpl(repository: CommunityRepositoryImpl())) {
         self.initialPost = post
+        self.useCase = useCase
     }
 
     func transform(input: Input) -> Output {
@@ -45,9 +47,7 @@ final class CommunityDetailViewModel: ViewModelable {
         input.viewDidLoad
             .do(onNext: { _ in loadingRelay.accept(true) })
             .flatMapLatest { _ -> Observable<CommunityPostDetail> in
-                /// - 목 데이터 반환 (실제로는 API 호출)
-                return Observable.just(self.createMockDetailData().toDomain)
-                    .delay(.milliseconds(300), scheduler: MainScheduler.instance)
+                return self.useCase.fetchPostDetail(postId: self.initialPost.id)
                     .catch { error in
                         errorRelay.accept(error)
                         return Observable.empty()
@@ -60,17 +60,10 @@ final class CommunityDetailViewModel: ViewModelable {
         /// - 좋아요 버튼 처리
         input.likeButtonTapped
             .withLatestFrom(isLikedRelay)
-            .subscribe(onNext: { currentLikeStatus in
-                let newLikeStatus = !currentLikeStatus
-                isLikedRelay.accept(newLikeStatus)
-
-                let currentCount = likeCountRelay.value
-                let newCount = newLikeStatus ? currentCount + 1 : currentCount - 1
-                likeCountRelay.accept(max(0, newCount))
-
-                /// - TODO: 실제 API 호출
-                print("Like status changed to: \(newLikeStatus)")
-            })
+            .flatMapLatest { currentLikeStatus -> Observable<Void> in
+                return Observable.empty()
+            }
+            .subscribe()
             .disposed(by: disposeBag)
 
         /// - 댓글 전송 처리
@@ -80,11 +73,10 @@ final class CommunityDetailViewModel: ViewModelable {
 
         input.sendComment
             .withLatestFrom(validCommentText)
-            .subscribe(onNext: { commentText in
-                /// - TODO: 실제 댓글 전송 API 호출
-                print("Sending comment: \(commentText)")
-                commentSentRelay.accept(())
-            })
+            .flatMapLatest { commentText -> Observable<Void> in
+                return Observable.empty()
+            }
+            .subscribe()
             .disposed(by: disposeBag)
 
         return Output(
