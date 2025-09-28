@@ -6,12 +6,19 @@
 //
 
 import UIKit
+import AVFoundation
+
+protocol ChatDetailDataSourceDelegate: AnyObject {
+    func didTapVoicePlayButton(voiceData: VoiceMessageData, relativePath: String?)
+}
 
 final class ChatDetailCollectionViewDataSource {
     private let collectionView: UICollectionView
     private var dataSource: UICollectionViewDiffableDataSource<Section, LastChat>!
     private let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
     private let calendar = Calendar.current
+
+    weak var delegate: ChatDetailDataSourceDelegate?
     
     enum Section {
         case messages
@@ -56,19 +63,39 @@ private extension ChatDetailCollectionViewDataSource {
             let isMyMessage = message.sender.userId == self.currentUserId
             let shouldShowTime = self.shouldShowTime(for: message, at: indexPath)
             let shouldShowProfile = self.shouldShowProfile(for: message, at: indexPath)
-            
-            
-            let hasFiles = !message.attachedFiles.isEmpty
-            
+
             if isMyMessage {
-                if hasFiles {
+                switch message.chatMessageType {
+                case .voice:
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "MyVoiceMessageCell",
+                        for: indexPath
+                    ) as! MyVoiceMessageCell
+
+                    /// - 음성 메시지 데이터 생성 (임시 데이터)
+                    if let voiceData = self.createVoiceMessageData(from: message) {
+                        cell.configure(with: voiceData, message: message, shouldShowTime: shouldShowTime)
+
+                        /// - 재생 버튼 이벤트 연결
+                        cell.playPauseButtonTapped
+                            .compactMap { $0 }
+                            .subscribe(onNext: { [weak self] voiceData in
+                                let relativePath = message.attachedFiles.first
+                                self?.delegate?.didTapVoicePlayButton(voiceData: voiceData, relativePath: relativePath)
+                            })
+                            .disposed(by: cell.disposeBag)
+                    }
+                    return cell
+
+                case .image:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "MyMessageFileCell",
                         for: indexPath
                     ) as! MyMessageFileCell
                     cell.configure(with: message, shouldShowTime: shouldShowTime)
                     return cell
-                } else {
+
+                case .text:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "MyMessageCell",
                         for: indexPath
@@ -77,14 +104,37 @@ private extension ChatDetailCollectionViewDataSource {
                     return cell
                 }
             } else {
-                if hasFiles {
+                switch message.chatMessageType {
+                case .voice:
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "OtherVoiceMessageCell",
+                        for: indexPath
+                    ) as! OtherVoiceMessageCell
+
+                    /// - 음성 메시지 데이터 생성 (임시 데이터)
+                    if let voiceData = self.createVoiceMessageData(from: message) {
+                        cell.configure(with: voiceData, message: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
+
+                        /// - 재생 버튼 이벤트 연결
+                        cell.playPauseButtonTapped
+                            .compactMap { $0 }
+                            .subscribe(onNext: { [weak self] voiceData in
+                                let relativePath = message.attachedFiles.first
+                                self?.delegate?.didTapVoicePlayButton(voiceData: voiceData, relativePath: relativePath)
+                            })
+                            .disposed(by: cell.disposeBag)
+                    }
+                    return cell
+
+                case .image:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "OtherMessageFileCell",
                         for: indexPath
                     ) as! OtherMessageFileCell
                     cell.configure(with: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
                     return cell
-                } else {
+
+                case .text:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "OtherMessageCell",
                         for: indexPath
@@ -163,10 +213,84 @@ private extension ChatDetailCollectionViewDataSource {
     func scrollToBottom() {
         let numberOfItems = collectionView.numberOfItems(inSection: 0)
         guard numberOfItems > 0 else { return }
-        
+
         let lastIndexPath = IndexPath(item: numberOfItems - 1, section: 0)
         DispatchQueue.main.async {
             self.collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: false)
         }
+    }
+
+    /// - LastChat에서 VoiceMessageData 생성
+    func createVoiceMessageData(from message: LastChat) -> VoiceMessageData? {
+        guard message.chatMessageType == .voice, !message.attachedFiles.isEmpty else {
+            return nil
+        }
+
+        let relativePath = message.attachedFiles.first!
+        let fileName = relativePath.components(separatedBy: "/").last
+
+        /// - 캐시된 파일이 있는지 확인
+        if let cachedData = VoiceFileDownloader.shared.getCachedVoiceData(from: relativePath) {
+            /// - 캐시된 파일의 실제 길이를 구하거나 기본값 사용
+            let duration = extractDurationFromAudioData(cachedData) ?? 30.0
+            print("✅ ChatDetailCollectionViewDataSource: Using cached voice data for \(fileName ?? "unknown"), size: \(cachedData.count) bytes, duration: \(String(format: "%.2f", duration))s")
+            return VoiceMessageData(
+                audioData: cachedData,
+                duration: duration,
+                fileName: fileName
+            )
+        } else {
+            /// - 파일이 없는 경우 빈 데이터로 생성 (다운로드는 재생 시 처리)
+            let duration: TimeInterval = 30.0 /// - 기본 길이 (다운로드 후 실제 길이로 업데이트됨)
+            print("📁 ChatDetailCollectionViewDataSource: No cached data for \(fileName ?? "unknown"), will download on playback")
+            return VoiceMessageData(
+                audioData: Data(),
+                duration: duration,
+                fileName: fileName
+            )
+        }
+    }
+
+    /// - 오디오 데이터에서 길이 추출
+    private func extractDurationFromAudioData(_ audioData: Data) -> TimeInterval? {
+        do {
+            /// - 임시 파일 생성
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let tempFileName = "temp_duration_\(UUID().uuidString).mp4"
+            let tempFileURL = tempDirectory.appendingPathComponent(tempFileName)
+
+            /// - 데이터를 임시 파일에 저장
+            try audioData.write(to: tempFileURL)
+
+            /// - AVAsset을 사용하여 duration 추출
+            let asset = AVAsset(url: tempFileURL)
+            let duration = asset.duration.seconds
+
+            /// - 임시 파일 삭제
+            try? FileManager.default.removeItem(at: tempFileURL)
+
+            /// - 유효한 duration인지 확인
+            if duration > 0 && duration.isFinite {
+                return duration
+            } else {
+                return nil
+            }
+        } catch {
+            print("❌ ChatDetailDataSource: Failed to extract duration - \(error)")
+            return nil
+        }
+    }
+
+}
+
+// MARK: - Public Methods
+extension ChatDetailCollectionViewDataSource {
+    /// - 특정 IndexPath의 VoiceMessageData 반환
+    func getVoiceData(for indexPath: IndexPath) -> VoiceMessageData? {
+        guard let message = dataSource.itemIdentifier(for: indexPath),
+              message.chatMessageType == .voice else {
+            return nil
+        }
+        return createVoiceMessageData(from: message)
     }
 }

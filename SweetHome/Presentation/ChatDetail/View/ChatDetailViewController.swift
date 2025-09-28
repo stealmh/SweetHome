@@ -16,6 +16,8 @@ class ChatDetailViewController: BaseViewController {
     private let roomId: String
     private let refreshControl = UIRefreshControl()
     private let selectedPhotosRelay = PublishSubject<[Data]>()
+    private let selectedVoiceRelay = PublishSubject<VoiceMessageData>()
+    private let voicePlaybackSubject = PublishSubject<VoiceMessageData>()
     
     private let navigationBar = SHNavigationBar()
     
@@ -27,6 +29,8 @@ class ChatDetailViewController: BaseViewController {
         cv.register(OtherMessageCell.self, forCellWithReuseIdentifier: "OtherMessageCell")
         cv.register(MyMessageFileCell.self, forCellWithReuseIdentifier: "MyMessageFileCell")
         cv.register(OtherMessageFileCell.self, forCellWithReuseIdentifier: "OtherMessageFileCell")
+        cv.register(MyVoiceMessageCell.self, forCellWithReuseIdentifier: "MyVoiceMessageCell")
+        cv.register(OtherVoiceMessageCell.self, forCellWithReuseIdentifier: "OtherVoiceMessageCell")
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
@@ -49,6 +53,10 @@ class ChatDetailViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        dataSourceManager.delegate = self
+
+        /// - 잘못된 캐시 파일 정리
+        VoiceFileDownloader.shared.clearInvalidCache()
     }
     
     private let viewWillDisappearSubject = PublishSubject<Void>()
@@ -114,6 +122,7 @@ class ChatDetailViewController: BaseViewController {
             sendMessage: sendMessageText,
             sendPhotos: chatInputView.addPhotoButton.rx.tap.asObservable(),
             selectedPhotos: selectedPhotosRelay.asObservable(),
+            selectedVoice: selectedVoiceRelay.asObservable(),
             viewWillDisappear: viewWillDisappearSubject.asObservable()
         )
         
@@ -151,7 +160,7 @@ class ChatDetailViewController: BaseViewController {
         
         output.showPhotoPicker
             .drive(onNext: { [weak self] _ in
-                self?.presentPhotoPicker()
+                self?.showAttachmentOptions()
             })
             .disposed(by: disposeBag)
         
@@ -173,6 +182,21 @@ class ChatDetailViewController: BaseViewController {
             .notification(UIResponder.keyboardWillHideNotification)
             .subscribe(onNext: { [weak self] notification in
                 self?.keyboardWillHide(notification)
+            })
+            .disposed(by: disposeBag)
+
+        /// - 음성 재생 이벤트 처리
+        voicePlaybackSubject
+            .subscribe(onNext: { [weak self] voiceData in
+                self?.handleVoicePlayback(voiceData)
+            })
+            .disposed(by: disposeBag)
+
+        /// - 음성 재생 상태 변화 구독
+        VoicePlaybackManager.shared.playbackStates
+            .observeOn(MainScheduler.instance)
+            .subscribe(onNext: { [weak self] states in
+                self?.updateVoiceMessageCells(with: states)
             })
             .disposed(by: disposeBag)
     }
@@ -208,6 +232,70 @@ private extension ChatDetailViewController {
         }
     }
     
+    func handleVoicePlayback(_ voiceData: VoiceMessageData, relativePath: String? = nil) {
+        print("🎵 ChatDetailViewController: Voice playback requested for file: \(voiceData.generatedFileName), path: \(relativePath ?? "none")")
+
+        /// - 항상 다운로드 후 재생 방식 사용
+        if voiceData.audioData.isEmpty, let relativePath = relativePath {
+            print("📥 ChatDetailViewController: Downloading voice file from server")
+            VoiceFileDownloader.shared.downloadVoiceFile(from: relativePath)
+                .observeOn(MainScheduler.instance)
+                .subscribe(
+                    onNext: { [weak self] result in
+                        /// - 실제 duration이 있으면 사용, 없으면 기본값 사용
+                        let finalDuration = result.actualDuration ?? voiceData.duration
+
+                        let updatedVoiceData = VoiceMessageData(
+                            audioData: result.audioData,
+                            duration: finalDuration,
+                            fileName: voiceData.fileName
+                        )
+                        print("✅ ChatDetailViewController: Downloaded \(result.audioData.count) bytes, duration: \(String(format: "%.2f", finalDuration))s, starting playback")
+                        VoicePlaybackManager.shared.togglePlayback(for: updatedVoiceData)
+                    },
+                    onError: { error in
+                        print("❌ ChatDetailViewController: Failed to download voice file - \(error)")
+                    }
+                )
+                .disposed(by: disposeBag)
+        } else if !voiceData.audioData.isEmpty {
+            /// - 이미 다운로드된 데이터가 있는 경우 바로 재생
+            print("✅ ChatDetailViewController: Using cached data (\(voiceData.audioData.count) bytes)")
+            VoicePlaybackManager.shared.togglePlayback(for: voiceData)
+        } else {
+            print("❌ ChatDetailViewController: No audio data and no path available")
+        }
+    }
+
+    func updateVoiceMessageCells(with states: [String: VoiceRecordingState]) {
+        /// - 현재 보이는 셀들 중 음성 메시지 셀들을 찾아서 상태 업데이트
+        for indexPath in collectionView.indexPathsForVisibleItems {
+            if let cell = collectionView.cellForItem(at: indexPath) as? MyVoiceMessageCell {
+                if let voiceData = dataSourceManager.getVoiceData(for: indexPath) {
+                    let fileName = voiceData.generatedFileName
+                    if let state = states[fileName] {
+                        cell.updatePlaybackState(state)
+                        if case .playing(let currentTime, let totalDuration) = state {
+                            let progress = Float(currentTime / totalDuration)
+                            cell.updateProgress(progress, currentTime: currentTime)
+                        }
+                    }
+                }
+            } else if let cell = collectionView.cellForItem(at: indexPath) as? OtherVoiceMessageCell {
+                if let voiceData = dataSourceManager.getVoiceData(for: indexPath) {
+                    let fileName = voiceData.generatedFileName
+                    if let state = states[fileName] {
+                        cell.updatePlaybackState(state)
+                        if case .playing(let currentTime, let totalDuration) = state {
+                            let progress = Float(currentTime / totalDuration)
+                            cell.updateProgress(progress, currentTime: currentTime)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     func scrollToBottom(animated: Bool) {
         guard collectionView.numberOfSections > 0 else { return }
         let lastSection = collectionView.numberOfSections - 1
@@ -216,7 +304,17 @@ private extension ChatDetailViewController {
         let indexPath = IndexPath(item: lastItem, section: lastSection)
         collectionView.scrollToItem(at: indexPath, at: .bottom, animated: animated)
     }
-    
+}
+
+//MARK: - ChatDetailDataSourceDelegate
+extension ChatDetailViewController: ChatDetailDataSourceDelegate {
+    func didTapVoicePlayButton(voiceData: VoiceMessageData, relativePath: String?) {
+        handleVoicePlayback(voiceData, relativePath: relativePath)
+    }
+}
+
+//MARK: - SocketConnectionStatusDelegate
+extension ChatDetailViewController {
     func updateConnectionStatus(_ status: SocketConnectionStatus) {
         switch status {
         case .connected:
@@ -230,14 +328,73 @@ private extension ChatDetailViewController {
         }
     }
     
+    private func showAttachmentOptions() {
+        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        /// - 앨범 선택
+        let photoAction = UIAlertAction(title: "앨범", style: .default) { [weak self] _ in
+            self?.presentPhotoPicker()
+        }
+        photoAction.setValue(UIImage(systemName: "photo.on.rectangle"), forKey: "image")
+
+        /// - 녹음 선택
+        let recordAction = UIAlertAction(title: "녹음", style: .default) { [weak self] _ in
+            self?.presentRecordingView()
+        }
+        recordAction.setValue(UIImage(systemName: "mic"), forKey: "image")
+
+        /// - 취소
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        alertController.addAction(photoAction)
+        alertController.addAction(recordAction)
+        alertController.addAction(cancelAction)
+
+        /// - iPad에서 popover 설정
+        if let popoverController = alertController.popoverPresentationController {
+            popoverController.sourceView = chatInputView.addPhotoButton
+            popoverController.sourceRect = chatInputView.addPhotoButton.bounds
+            popoverController.permittedArrowDirections = [.up]
+        }
+
+        present(alertController, animated: true)
+    }
+
     private func presentPhotoPicker() {
         var configuration = PHPickerConfiguration()
         configuration.selectionLimit = 5
         configuration.filter = .images
-        
+
         let picker = PHPickerViewController(configuration: configuration)
         picker.delegate = self
         present(picker, animated: true)
+    }
+
+    private func presentRecordingView() {
+        let voiceRecordingBottomSheet = VoiceRecordingBottomSheet()
+
+        /// - 음성 데이터 완료 시 콜백 설정
+        voiceRecordingBottomSheet.onVoiceDataReady = { [weak self] voiceData in
+            self?.handleVoiceMessageSend(voiceData)
+        }
+
+        /// - 바텀시트 닫힘 콜백 설정
+        voiceRecordingBottomSheet.onDismiss = { [weak self] in
+            print("음성 녹음 바텀시트 닫힘")
+        }
+
+        /// - 바텀시트 표시
+        voiceRecordingBottomSheet.modalPresentationStyle = .overFullScreen
+        voiceRecordingBottomSheet.modalTransitionStyle = .crossDissolve
+        present(voiceRecordingBottomSheet, animated: true)
+    }
+
+    private func handleVoiceMessageSend(_ voiceData: VoiceMessageData) {
+        /// - 음성 메시지 전송 로직
+        print("음성 메시지 전송 - 파일명: \(voiceData.generatedFileName), 길이: \(String(format: "%.1f", voiceData.duration))초, 크기: \(voiceData.audioData.count) bytes")
+
+        /// - ViewModel로 음성 데이터 전달
+        selectedVoiceRelay.onNext(voiceData)
     }
 }
 

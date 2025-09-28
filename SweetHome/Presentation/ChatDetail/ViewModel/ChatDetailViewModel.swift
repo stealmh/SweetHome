@@ -28,7 +28,53 @@ class ChatDetailViewModel: ViewModelable {
         let sendMessage: Observable<String>
         let sendPhotos: Observable<Void>
         let selectedPhotos: Observable<[Data]>
+        let selectedVoice: Observable<VoiceMessageData>
         let viewWillDisappear: Observable<Void>
+    }
+
+
+    enum FileType {
+        case photo(Data)
+        case voice(VoiceMessageData)
+
+        var data: Data {
+            switch self {
+            case .photo(let data):
+                return data
+            case .voice(let voiceData):
+                return voiceData.audioData
+            }
+        }
+
+        var fileName: String {
+            let userId = KeyChainManager.shared.read(.userID) ?? ""
+            let timestamp = Int(Date().timeIntervalSince1970)
+
+            switch self {
+            case .photo:
+                return "\(userId)_\(timestamp).jpg"
+            case .voice(let voiceData):
+                return voiceData.generatedFileName
+            }
+        }
+
+        var mimeType: String {
+            switch self {
+            case .photo:
+                return "image/jpeg"
+            case .voice:
+                return "audio/mp4"
+            }
+        }
+
+        var messageContent: String {
+            switch self {
+            case .photo:
+                return "사진"
+            case .voice:
+                return "음성메시지"
+            }
+        }
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
@@ -117,7 +163,24 @@ class ChatDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] imageDatas -> Observable<Void> in
                 guard let self else { return .empty() }
-                return self.uploadPhotos(imageDatas, roomId: input.roomId)
+                let fileTypes = imageDatas.map { FileType.photo($0) }
+                return self.uploadFiles(fileTypes, roomId: input.roomId)
+            }
+            .do(onNext: { _ in isLoadingRelay.onNext(false) })
+            .subscribe(onNext: { _ in
+                photosUploadedRelay.onNext(())
+            }, onError: { error in
+                isLoadingRelay.onNext(false)
+                errorRelay.onNext(SHError.from(error))
+            })
+            .disposed(by: disposeBag)
+
+        input.selectedVoice
+            .do(onNext: { _ in isLoadingRelay.onNext(true) })
+            .flatMapLatest { [weak self] voiceData -> Observable<Void> in
+                guard let self else { return .empty() }
+                let fileType = FileType.voice(voiceData)
+                return self.uploadFiles([fileType], roomId: input.roomId)
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { _ in
@@ -304,43 +367,49 @@ class ChatDetailViewModel: ViewModelable {
 
 /// - upload
 private extension ChatDetailViewModel {
-    func prepareMultipartData(from imageDatas: [Data]) -> [MultipartFormData] {
-        let userId = KeyChainManager.shared.read(.userID) ?? ""
-        let timestamp = Int(Date().timeIntervalSince1970)
-        
-        return imageDatas.enumerated().map { index, imageData in
-            let fileName = "\(userId)_\(timestamp)_\(index).jpg"
+    func prepareMultipartData(from fileTypes: [FileType]) -> [MultipartFormData] {
+        return fileTypes.enumerated().map { index, fileType in
+            var fileName = fileType.fileName
+
+            // 사진의 경우 인덱스 추가
+            if case .photo = fileType {
+                let userId = KeyChainManager.shared.read(.userID) ?? ""
+                let timestamp = Int(Date().timeIntervalSince1970)
+                fileName = "\(userId)_\(timestamp)_\(index).jpg"
+            }
+
             return MultipartFormData(
-                data: imageData,
+                data: fileType.data,
                 name: "files",
                 fileName: fileName,
-                mimeType: "image/jpeg"
+                mimeType: fileType.mimeType
             )
         }
     }
     
-    func uploadFiles(_ multipartData: [MultipartFormData], roomId: String) -> Observable<[String]> {
+    func uploadMultipartFiles(_ multipartData: [MultipartFormData], roomId: String) -> Observable<[String]> {
         return apiClient.uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartData))
             .map { (response: ChatUploadResponse) in
                 return response.files
             }
     }
-    
-    func sendPhotoMessage(with files: [String], roomId: String) -> Observable<Void> {
-        let sendChat = SendChat(content: "사진", files: files)
+
+    func sendFileMessage(with files: [String], content: String, roomId: String) -> Observable<Void> {
+        let sendChat = SendChat(content: content, files: files)
         return apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: roomId, model: sendChat))
             .map { (_: LastChatResponse) in () }
     }
-    
-    func uploadPhotos(_ imageDatas: [Data], roomId: String) -> Observable<Void> {
-        guard !imageDatas.isEmpty else { return .just(()) }
-        
-        let multipartData = prepareMultipartData(from: imageDatas)
-        
-        return uploadFiles(multipartData, roomId: roomId)
+
+    func uploadFiles(_ fileTypes: [FileType], roomId: String) -> Observable<Void> {
+        guard !fileTypes.isEmpty else { return .just(()) }
+
+        let multipartData = prepareMultipartData(from: fileTypes)
+        let messageContent = fileTypes.first?.messageContent ?? "파일"
+
+        return uploadMultipartFiles(multipartData, roomId: roomId)
             .flatMap { [weak self] files -> Observable<Void> in
                 guard let self else { return .empty() }
-                return self.sendPhotoMessage(with: files, roomId: roomId)
+                return self.sendFileMessage(with: files, content: messageContent, roomId: roomId)
             }
     }
 }

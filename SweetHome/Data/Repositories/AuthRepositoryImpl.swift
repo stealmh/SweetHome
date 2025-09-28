@@ -31,6 +31,7 @@ class AuthRepositoryImpl: AuthRepository {
         return apiClient.requestObservable(UserEndpoint.emailLogin(request))
             .do(onNext: { [weak self] response in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
+                self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
     }
@@ -45,6 +46,7 @@ class AuthRepositoryImpl: AuthRepository {
         return apiClient.requestObservable(UserEndpoint.kakaoLogin(request))
             .do(onNext: { [weak self] response in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
+                self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
     }
@@ -53,6 +55,7 @@ class AuthRepositoryImpl: AuthRepository {
         return apiClient.requestObservable(UserEndpoint.appleLogin(request))
             .do(onNext: { [weak self] response in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
+                self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
     }
@@ -84,6 +87,10 @@ class AuthRepositoryImpl: AuthRepository {
     func saveTokens(accessToken: String, refreshToken: String) {
         keychainManager.save(.accessToken, value: accessToken)
         keychainManager.save(.refreshToken, value: refreshToken)
+    }
+
+    func saveUserID(_ userID: String) {
+        keychainManager.save(.userID, value: userID)
     }
 
     func clearTokens() {
