@@ -74,32 +74,29 @@ final class VoiceRecordingBottomSheet: UIViewController {
     private let cancelButton: UIButton = {
         let v = UIButton(type: .system)
         v.setTitle("취소", for: .normal)
-        v.setTitleColor(.systemRed, for: .normal)
+        v.setTitleColor(.systemGray, for: .normal)
         v.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        v.backgroundColor = .systemBackground
-        v.layer.cornerRadius = 24
-        v.layer.borderWidth = 1
-        v.layer.borderColor = UIColor.systemRed.cgColor
+        v.backgroundColor = .clear
         return v
     }()
 
     private let recordButton: UIButton = {
         let v = UIButton(type: .system)
-        v.setTitle("녹음", for: .normal)
-        v.setTitleColor(.white, for: .normal)
-        v.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        v.setImage(UIImage(systemName: "mic.fill"), for: .normal)
+        v.tintColor = .white
         v.backgroundColor = .systemRed
-        v.layer.cornerRadius = 24
+        v.layer.cornerRadius = 25
+        v.imageView?.contentMode = .scaleAspectFit
         return v
     }()
 
     private let sendButton: UIButton = {
         let v = UIButton(type: .system)
-        v.setTitle("전송", for: .normal)
-        v.setTitleColor(.white, for: .normal)
-        v.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        v.setImage(UIImage(systemName: "paperplane.fill"), for: .normal)
+        v.tintColor = .white
         v.backgroundColor = .systemBlue
-        v.layer.cornerRadius = 24
+        v.layer.cornerRadius = 22
+        v.imageView?.contentMode = .scaleAspectFit
         v.isEnabled = false
         v.alpha = 0.5
         return v
@@ -214,28 +211,26 @@ final class VoiceRecordingBottomSheet: UIViewController {
             $0.height.equalTo(44)
         }
 
-        let buttonHeight: CGFloat = 48
-        let buttonSpacing: CGFloat = 12
+        let recordButtonSize: CGFloat = 50
+        let sendButtonSize: CGFloat = 44
 
         cancelButton.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(buttonHeight)
-            $0.width.equalTo(80)
+            $0.height.equalTo(44)
+            $0.width.equalTo(60)
         }
 
         sendButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().offset(-20)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(buttonHeight)
-            $0.width.equalTo(80)
+            $0.size.equalTo(sendButtonSize)
         }
 
         recordButton.snp.makeConstraints {
-            $0.leading.equalTo(cancelButton.snp.trailing).offset(buttonSpacing)
-            $0.trailing.equalTo(sendButton.snp.leading).offset(-buttonSpacing)
+            $0.centerX.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide).offset(-20)
-            $0.height.equalTo(buttonHeight)
+            $0.size.equalTo(recordButtonSize)
         }
     }
 
@@ -397,8 +392,7 @@ final class VoiceRecordingBottomSheet: UIViewController {
         switch state {
         case .idle:
             timeLabel.text = "00:00"
-            recordButton.setTitle("녹음", for: .normal)
-            recordButton.setImage(UIImage(systemName: "record.circle"), for: .normal)
+            recordButton.setImage(UIImage(systemName: "mic.fill"), for: .normal)
             recordButton.backgroundColor = .systemRed
             recordButton.tintColor = .white
             playButton.isHidden = true
@@ -407,8 +401,7 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
         case .recording(let duration):
             timeLabel.text = formatTime(duration)
-            recordButton.setTitle("중지", for: .normal)
-            recordButton.setImage(UIImage(systemName: "rectangle"), for: .normal)
+            recordButton.setImage(UIImage(systemName: "stop.fill"), for: .normal)
             recordButton.backgroundColor = .systemGray
             recordButton.tintColor = .white
             playButton.isHidden = true
@@ -417,10 +410,9 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
         case .completed(let duration):
             timeLabel.text = formatTime(duration)
-            recordButton.setTitle("다시 녹음", for: .normal)
             recordButton.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
-            recordButton.backgroundColor = .systemGray
-            recordButton.tintColor = .black
+            recordButton.backgroundColor = .white
+            recordButton.tintColor = .label
             playButton.isHidden = false
             playButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
             sendButton.isEnabled = true
