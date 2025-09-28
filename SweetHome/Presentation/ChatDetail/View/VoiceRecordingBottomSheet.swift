@@ -129,6 +129,10 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        /// - 모달이 버튼을 통해서만 닫히도록 설정
+        isModalInPresentation = true
+
         setupUI()
         setupConstraints()
         bind()
@@ -159,12 +163,13 @@ final class VoiceRecordingBottomSheet: UIViewController {
 
         waveformContainerView.addSubviews(playButton, waveformView)
 
-        /// - 바텀시트 제스처 추가
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
-        view.addGestureRecognizer(tapGesture)
-
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
-        containerView.addGestureRecognizer(panGesture)
+        /// - 바텀시트 제스처 비활성화 (취소/전송 버튼으로만 닫기 가능)
+        /// - 배경 탭이나 드래그로는 닫히지 않도록 설정
+        /// let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped))
+        /// view.addGestureRecognizer(tapGesture)
+        ///
+        /// let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
+        /// containerView.addGestureRecognizer(panGesture)
     }
 
     private func setupConstraints() {
