@@ -43,7 +43,7 @@ final class VoiceRecordingBottomSheet: UIViewController {
         let v = UILabel()
         v.text = "00:00"
         v.font = .monospacedDigitSystemFont(ofSize: 16, weight: .medium)
-        v.textColor = .systemBlue
+        v.textColor = SHColor.GrayScale.gray_75
         v.textAlignment = .center
         return v
     }()
