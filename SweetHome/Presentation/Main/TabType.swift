@@ -28,7 +28,7 @@ enum TabType: Int, CaseIterable {
         switch self {
         case .home: return SHAsset.TabBar.homeEmpty?.resized(to: 28)
         case .interest: return SHAsset.TabBar.interestEmpty?.resized(to: 28)
-        case .community: return UIImage(systemName: "person.3")?.resized(to: 28)
+        case .community: return UIImage(systemName: "person.3")?.resized(to: 26)
         case .chat: return UIImage(systemName: "message")?.resized(to: 28)
         case .setting: return SHAsset.TabBar.settingEmpty?.resized(to: 28)
         }
@@ -38,7 +38,7 @@ enum TabType: Int, CaseIterable {
         switch self {
         case .home: return SHAsset.TabBar.homeFill?.resized(to: 28)
         case .interest: return SHAsset.TabBar.interestFill?.resized(to: 28)
-        case .community: return UIImage(systemName: "person.3.fill")?.resized(to: 28)
+        case .community: return UIImage(systemName: "person.3.fill")?.resized(to: 26)
         case .chat: return UIImage(systemName: "message.fill")?.resized(to: 28)
         case .setting: return SHAsset.TabBar.settingFill?.resized(to: 28)
         }

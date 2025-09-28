@@ -101,6 +101,25 @@ final class CommunityPostCell: UICollectionViewCell {
         return button
     }()
 
+    private let imageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.backgroundColor = SHColor.GrayScale.gray_75
+        imageView.contentMode = .scaleAspectFill
+        imageView.isHidden = true
+        return imageView
+    }()
+
+    private let pageControl: UIPageControl = {
+        let pageControl = UIPageControl()
+        pageControl.numberOfPages = 3
+        pageControl.currentPage = 0
+        pageControl.pageIndicatorTintColor = SHColor.GrayScale.gray_75
+        pageControl.currentPageIndicatorTintColor = .black
+        pageControl.isUserInteractionEnabled = false
+        pageControl.isHidden = true
+        return pageControl
+    }()
+
     private let separatorView: UIView = {
         let view = UIView()
         view.backgroundColor = SHColor.GrayScale.gray_30
@@ -127,6 +146,8 @@ final class CommunityPostCell: UICollectionViewCell {
             moreButton,
             titleLabel,
             contentLabel,
+            imageView,
+            pageControl,
             likeButton,
             commentButton,
             separatorView
@@ -172,9 +193,21 @@ final class CommunityPostCell: UICollectionViewCell {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
 
-        /// - 하단 액션 영역
-        likeButton.snp.makeConstraints {
+        /// - 이미지 영역 (1:1.3)
+        imageView.snp.makeConstraints {
             $0.top.equalTo(contentLabel.snp.bottom).offset(12)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(imageView.snp.width).multipliedBy(1.3)
+        }
+
+        pageControl.snp.makeConstraints {
+            $0.bottom.equalTo(imageView.snp.bottom).inset(8)
+            $0.centerX.equalTo(imageView)
+            $0.height.equalTo(10)
+        }
+
+        /// - 하단 액션 영역 (동적 제약조건)
+        likeButton.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.width.equalTo(60)
             $0.height.equalTo(32)
@@ -225,6 +258,39 @@ final class CommunityPostCell: UICollectionViewCell {
         /// - 프로필 이미지 설정 (기본 이미지 사용)
         profileImageView.image = SHAsset.Default.defaultImage
         profileImageView.tintColor = SHColor.GrayScale.gray_90
+
+        /// - 게시물 이미지 설정
+        if !post.files.isEmpty {
+            imageView.isHidden = false
+            pageControl.isHidden = false
+
+            // 임시 이미지 설정 (실제로는 첫 번째 파일을 로드)
+            imageView.image = UIImage(named: "food")
+            imageView.tintColor = SHColor.GrayScale.gray_60
+
+            // 페이지 컨트롤 설정
+            pageControl.numberOfPages = min(post.files.count, 5) // 최대 5장까지 표시
+            pageControl.currentPage = 0
+
+            // 이미지가 있을 때 likeButton top 제약조건
+            likeButton.snp.remakeConstraints {
+                $0.top.equalTo(imageView.snp.bottom).offset(12)
+                $0.leading.equalToSuperview().offset(16)
+                $0.width.equalTo(60)
+                $0.height.equalTo(32)
+            }
+        } else {
+            imageView.isHidden = true
+            pageControl.isHidden = true
+
+            // 이미지가 없을 때 likeButton top 제약조건
+            likeButton.snp.remakeConstraints {
+                $0.top.equalTo(contentLabel.snp.bottom).offset(12)
+                $0.leading.equalToSuperview().offset(16)
+                $0.width.equalTo(60)
+                $0.height.equalTo(32)
+            }
+        }
     }
 
     /// - 좋아요 버튼 액션
