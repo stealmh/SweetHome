@@ -8,7 +8,6 @@
 import UIKit
 import SnapKit
 
-/// - 커뮤니티 게시글 셀
 final class CommunityPostCell: UICollectionViewCell {
     static let identifier = "CommunityPostCell"
 
@@ -21,21 +20,18 @@ final class CommunityPostCell: UICollectionViewCell {
         return view
     }()
 
-    private let categoryLabel: UILabel = {
-        let label = UILabel()
-        label.font = SHFont.pretendard(.medium).setSHFont(.caption1)
-        label.textColor = SHColor.Brand.brightWood
-        label.backgroundColor = SHColor.Brand.brightCream
-        label.textAlignment = .center
-        label.layer.cornerRadius = 4
-        label.clipsToBounds = true
-        return label
+    private lazy var moreButton: UIButton = {
+        let button = UIButton()
+        button.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+        button.tintColor = SHColor.GrayScale.gray_60
+        button.addTarget(self, action: #selector(moreButtonTapped), for: .touchUpInside)
+        return button
     }()
 
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = SHFont.pretendard(.semiBold).setSHFont(.body1)
-        label.textColor = SHColor.GrayScale.gray_15
+        label.textColor = .black
         label.numberOfLines = 2
         return label
     }()
@@ -43,14 +39,14 @@ final class CommunityPostCell: UICollectionViewCell {
     private let contentLabel: UILabel = {
         let label = UILabel()
         label.font = SHFont.pretendard(.regular).setSHFont(.body2)
-        label.textColor = SHColor.GrayScale.gray_60
+        label.textColor = SHColor.GrayScale.gray_90
         label.numberOfLines = 3
         return label
     }()
 
     private let profileImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.backgroundColor = SHColor.GrayScale.gray_90
+        imageView.backgroundColor = .clear
         imageView.layer.cornerRadius = 16
         imageView.clipsToBounds = true
         imageView.contentMode = .scaleAspectFill
@@ -59,8 +55,8 @@ final class CommunityPostCell: UICollectionViewCell {
 
     private let nicknameLabel: UILabel = {
         let label = UILabel()
-        label.font = SHFont.pretendard(.medium).setSHFont(.caption1)
-        label.textColor = SHColor.GrayScale.gray_30
+        label.font = SHFont.pretendard(.medium).setSHFont(.body1)
+        label.textColor = .black
         return label
     }()
 
@@ -72,27 +68,42 @@ final class CommunityPostCell: UICollectionViewCell {
     }()
 
     private lazy var likeButton: UIButton = {
-        let button = UIButton()
-        button.setImage(UIImage(systemName: "heart"), for: .normal)
-        button.setImage(UIImage(systemName: "heart.fill"), for: .selected)
-        button.tintColor = SHColor.Brand.brightWood
-        button.titleLabel?.font = SHFont.pretendard(.medium).setSHFont(.caption1)
-        button.setTitleColor(SHColor.GrayScale.gray_60, for: .normal)
+        var config = UIButton.Configuration.plain()
+        config.image = SHAsset.Icon.likeEmpty
+        config.baseForegroundColor = SHColor.GrayScale.gray_75
+        config.imagePadding = 4
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        config.titlePadding = 0
+
+        let button = UIButton(configuration: config)
+        button.contentHorizontalAlignment = .leading
+        button.configurationUpdateHandler = { [weak self] button in
+            var config = button.configuration
+            config?.image = button.isSelected ? SHAsset.Icon.likeFill : SHAsset.Icon.likeEmpty
+            button.configuration = config
+        }
         button.addTarget(self, action: #selector(likeButtonTapped), for: .touchUpInside)
         return button
     }()
 
-    private let commentCountLabel: UILabel = {
-        let label = UILabel()
-        label.font = SHFont.pretendard(.medium).setSHFont(.caption1)
-        label.textColor = SHColor.GrayScale.gray_60
-        label.text = "💬 0"
-        return label
+    private lazy var commentButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        let imageConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        config.image = UIImage(systemName: "message", withConfiguration: imageConfig)
+        config.baseForegroundColor = SHColor.GrayScale.gray_75
+        config.imagePadding = 4
+        config.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        config.titlePadding = 0
+
+        let button = UIButton(configuration: config)
+        button.contentHorizontalAlignment = .leading
+        button.isUserInteractionEnabled = false
+        return button
     }()
 
     private let separatorView: UIView = {
         let view = UIView()
-        view.backgroundColor = SHColor.GrayScale.gray_75
+        view.backgroundColor = SHColor.GrayScale.gray_30
         return view
     }()
 
@@ -113,11 +124,11 @@ final class CommunityPostCell: UICollectionViewCell {
             profileImageView,
             nicknameLabel,
             timeLabel,
-            categoryLabel,
+            moreButton,
             titleLabel,
             contentLabel,
             likeButton,
-            commentCountLabel,
+            commentButton,
             separatorView
         )
     }
@@ -131,7 +142,7 @@ final class CommunityPostCell: UICollectionViewCell {
         /// - 상단 프로필 영역
         profileImageView.snp.makeConstraints {
             $0.top.leading.equalToSuperview().offset(16)
-            $0.width.height.equalTo(32)
+            $0.width.height.equalTo(40)
         }
 
         nicknameLabel.snp.makeConstraints {
@@ -144,11 +155,10 @@ final class CommunityPostCell: UICollectionViewCell {
             $0.centerY.equalTo(profileImageView)
         }
 
-        categoryLabel.snp.makeConstraints {
+        moreButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
             $0.centerY.equalTo(profileImageView)
-            $0.height.equalTo(20)
-            $0.width.greaterThanOrEqualTo(40)
+            $0.width.height.equalTo(24)
         }
 
         /// - 콘텐츠 영역
@@ -170,9 +180,11 @@ final class CommunityPostCell: UICollectionViewCell {
             $0.height.equalTo(32)
         }
 
-        commentCountLabel.snp.makeConstraints {
-            $0.leading.equalTo(likeButton.snp.trailing).offset(12)
+        commentButton.snp.makeConstraints {
+            $0.leading.equalTo(likeButton.snp.trailing)
             $0.centerY.equalTo(likeButton)
+            $0.width.equalTo(60)
+            $0.height.equalTo(32)
         }
 
         /// - 구분선
@@ -186,7 +198,6 @@ final class CommunityPostCell: UICollectionViewCell {
 
     /// - 데이터 설정
     func configure(with post: CommunityPost) {
-        categoryLabel.text = " \(post.category) "
         titleLabel.text = post.title
         contentLabel.text = post.contentPreview
         nicknameLabel.text = post.creator.nick
@@ -194,18 +205,36 @@ final class CommunityPostCell: UICollectionViewCell {
 
         /// - 좋아요 버튼 설정
         likeButton.isSelected = post.isLike
-        likeButton.setTitle(" \(post.likeCount)", for: .normal)
+        var config = likeButton.configuration
+        config?.title = "\(post.likeCount)"
+        config?.attributedTitle = AttributedString("\(post.likeCount)", attributes: AttributeContainer([
+            .font: SHFont.pretendard(.semiBold).setSHFont(.body2) ?? UIFont.systemFont(ofSize: 14),
+            .foregroundColor: SHColor.GrayScale.gray_75
+        ]))
+        likeButton.configuration = config
 
-        /// - 댓글 개수 설정 (임시로 0으로 설정)
-        commentCountLabel.text = "💬 0"
+        /// - 댓글 버튼 설정 (임시로 0으로 설정)
+        var commentConfig = commentButton.configuration
+        commentConfig?.title = "0"
+        commentConfig?.attributedTitle = AttributedString("0", attributes: AttributeContainer([
+            .font: SHFont.pretendard(.semiBold).setSHFont(.body2) ?? UIFont.systemFont(ofSize: 14),
+            .foregroundColor: SHColor.GrayScale.gray_75
+        ]))
+        commentButton.configuration = commentConfig
 
         /// - 프로필 이미지 설정 (기본 이미지 사용)
-        profileImageView.image = UIImage(systemName: "person.circle.fill")
+        profileImageView.image = SHAsset.Default.defaultImage
         profileImageView.tintColor = SHColor.GrayScale.gray_90
     }
 
     /// - 좋아요 버튼 액션
     @objc private func likeButtonTapped() {
         onLikeTapped?()
+    }
+
+    /// - 더보기 버튼 액션
+    @objc private func moreButtonTapped() {
+        /// - TODO: 더보기 메뉴 표시
+        print("More button tapped")
     }
 }
