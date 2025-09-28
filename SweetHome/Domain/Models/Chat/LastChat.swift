@@ -11,10 +11,13 @@ struct LastChat: Hashable {
     let chatId: String
     let roomId: String
     let content: String
-    
+
     var displayLabel: String {
         if content == "사진" && !attachedFiles.isEmpty {
             return "사진"
+        }
+        if content == "음성메시지" && !attachedFiles.isEmpty {
+            return "음성메시지"
         }
         return content
     }
@@ -22,6 +25,24 @@ struct LastChat: Hashable {
     let updatedAt: Date
     let sender: ChatSender
     let attachedFiles: [String]
+
+    /// - 메시지 타입 구분
+    var chatMessageType: ChatMessageType {
+        if content == "사진" && !attachedFiles.isEmpty {
+            return .image
+        }
+        if content == "음성메시지" && !attachedFiles.isEmpty {
+            return .voice
+        }
+        return .text
+    }
+}
+
+/// - 채팅 메시지 타입 열거형
+enum ChatMessageType {
+    case text
+    case image
+    case voice
 }
 
 extension LastChatResponse {

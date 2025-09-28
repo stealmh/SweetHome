@@ -56,19 +56,30 @@ private extension ChatDetailCollectionViewDataSource {
             let isMyMessage = message.sender.userId == self.currentUserId
             let shouldShowTime = self.shouldShowTime(for: message, at: indexPath)
             let shouldShowProfile = self.shouldShowProfile(for: message, at: indexPath)
-            
-            
-            let hasFiles = !message.attachedFiles.isEmpty
-            
+
             if isMyMessage {
-                if hasFiles {
+                switch message.chatMessageType {
+                case .voice:
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "MyVoiceMessageCell",
+                        for: indexPath
+                    ) as! MyVoiceMessageCell
+
+                    /// - 음성 메시지 데이터 생성 (임시 데이터)
+                    if let voiceData = self.createVoiceMessageData(from: message) {
+                        cell.configure(with: voiceData, message: message, shouldShowTime: shouldShowTime)
+                    }
+                    return cell
+
+                case .image:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "MyMessageFileCell",
                         for: indexPath
                     ) as! MyMessageFileCell
                     cell.configure(with: message, shouldShowTime: shouldShowTime)
                     return cell
-                } else {
+
+                case .text:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "MyMessageCell",
                         for: indexPath
@@ -77,14 +88,28 @@ private extension ChatDetailCollectionViewDataSource {
                     return cell
                 }
             } else {
-                if hasFiles {
+                switch message.chatMessageType {
+                case .voice:
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: "OtherVoiceMessageCell",
+                        for: indexPath
+                    ) as! OtherVoiceMessageCell
+
+                    /// - 음성 메시지 데이터 생성 (임시 데이터)
+                    if let voiceData = self.createVoiceMessageData(from: message) {
+                        cell.configure(with: voiceData, message: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
+                    }
+                    return cell
+
+                case .image:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "OtherMessageFileCell",
                         for: indexPath
                     ) as! OtherMessageFileCell
                     cell.configure(with: message, shouldShowTime: shouldShowTime, shouldShowProfile: shouldShowProfile)
                     return cell
-                } else {
+
+                case .text:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: "OtherMessageCell",
                         for: indexPath
@@ -163,10 +188,28 @@ private extension ChatDetailCollectionViewDataSource {
     func scrollToBottom() {
         let numberOfItems = collectionView.numberOfItems(inSection: 0)
         guard numberOfItems > 0 else { return }
-        
+
         let lastIndexPath = IndexPath(item: numberOfItems - 1, section: 0)
         DispatchQueue.main.async {
             self.collectionView.scrollToItem(at: lastIndexPath, at: .bottom, animated: false)
         }
+    }
+
+    /// - LastChat에서 VoiceMessageData 생성 (임시 구현)
+    func createVoiceMessageData(from message: LastChat) -> VoiceMessageData? {
+        guard message.chatMessageType == .voice, !message.attachedFiles.isEmpty else {
+            return nil
+        }
+
+        /// - 임시 데이터 생성 (실제로는 서버에서 받아온 음성 파일 데이터를 사용)
+        let tempAudioData = Data()
+        let duration: TimeInterval = 30.0 /// - 임시로 30초 설정
+        let fileName = message.attachedFiles.first
+
+        return VoiceMessageData(
+            audioData: tempAudioData,
+            duration: duration,
+            fileName: fileName
+        )
     }
 }

@@ -28,6 +28,8 @@ class ChatDetailViewController: BaseViewController {
         cv.register(OtherMessageCell.self, forCellWithReuseIdentifier: "OtherMessageCell")
         cv.register(MyMessageFileCell.self, forCellWithReuseIdentifier: "MyMessageFileCell")
         cv.register(OtherMessageFileCell.self, forCellWithReuseIdentifier: "OtherMessageFileCell")
+        cv.register(MyVoiceMessageCell.self, forCellWithReuseIdentifier: "MyVoiceMessageCell")
+        cv.register(OtherVoiceMessageCell.self, forCellWithReuseIdentifier: "OtherVoiceMessageCell")
         cv.keyboardDismissMode = .onDrag
         return cv
     }()
