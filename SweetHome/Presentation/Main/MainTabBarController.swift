@@ -39,6 +39,7 @@ private extension MainTabBarController {
         let initialControllers = [
             createViewController(for: .home),
             createPlaceholder(for: .interest),
+            createPlaceholder(for: .community),
             createPlaceholder(for: .chat),
             createPlaceholder(for: .setting)
         ]
@@ -69,25 +70,27 @@ private extension MainTabBarController {
     
     func createViewController(for tabType: TabType) -> UIViewController {
         let vc: UIViewController
-        
+
         switch tabType {
         case .home:
             vc = HomeViewController()
         case .interest:
             vc = HomeViewController()
+        case .community:
+            vc = CommunityViewController()
         case .chat:
             vc = ChatViewController()
         case .setting:
             vc = HomeViewController()
         }
-        
+
         let navController = UINavigationController(rootViewController: vc)
         navController.tabBarItem = UITabBarItem(
             title: tabType.title,
             image: tabType.image,
             selectedImage: tabType.selectedImage
         )
-        
+
         return navController
     }
     
