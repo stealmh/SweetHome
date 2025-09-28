@@ -18,12 +18,12 @@ class CommunityViewController: BaseViewController {
     private var dataSourceManager: CommunityCollectionViewDataSource!
 
     /// - UI 컴포넌트들
-    private let navigationBar = SHNavigationBar()
+    private let navigationBar = CommunityNavigationBar()
 
     private lazy var collectionView: UICollectionView = {
         layoutManager = CommunityCollectionViewLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layoutManager.createLayout())
-        cv.backgroundColor = SHColor.GrayScale.gray_30
+        cv.backgroundColor = .white
         cv.showsVerticalScrollIndicator = false
         cv.register(CommunityPostCell.self, forCellWithReuseIdentifier: CommunityPostCell.identifier)
 
@@ -42,12 +42,11 @@ class CommunityViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupCollectionView()
+        setupNavigationBar()
         navigationController?.setNavigationBarHidden(true, animated: false)
-        navigationBar.configure(title: "커뮤니티")
     }
 
     override func setupUI() {
-        view.backgroundColor = SHColor.GrayScale.gray_30
         view.addSubviews(navigationBar, collectionView)
         collectionView.refreshControl = refreshControl
     }
@@ -68,6 +67,19 @@ class CommunityViewController: BaseViewController {
     /// - 컬렉션뷰 설정
     private func setupCollectionView() {
         collectionView.rx.setDelegate(self).disposed(by: disposeBag)
+    }
+
+    /// - 네비게이션 바 설정
+    private func setupNavigationBar() {
+        navigationBar.onSearchTapped = { [weak self] in
+            /// - TODO: 검색 화면으로 이동
+            print("Search button tapped")
+        }
+
+        navigationBar.onNotificationTapped = { [weak self] in
+            /// - TODO: 알림 화면으로 이동
+            print("Notification button tapped")
+        }
     }
 
     override func bind() {
