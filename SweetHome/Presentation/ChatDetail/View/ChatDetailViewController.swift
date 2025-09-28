@@ -241,13 +241,16 @@ private extension ChatDetailViewController {
             VoiceFileDownloader.shared.downloadVoiceFile(from: relativePath)
                 .observeOn(MainScheduler.instance)
                 .subscribe(
-                    onNext: { [weak self] audioData in
+                    onNext: { [weak self] result in
+                        /// - 실제 duration이 있으면 사용, 없으면 기본값 사용
+                        let finalDuration = result.actualDuration ?? voiceData.duration
+
                         let updatedVoiceData = VoiceMessageData(
-                            audioData: audioData,
-                            duration: voiceData.duration,
+                            audioData: result.audioData,
+                            duration: finalDuration,
                             fileName: voiceData.fileName
                         )
-                        print("✅ ChatDetailViewController: Downloaded \(audioData.count) bytes, starting playback")
+                        print("✅ ChatDetailViewController: Downloaded \(result.audioData.count) bytes, duration: \(String(format: "%.2f", finalDuration))s, starting playback")
                         VoicePlaybackManager.shared.togglePlayback(for: updatedVoiceData)
                     },
                     onError: { error in
@@ -272,8 +275,8 @@ private extension ChatDetailViewController {
                     let fileName = voiceData.generatedFileName
                     if let state = states[fileName] {
                         cell.updatePlaybackState(state)
-                        if case .playing(let currentTime, _) = state {
-                            let progress = Float(currentTime / voiceData.duration)
+                        if case .playing(let currentTime, let totalDuration) = state {
+                            let progress = Float(currentTime / totalDuration)
                             cell.updateProgress(progress, currentTime: currentTime)
                         }
                     }
@@ -283,8 +286,8 @@ private extension ChatDetailViewController {
                     let fileName = voiceData.generatedFileName
                     if let state = states[fileName] {
                         cell.updatePlaybackState(state)
-                        if case .playing(let currentTime, _) = state {
-                            let progress = Float(currentTime / voiceData.duration)
+                        if case .playing(let currentTime, let totalDuration) = state {
+                            let progress = Float(currentTime / totalDuration)
                             cell.updateProgress(progress, currentTime: currentTime)
                         }
                     }

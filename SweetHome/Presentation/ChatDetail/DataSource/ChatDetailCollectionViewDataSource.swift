@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import AVFoundation
 
 protocol ChatDetailDataSourceDelegate: AnyObject {
     func didTapVoicePlayButton(voiceData: VoiceMessageData, relativePath: String?)
@@ -232,7 +233,7 @@ private extension ChatDetailCollectionViewDataSource {
         if let cachedData = VoiceFileDownloader.shared.getCachedVoiceData(from: relativePath) {
             /// - 캐시된 파일의 실제 길이를 구하거나 기본값 사용
             let duration = extractDurationFromAudioData(cachedData) ?? 30.0
-            print("✅ ChatDetailCollectionViewDataSource: Using cached voice data for \(fileName ?? "unknown"), size: \(cachedData.count) bytes")
+            print("✅ ChatDetailCollectionViewDataSource: Using cached voice data for \(fileName ?? "unknown"), size: \(cachedData.count) bytes, duration: \(String(format: "%.2f", duration))s")
             return VoiceMessageData(
                 audioData: cachedData,
                 duration: duration,
@@ -240,7 +241,7 @@ private extension ChatDetailCollectionViewDataSource {
             )
         } else {
             /// - 파일이 없는 경우 빈 데이터로 생성 (다운로드는 재생 시 처리)
-            let duration: TimeInterval = 30.0 /// - 기본 길이
+            let duration: TimeInterval = 30.0 /// - 기본 길이 (다운로드 후 실제 길이로 업데이트됨)
             print("📁 ChatDetailCollectionViewDataSource: No cached data for \(fileName ?? "unknown"), will download on playback")
             return VoiceMessageData(
                 audioData: Data(),
@@ -250,11 +251,34 @@ private extension ChatDetailCollectionViewDataSource {
         }
     }
 
-    /// - 오디오 데이터에서 길이 추출 (임시 구현)
+    /// - 오디오 데이터에서 길이 추출
     private func extractDurationFromAudioData(_ audioData: Data) -> TimeInterval? {
-        /// - TODO: 실제 오디오 파일의 메타데이터에서 길이 추출
-        /// - 현재는 기본값 반환
-        return nil
+        do {
+            /// - 임시 파일 생성
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let tempFileName = "temp_duration_\(UUID().uuidString).mp4"
+            let tempFileURL = tempDirectory.appendingPathComponent(tempFileName)
+
+            /// - 데이터를 임시 파일에 저장
+            try audioData.write(to: tempFileURL)
+
+            /// - AVAsset을 사용하여 duration 추출
+            let asset = AVAsset(url: tempFileURL)
+            let duration = asset.duration.seconds
+
+            /// - 임시 파일 삭제
+            try? FileManager.default.removeItem(at: tempFileURL)
+
+            /// - 유효한 duration인지 확인
+            if duration > 0 && duration.isFinite {
+                return duration
+            } else {
+                return nil
+            }
+        } catch {
+            print("❌ ChatDetailDataSource: Failed to extract duration - \(error)")
+            return nil
+        }
     }
 
 }

@@ -8,6 +8,7 @@
 import Foundation
 import RxSwift
 import Alamofire
+import AVFoundation
 
 /// - VoiceFileDownloader: 음성 파일 다운로드 및 캐싱을 담당하는 클래스
 final class VoiceFileDownloader {
@@ -37,8 +38,14 @@ final class VoiceFileDownloader {
 
     // MARK: - Public Methods
 
+    /// - 다운로드 결과 구조체
+    struct VoiceDownloadResult {
+        let audioData: Data
+        let actualDuration: TimeInterval?
+    }
+
     /// - 음성 파일 다운로드 (Observable 반환)
-    func downloadVoiceFile(from relativePath: String) -> Observable<Data> {
+    func downloadVoiceFile(from relativePath: String) -> Observable<VoiceDownloadResult> {
         return Observable.create { [weak self] observer in
             guard let self else {
                 observer.onError(SHError.networkError(.connectionFailed("다운로드에 실패하였습니다.")))
@@ -59,7 +66,15 @@ final class VoiceFileDownloader {
                         try? self.fileManager.removeItem(at: cachedFileURL)
                     } else {
                         print("✅ VoiceFileDownloader: Using valid cached file (\(cachedData.count) bytes)")
-                        observer.onNext(cachedData)
+
+                        /// - 캐시된 파일에서도 duration 추출
+                        let actualDuration = self.extractAudioDuration(from: cachedData)
+                        if let duration = actualDuration {
+                            print("🎵 VoiceFileDownloader: Cached file duration: \(String(format: "%.2f", duration)) seconds")
+                        }
+
+                        let result = VoiceDownloadResult(audioData: cachedData, actualDuration: actualDuration)
+                        observer.onNext(result)
                         observer.onCompleted()
                         return Disposables.create()
                     }
@@ -155,7 +170,16 @@ final class VoiceFileDownloader {
                         try? data.write(to: cachedFileURL)
                         print("✅ VoiceFileDownloader: Downloaded and cached \(data.count) bytes")
 
-                        observer.onNext(data)
+                        /// - 실제 오디오 길이 추출 시도
+                        let actualDuration = self?.extractAudioDuration(from: data) ?? nil
+                        if let duration = actualDuration {
+                            print("🎵 VoiceFileDownloader: Extracted audio duration: \(String(format: "%.2f", duration)) seconds")
+                        } else {
+                            print("⚠️ VoiceFileDownloader: Could not extract audio duration")
+                        }
+
+                        let result = VoiceDownloadResult(audioData: data, actualDuration: actualDuration)
+                        observer.onNext(result)
                         observer.onCompleted()
                     } catch {
                         print("❌ VoiceFileDownloader: Failed to read downloaded file - \(error)")
@@ -245,6 +269,37 @@ final class VoiceFileDownloader {
             .replacingOccurrences(of: "\\", with: "_")
         return fileName
     }
+
+    /// - 오디오 데이터에서 실제 duration 추출
+    private func extractAudioDuration(from audioData: Data) -> TimeInterval? {
+        do {
+            /// - 임시 파일 생성
+            let tempDirectory = FileManager.default.temporaryDirectory
+            let tempFileName = "temp_audio_\(UUID().uuidString).mp4"
+            let tempFileURL = tempDirectory.appendingPathComponent(tempFileName)
+
+            /// - 데이터를 임시 파일에 저장
+            try audioData.write(to: tempFileURL)
+
+            /// - AVAsset을 사용하여 duration 추출
+            let asset = AVAsset(url: tempFileURL)
+            let duration = asset.duration.seconds
+
+            /// - 임시 파일 삭제
+            try? FileManager.default.removeItem(at: tempFileURL)
+
+            /// - 유효한 duration인지 확인 (0보다 크고 무한대가 아님)
+            if duration > 0 && duration.isFinite {
+                return duration
+            } else {
+                print("⚠️ VoiceFileDownloader: Invalid duration extracted: \(duration)")
+                return nil
+            }
+        } catch {
+            print("❌ VoiceFileDownloader: Failed to extract audio duration - \(error)")
+            return nil
+        }
+    }
 }
 
 // MARK: - VoiceMessageData Extension
@@ -253,10 +308,12 @@ extension VoiceMessageData {
     /// - 서버 상대 경로에서 실제 VoiceMessageData 생성
     static func from(relativePath: String, duration: TimeInterval) -> Observable<VoiceMessageData> {
         return VoiceFileDownloader.shared.downloadVoiceFile(from: relativePath)
-            .map { audioData in
+            .map { result in
+                /// - 실제 duration이 있으면 사용, 없으면 파라미터 duration 사용
+                let finalDuration = result.actualDuration ?? duration
                 return VoiceMessageData(
-                    audioData: audioData,
-                    duration: duration,
+                    audioData: result.audioData,
+                    duration: finalDuration,
                     fileName: relativePath.components(separatedBy: "/").last
                 )
             }
