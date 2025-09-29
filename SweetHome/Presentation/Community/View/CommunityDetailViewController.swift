@@ -143,7 +143,7 @@ class CommunityDetailViewController: BaseViewController {
     private let commentsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = 8
+        stackView.spacing = 4
         return stackView
     }()
 
@@ -498,20 +498,14 @@ class CommunityDetailViewController: BaseViewController {
         containerView.backgroundColor = .white
 
         let profileImageView = UIImageView()
-        profileImageView.image = SHAsset.Default.defaultImage
-        profileImageView.tintColor = SHColor.GrayScale.gray_90
         profileImageView.layer.cornerRadius = 14
         profileImageView.clipsToBounds = true
+        profileImageView.contentMode = .scaleAspectFill
 
         let nicknameLabel = UILabel()
         nicknameLabel.text = comment.creator.nick
         nicknameLabel.font = SHFont.pretendard(.medium).setSHFont(.body1)
         nicknameLabel.textColor = .black
-
-        let timeLabel = UILabel()
-        timeLabel.text = comment.timeAgoText
-        timeLabel.font = SHFont.pretendard(.regular).setSHFont(.caption1)
-        timeLabel.textColor = SHColor.GrayScale.gray_60
 
         let commentLabel = UILabel()
         commentLabel.text = comment.content
@@ -519,27 +513,50 @@ class CommunityDetailViewController: BaseViewController {
         commentLabel.textColor = SHColor.GrayScale.gray_90
         commentLabel.numberOfLines = 0
 
-        containerView.addSubviews(profileImageView, nicknameLabel, timeLabel, commentLabel)
+        let timeLabel = UILabel()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일 a h:mm"
+        timeLabel.text = formatter.string(from: comment.createdAt)
+        timeLabel.font = SHFont.pretendard(.regular).setSHFont(.caption1)
+        timeLabel.textColor = SHColor.GrayScale.gray_60
+
+        let replyButton = UIButton()
+        replyButton.setTitle("답글달기", for: .normal)
+        replyButton.setTitleColor(SHColor.GrayScale.gray_60, for: .normal)
+        replyButton.titleLabel?.font = SHFont.pretendard(.medium).setSHFont(.caption1)
+
+        containerView.addSubviews(profileImageView, nicknameLabel, commentLabel, timeLabel, replyButton)
 
         profileImageView.snp.makeConstraints {
-            $0.top.leading.equalToSuperview().offset(8)
+            $0.top.equalToSuperview().offset(8)
+            $0.leading.equalToSuperview().offset(16)
             $0.width.height.equalTo(28)
         }
 
         nicknameLabel.snp.makeConstraints {
             $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
-            $0.centerY.equalTo(profileImageView)
-        }
-
-        timeLabel.snp.makeConstraints {
-            $0.leading.equalTo(nicknameLabel.snp.trailing).offset(8)
-            $0.centerY.equalTo(profileImageView)
+            $0.top.equalTo(profileImageView)
         }
 
         commentLabel.snp.makeConstraints {
-            $0.top.equalTo(profileImageView.snp.bottom).offset(4)
-            $0.leading.trailing.equalToSuperview().inset(16)
-            $0.bottom.equalToSuperview().inset(8)
+            $0.leading.equalTo(nicknameLabel.snp.trailing).offset(8)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.centerY.equalTo(nicknameLabel)
+        }
+
+        timeLabel.snp.makeConstraints {
+            $0.top.equalTo(nicknameLabel.snp.bottom).offset(4)
+            $0.leading.equalTo(profileImageView.snp.trailing).offset(8)
+        }
+
+        replyButton.snp.makeConstraints {
+            $0.leading.equalTo(timeLabel.snp.trailing).offset(12)
+            $0.centerY.equalTo(timeLabel)
+        }
+
+        containerView.snp.makeConstraints {
+            $0.bottom.equalTo(timeLabel.snp.bottom).offset(8)
         }
 
         return containerView
