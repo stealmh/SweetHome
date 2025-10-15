@@ -11,14 +11,16 @@ import RxCocoa
 
 class ChatDetailViewModel: ViewModelable {
     let disposeBag = DisposeBag()
-    private let apiClient = ApiClient()
+    private let useCase: ChatDetailUseCase
     private let socketManager: ChatSocketManager = { return ChatSocketManager.shared }()
-    private let localRepository = ChatCoreDataRepository()
     private let chatMessagesRelay = BehaviorSubject<[LastChat]>(value: [])
     private let otherUserNameRelay = BehaviorSubject<String?>(value: nil)
     private let uploadedFilesRelay = BehaviorSubject<[String]>(value: [])
-    
-    init() {
+
+    init(useCase: ChatDetailUseCase = ChatDetailUseCaseImpl(
+        repository: ChatDetailRepositoryImpl()
+    )) {
+        self.useCase = useCase
         _ = socketManager
     }
     
@@ -105,9 +107,9 @@ class ChatDetailViewModel: ViewModelable {
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<[LastChat]> in
                 guard let self else { return .empty() }
-                return self.loadChatMessagesWithIncrementalSync(roomId: input.roomId)
+                return self.useCase.loadMessagesWithIncrementalSync(roomId: input.roomId)
             }
-            .do(onNext: { [weak self] messages in 
+            .do(onNext: { [weak self] messages in
                 isLoadingRelay.onNext(false)
                 // 채팅방 진입 시 읽음 처리
                 self?.handleRoomEnter(roomId: input.roomId, messages: messages)
@@ -127,13 +129,16 @@ class ChatDetailViewModel: ViewModelable {
             .flatMapLatest { [weak self] message -> Observable<Void> in
                 guard let self else { return .empty() }
                 let files = (try? self.uploadedFilesRelay.value()) ?? []
-                let sendChat = SendChat(content: message, files: files.isEmpty ? nil : files)
-                return self.apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: input.roomId, model: sendChat))
-                    .map { (_: LastChatResponse) in
-                        // 메시지 전송 후 업로드된 파일 목록 초기화
-                        self.uploadedFilesRelay.onNext([])
-                        return ()
-                    }
+                return self.useCase.sendMessage(
+                    roomId: input.roomId,
+                    content: message,
+                    files: files.isEmpty ? nil : files
+                )
+                .map { _ in
+                    // 메시지 전송 후 업로드된 파일 목록 초기화
+                    self.uploadedFilesRelay.onNext([])
+                    return ()
+                }
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { _ in
@@ -147,7 +152,12 @@ class ChatDetailViewModel: ViewModelable {
         socketManager.messageReceived
             .filter { $0.room_id == input.roomId }
             .subscribe(onNext: { [weak self] socketMessage in
-                self?.handleNewSocketMessage(socketMessage)
+                let newMessage = socketMessage.toDomain()
+                self?.useCase.handleNewSocketMessage(newMessage)
+                    .subscribe(onNext: { [weak self] updatedMessages in
+                        self?.chatMessagesRelay.onNext(updatedMessages)
+                    })
+                    .disposed(by: self?.disposeBag ?? DisposeBag())
             })
             .disposed(by: disposeBag)
         
@@ -164,7 +174,7 @@ class ChatDetailViewModel: ViewModelable {
             .flatMapLatest { [weak self] imageDatas -> Observable<Void> in
                 guard let self else { return .empty() }
                 let fileTypes = imageDatas.map { FileType.photo($0) }
-                return self.uploadFiles(fileTypes, roomId: input.roomId)
+                return self.useCase.uploadFilesAndSendMessage(roomId: input.roomId, fileTypes: fileTypes)
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { _ in
@@ -180,7 +190,7 @@ class ChatDetailViewModel: ViewModelable {
             .flatMapLatest { [weak self] voiceData -> Observable<Void> in
                 guard let self else { return .empty() }
                 let fileType = FileType.voice(voiceData)
-                return self.uploadFiles([fileType], roomId: input.roomId)
+                return self.useCase.uploadFilesAndSendMessage(roomId: input.roomId, fileTypes: [fileType])
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { _ in
@@ -274,7 +284,7 @@ class ChatDetailViewModel: ViewModelable {
         }
         
         // 4. 백그라운드에서 증분 동기화 (선택적)
-        performIncrementalSync(roomId: roomId)
+        useCase.performIncrementalSync(roomId: roomId)
             .subscribe(onNext: {
                 print("   - 백그라운드 증분 동기화 완료")
             }, onError: { error in
@@ -285,131 +295,9 @@ class ChatDetailViewModel: ViewModelable {
         print("   - ✅ 채팅방 퇴장 처리 완료")
     }
     
-    private func handleNewSocketMessage(_ response: LastChatResponse) {
-        let newMessage = response.toDomain()
-        
-        localRepository.saveChatMessage(newMessage)
-            .flatMap { [weak self] _ -> Observable<[LastChat]> in
-                guard let self else { return .empty() }
-                return self.localRepository.fetchChatMessages(for: newMessage.roomId)
-            }
-            .subscribe(onNext: { [weak self] updateMessages in
-                self?.chatMessagesRelay.onNext(updateMessages)
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    private func refreshMessages(roomId: String) {
-        // refreshMessages는 더 이상 사용하지 않음 (증분 동기화로 대체)
-        performIncrementalSync(roomId: roomId)
-            .subscribe()
-            .disposed(by: disposeBag)
-    }
-    
     private func updateOtherUserName(from messages: [LastChat]) {
-        let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
-        let otherUserMessage = messages.first { $0.sender.userId != currentUserId }
-        otherUserNameRelay.onNext(otherUserMessage?.sender.nickname)
-    }
-    
-    // MARK: - 증분 동기화 로직
-    
-    /// 로컬 데이터 우선 로드 → 서버와 증분 동기화
-    private func loadChatMessagesWithIncrementalSync(roomId: String) -> Observable<[LastChat]> {
-        return localRepository.fetchChatMessages(for: roomId)
-            .do(onNext: { [weak self] localMessages in
-                // 백그라운드에서 증분 동기화 항상 수행
-                self?.performIncrementalSync(roomId: roomId)
-                    .subscribe()
-                    .disposed(by: self?.disposeBag ?? DisposeBag())
-            })
-    }
-    
-    /// 증분 동기화 수행 (마지막 메시지 날짜 이후 메시지만 가져오기)
-    private func performIncrementalSync(roomId: String) -> Observable<Void> {
-        return localRepository.getLastMessageDate(for: roomId)
-            .flatMap { [weak self] lastMessageDate -> Observable<Void> in
-                guard let self else { return .empty() }
-                
-                let nextDateString: String? = lastMessageDate.flatMap { data in
-                    let formatter = ISO8601DateFormatter()
-                    formatter.timeZone = TimeZone(identifier: "UTC")
-                    return formatter.string(from: data)
-                }
-
-                
-                // 마지막 메시지 날짜 이후 메시지 요청
-                return self.apiClient.requestObservable(ChatEndpoint.messageRead(room_id: roomId, next: nextDateString))
-                    .map { (response: ChatDetailResponse) in
-                        response.data.compactMap { $0.toDomain() }
-                    }
-                    .flatMap { newMessages -> Observable<Void> in
-                        guard !newMessages.isEmpty else { return .just(()) }
-                        
-                        // 새 메시지들 로컬 저장
-                        return self.localRepository.saveChatMessages(newMessages)
-                            .flatMap { _ -> Observable<[LastChat]> in
-                                self.localRepository.fetchChatMessages(for: roomId)
-                            }
-                            .do(onNext: { [weak self] updatedMessages in
-                                self?.chatMessagesRelay.onNext(updatedMessages)
-                            })
-                            .map { _ in () }
-                    }
-                    .catch { error in
-                        // 에러가 발생해도 계속 진행
-                        print("증분 동기화 실패: \(error)")
-                        return .just(())
-                    }
-            }
+        let otherUserName = useCase.extractOtherUserName(from: messages)
+        otherUserNameRelay.onNext(otherUserName)
     }
 }
 
-/// - upload
-private extension ChatDetailViewModel {
-    func prepareMultipartData(from fileTypes: [FileType]) -> [MultipartFormData] {
-        return fileTypes.enumerated().map { index, fileType in
-            var fileName = fileType.fileName
-
-            // 사진의 경우 인덱스 추가
-            if case .photo = fileType {
-                let userId = KeyChainManager.shared.read(.userID) ?? ""
-                let timestamp = Int(Date().timeIntervalSince1970)
-                fileName = "\(userId)_\(timestamp)_\(index).jpg"
-            }
-
-            return MultipartFormData(
-                data: fileType.data,
-                name: "files",
-                fileName: fileName,
-                mimeType: fileType.mimeType
-            )
-        }
-    }
-    
-    func uploadMultipartFiles(_ multipartData: [MultipartFormData], roomId: String) -> Observable<[String]> {
-        return apiClient.uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartData))
-            .map { (response: ChatUploadResponse) in
-                return response.files
-            }
-    }
-
-    func sendFileMessage(with files: [String], content: String, roomId: String) -> Observable<Void> {
-        let sendChat = SendChat(content: content, files: files)
-        return apiClient.requestObservable(ChatEndpoint.sendMessage(room_id: roomId, model: sendChat))
-            .map { (_: LastChatResponse) in () }
-    }
-
-    func uploadFiles(_ fileTypes: [FileType], roomId: String) -> Observable<Void> {
-        guard !fileTypes.isEmpty else { return .just(()) }
-
-        let multipartData = prepareMultipartData(from: fileTypes)
-        let messageContent = fileTypes.first?.messageContent ?? "파일"
-
-        return uploadMultipartFiles(multipartData, roomId: roomId)
-            .flatMap { [weak self] files -> Observable<Void> in
-                guard let self else { return .empty() }
-                return self.sendFileMessage(with: files, content: messageContent, roomId: roomId)
-            }
-    }
-}
