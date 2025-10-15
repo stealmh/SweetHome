@@ -24,11 +24,12 @@ class EstateSearchViewModel: ViewModelable {
         let isEmpty: Driver<Bool>
     }
     
-    private let apiClient: ApiClient
-    private let searchApiClient = ApiClient(network: NetworkService(interceptor: nil))
-    
-    init(apiClient: ApiClient = ApiClient.shared) {
-        self.apiClient = apiClient
+    private let useCase: EstateSearchUseCase
+
+    init(useCase: EstateSearchUseCase = EstateSearchUseCaseImpl(
+        repository: EstateSearchRepositoryImpl()
+    )) {
+        self.useCase = useCase
     }
     
     func transform(input: Input) -> Output {
@@ -48,7 +49,7 @@ class EstateSearchViewModel: ViewModelable {
             .flatMapLatest { [weak self] query -> Observable<[Estate]> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
 
-                return self.performSearch(query: query)
+                return self.useCase.searchEstates(query: query)
                     .catch { error -> Observable<[Estate]> in
                         errorRelay.onNext(SHError.from(error))
                         return Observable.just([])
@@ -73,18 +74,5 @@ class EstateSearchViewModel: ViewModelable {
             error: errorRelay.asDriver(onErrorDriveWith: .empty()),
             isEmpty: isEmpty
         )
-    }
-    
-    private func performSearch(query: String) -> Observable<[Estate]> {
-        // TODO: Replace with actual API call
-        // For now, return search result mock data filtered by query
-        let mockResults = Estate.searchResultMock.filter { estate in
-            estate.title.lowercased().contains(query.lowercased()) ||
-            estate.category.lowercased().contains(query.lowercased()) ||
-            estate.introduction.lowercased().contains(query.lowercased())
-        }
-
-        return Observable.just(mockResults.isEmpty ? Estate.searchResultMock : mockResults)
-            .delay(.milliseconds(500), scheduler: MainScheduler.instance) // Simulate network delay
     }
 }
