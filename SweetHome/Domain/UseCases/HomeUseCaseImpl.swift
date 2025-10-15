@@ -12,10 +12,10 @@ import RxSwift
 final class HomeUseCaseImpl: HomeUseCase {
 
     // MARK: - Dependencies
-    private let repository: EstateRepository
+    private let repository: HomeEstateRepository
 
     // MARK: - Initialization
-    init(repository: EstateRepository) {
+    init(repository: HomeEstateRepository) {
         self.repository = repository
     }
 

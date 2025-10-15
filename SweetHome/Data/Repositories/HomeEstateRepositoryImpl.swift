@@ -1,5 +1,5 @@
 //
-//  EstateRepositoryImpl.swift
+//  HomeEstateRepositoryImpl.swift
 //  SweetHome
 //
 //  Created by 김민호 on 10/15/25.
@@ -8,8 +8,8 @@
 import Foundation
 import RxSwift
 
-/// - EstateRepository의 구현체
-final class EstateRepositoryImpl: EstateRepository {
+/// - HomeEstateRepository의 구현체
+final class HomeEstateRepositoryImpl: HomeEstateRepository {
 
     // MARK: - Dependencies
     private let apiClient: ApiClientProtocol
@@ -19,7 +19,7 @@ final class EstateRepositoryImpl: EstateRepository {
         self.apiClient = apiClient
     }
 
-    // MARK: - EstateRepository Implementation
+    // MARK: - HomeEstateRepository Implementation
 
     /// - 오늘의 매물 목록 조회
     func fetchTodayEstates() -> Observable<[Estate]> {
