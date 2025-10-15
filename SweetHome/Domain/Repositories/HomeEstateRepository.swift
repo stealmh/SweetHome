@@ -1,5 +1,5 @@
 //
-//  EstateRepository.swift
+//  HomeEstateRepository.swift
 //  SweetHome
 //
 //  Created by 김민호 on 10/15/25.
@@ -8,8 +8,8 @@
 import Foundation
 import RxSwift
 
-/// - 매물 관련 데이터 접근을 추상화하는 Repository
-protocol EstateRepository {
+/// - 홈 화면의 매물 관련 데이터 접근을 추상화하는 Repository
+protocol HomeEstateRepository {
     /// - 오늘의 매물 목록 조회
     func fetchTodayEstates() -> Observable<[Estate]>
 

@@ -34,7 +34,7 @@ class HomeViewModel: ViewModelable {
     private let autoScrollTriggerRelay = PublishSubject<Void>()
 
     init(useCase: HomeUseCase = HomeUseCaseImpl(
-        repository: EstateRepositoryImpl()
+        repository: HomeEstateRepositoryImpl()
     )) {
         self.useCase = useCase
     }
