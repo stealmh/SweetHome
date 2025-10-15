@@ -29,17 +29,17 @@ class RegisterViewModel: ViewModelable {
         let emailValidationError: Driver<SHError?>
     }
     
-    private let apiClient: ApiClient
+    private let useCase: RegisterUseCase
     private let emailValidator: EmailValidator
-    private let keychainManager: KeyChainManagerProtocol
-    
+
     init(
-        apiClient: ApiClient = ApiClient.shared,
-        keychainManager: KeyChainManagerProtocol = KeyChainManager.shared
+        useCase: RegisterUseCase = RegisterUseCaseImpl(
+            repository: RegisterRepositoryImpl()
+        ),
+        apiClient: ApiClient = ApiClient.shared
     ) {
-        self.apiClient = apiClient
+        self.useCase = useCase
         self.emailValidator = EmailValidator(apiClient: apiClient)
-        self.keychainManager = keychainManager
     }
     
     func transform(input: Input) -> Output {
@@ -87,22 +87,32 @@ class RegisterViewModel: ViewModelable {
                     deviceToken: nil
                 )
                 print("회원가입 요청 받음: \(requestModel)")
-                
+
                 // 유효성 검사
-                if let validationError = self.validateRegistrationData(email: email, password: password, nickname: nickname) {
+                if let validationError = self.useCase.validateRegistrationData(email: email, password: password, nickname: nickname) {
                     registerErrorRelay.onNext(validationError)
                     return Observable.empty()
                 }
-                
+
                 print("모든 유효성 검사 통과, 회원가입 진행")
                 isLoadingRelay.onNext(true)
-                
-                return self.performRegistration(
-                    requestModel: requestModel,
-                    isLoadingRelay: isLoadingRelay,
-                    registerErrorRelay: registerErrorRelay,
-                    navigateToMainSubject: navigateToMainSubject
-                )
+
+                return self.useCase.register(request: requestModel)
+                    .do(
+                        onNext: { response in
+                            print("✅ 회원가입 성공")
+                            isLoadingRelay.onNext(false)
+                            navigateToMainSubject.onNext(())
+                        },
+                        onError: { error in
+                            print("❌ 회원가입 실패: \(error)")
+                            isLoadingRelay.onNext(false)
+                            let shError = SHError.from(error)
+                            registerErrorRelay.onNext(shError)
+                        }
+                    )
+                    .map { _ in () }
+                    .catchAndReturn(())
             }
             .subscribe()
             .disposed(by: disposeBag)
@@ -120,72 +130,3 @@ class RegisterViewModel: ViewModelable {
     }
 }
 
-// MARK: - Private Methods
-private extension RegisterViewModel {
-    
-    /// 회원가입 데이터 유효성 검사
-    func validateRegistrationData(email: String, password: String, nickname: String) -> SHError? {
-        guard email.isValidEmail else { return .clientError(.textfield(.invalidEmailFormat)) }
-        guard password.isValidPassword else { return .clientError(.textfield(.weakPassword)) }
-        guard !nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .clientError(.textfield(.emptyNickname)) }
-        
-        return nil
-    }
-    
-    /// 회원가입 네트워크 요청 수행
-    func performRegistration(
-        requestModel: RegisterRequest,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<SHError>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) -> Observable<Void> {
-        return apiClient.requestObservable(UserEndpoint.emailRegister(requestModel))
-            .do(
-                onNext: { [weak self] (response: RegisterResponse) in
-                    self?.handleRegistrationSuccess(
-                        response: response,
-                        isLoadingRelay: isLoadingRelay,
-                        navigateToMainSubject: navigateToMainSubject
-                    )
-                },
-                onError: { error in
-                    self.handleRegistrationError(
-                        error: error,
-                        isLoadingRelay: isLoadingRelay,
-                        registerErrorRelay: registerErrorRelay
-                    )
-                }
-            )
-            .map { _ in () }
-            .catchAndReturn(())
-    }
-    
-    /// 회원가입 성공 처리
-    func handleRegistrationSuccess(
-        response: RegisterResponse,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        navigateToMainSubject: PublishSubject<Void>
-    ) {
-        print("✅ 회원가입 성공")
-        isLoadingRelay.onNext(false)
-        
-        // 토큰 저장
-        keychainManager.save(.accessToken, value: response.accessToken)
-        keychainManager.save(.refreshToken, value: response.refreshToken)
-        
-        // 메인 화면으로 이동
-        navigateToMainSubject.onNext(())
-    }
-    
-    /// 회원가입 실패 처리
-    func handleRegistrationError(
-        error: Error,
-        isLoadingRelay: BehaviorSubject<Bool>,
-        registerErrorRelay: PublishSubject<SHError>
-    ) {
-        print("❌ 회원가입 실패: \(error)")
-        isLoadingRelay.onNext(false)
-        let shError = SHError.from(error)
-        registerErrorRelay.onNext(shError)
-    }
-}
