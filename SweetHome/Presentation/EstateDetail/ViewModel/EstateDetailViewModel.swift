@@ -42,13 +42,15 @@ class EstateDetailViewModel: ViewModelable {
     }
     
     // MARK: - Properties
-    private let apiClient: ApiClientProtocol
+    private let useCase: EstateDetailUseCase
     private let estateDetailRelay = BehaviorSubject<DetailEstate?>(value: nil)
     private let similarEstatesRelay = BehaviorSubject<[Estate]>(value: [])
-    
+
     // MARK: - Initialization
-    init(apiClient: ApiClientProtocol = ApiClient.shared) {
-        self.apiClient = apiClient
+    init(useCase: EstateDetailUseCase = EstateDetailUseCaseImpl(
+        repository: EstateDetailRepositoryImpl()
+    )) {
+        self.useCase = useCase
     }
     
     func transform(input: Input) -> Output {
@@ -102,14 +104,13 @@ class EstateDetailViewModel: ViewModelable {
     ) {
         viewDidLoad
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
-            .flatMapLatest { [weak self] estateID -> Observable<DetailEstateResponse> in
+            .flatMapLatest { [weak self] estateID -> Observable<DetailEstate> in
                 guard let self else {
                     return Observable.error(SHError.commonError(.weakSelfFailure))
                 }
-                
-                return self.apiClient
-                    .requestObservable(EstateEndpoint.detail(id: estateID))
-                    .catch { error -> Observable<DetailEstateResponse> in
+
+                return self.useCase.fetchEstateDetail(estateID: estateID)
+                    .catch { error -> Observable<DetailEstate> in
                         print("❌ 매물 상세정보 로드 실패: \(error.localizedDescription)")
                         errorRelay.onNext(SHError.from(error))
                         return Observable.empty()
@@ -117,7 +118,7 @@ class EstateDetailViewModel: ViewModelable {
             }
             .do(onNext: { _ in isLoadingRelay.onNext(false) })
             .subscribe(onNext: { [weak self] detail in
-                self?.estateDetailRelay.onNext(detail.toDomain)
+                self?.estateDetailRelay.onNext(detail)
                 self?.loadSimilarEstates(errorRelay: errorRelay)
             }, onError: { error in
                 isLoadingRelay.onNext(false)
@@ -145,16 +146,12 @@ class EstateDetailViewModel: ViewModelable {
         for currentDetail: DetailEstate,
         errorRelay: PublishSubject<SHError>
     ) {
-        let newLikeStatus = !currentDetail.isLiked
-        let optimisticDetail = createOptimisticDetail(from: currentDetail, newLikeStatus: newLikeStatus)
-        
-        /// - UI는 바로 반영하기
-        estateDetailRelay.onNext(optimisticDetail)
-        
-        let requestBody = DetailEstateLikeStatus(like_status: newLikeStatus)
-        apiClient
-            .requestObservable(EstateEndpoint.like(id: currentDetail.id, body: requestBody))
-            .map { (_: DetailEstateLikeStatus) in }
+        let result = useCase.toggleFavorite(currentDetail: currentDetail)
+
+        /// - UI는 바로 반영하기 (낙관적 업데이트)
+        estateDetailRelay.onNext(result.optimistic)
+
+        result.apiResult
             .catch { [weak self] error -> Observable<Void> in
                 /// - 실패 시 원래 상태로 복원
                 self?.estateDetailRelay.onNext(currentDetail)
@@ -163,40 +160,6 @@ class EstateDetailViewModel: ViewModelable {
             }
             .subscribe()
             .disposed(by: disposeBag)
-    }
-    
-    /// 낙관적 업데이트를 위한 DetailEstate 생성
-    private func createOptimisticDetail(
-        from currentDetail: DetailEstate,
-        newLikeStatus: Bool
-    ) -> DetailEstate {
-        return DetailEstate(
-            id: currentDetail.id,
-            category: currentDetail.category,
-            title: currentDetail.title,
-            introduction: currentDetail.introduction,
-            reservationPrice: currentDetail.reservationPrice,
-            thumbnails: currentDetail.thumbnails,
-            description: currentDetail.description,
-            deposit: currentDetail.deposit,
-            monthlyRent: currentDetail.monthlyRent,
-            builtYear: currentDetail.builtYear,
-            maintenanceFee: currentDetail.maintenanceFee,
-            area: currentDetail.area,
-            parkingCount: currentDetail.parkingCount,
-            floors: currentDetail.floors,
-            options: currentDetail.options,
-            geolocation: currentDetail.geolocation,
-            creator: currentDetail.creator,
-            isLiked: newLikeStatus,
-            isReserved: currentDetail.isReserved,
-            likeCount: newLikeStatus ? currentDetail.likeCount + 1 : currentDetail.likeCount - 1,
-            isSafeEstate: currentDetail.isSafeEstate,
-            isRecommended: currentDetail.isRecommended,
-            comments: currentDetail.comments,
-            createdAt: currentDetail.createdAt,
-            updatedAt: currentDetail.updatedAt
-        )
     }
     
     /// 예약하기 버튼 처리
@@ -223,16 +186,7 @@ class EstateDetailViewModel: ViewModelable {
         for estate: DetailEstate,
         errorRelay: PublishSubject<SHError>
     ) -> Observable<(OrderResponse, estateName: String)> {
-        let orderRequest = OrderRequest(
-            estate_id: estate.id,
-            total_price: estate.reservationPrice
-        )
-        
-        return apiClient
-            .requestObservable(OrderEndpoint.order(body: orderRequest))
-            .map { response in
-                return (response, estateName: estate.title)
-            }
+        return useCase.createReservation(estate: estate)
             .catch { error -> Observable<(OrderResponse, estateName: String)> in
                 errorRelay.onNext(SHError.from(error))
                 return Observable.empty()
@@ -309,21 +263,7 @@ class EstateDetailViewModel: ViewModelable {
         _ iamportResponse: PaymentIamportResponse,
         errorRelay: PublishSubject<SHError?>
     ) -> Observable<PaymentValidationResponse> {
-        
-        guard let imp_uid = iamportResponse.imp_uid,
-              iamportResponse.success == true else {
-            let error = SHError.networkError(.unknown(
-                statusCode: nil,
-                message: "결제에 실패헀습니다."
-            ))
-            errorRelay.onNext(error)
-            return Observable.empty()
-        }
-        
-        let validationRequest = PaymentValidationRequest(imp_uid: imp_uid)
-        
-        return apiClient
-            .requestObservable(PaymentEndpoint.validation(body: validationRequest))
+        return useCase.validatePayment(iamportResponse: iamportResponse)
             .catch { error -> Observable<PaymentValidationResponse> in
                 errorRelay.onNext(SHError.from(error))
                 return Observable.empty()
@@ -332,11 +272,7 @@ class EstateDetailViewModel: ViewModelable {
     
     /// - 유사한 매물 로드
     private func loadSimilarEstates(errorRelay: PublishSubject<SHError>) {
-        apiClient
-            .requestObservable(EstateEndpoint.similarEstates)
-            .map { (response: BaseEstateResponse) -> [Estate] in
-                return response.data.map { $0.toDomain }
-            }
+        useCase.fetchSimilarEstates()
             .catch { error -> Observable<[Estate]> in
                 errorRelay.onNext(SHError.from(error))
                 return Observable.just([])
