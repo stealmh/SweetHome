@@ -11,14 +11,14 @@ import RxCocoa
 
 class HomeViewModel: ViewModelable {
     let disposeBag = DisposeBag()
-    
+
     struct Input {
         let onAppear: Observable<Void>
         let startAutoScroll: Observable<Void>
         let stopAutoScroll: Observable<Void>
         let userScrolling: Observable<Bool>
     }
-    
+
     struct Output: ViewModelLoadable, ViewModelErrorable {
         let isLoading: Driver<Bool>
         let todayEstates: Driver<[Estate]>
@@ -28,13 +28,15 @@ class HomeViewModel: ViewModelable {
         let hotEstates: Driver<[Estate]>
         let topics: Driver<[EstateTopic]>
     }
-    
-    private let apiClient: ApiClientProtocol
+
+    private let useCase: HomeUseCase
     private var autoScrollTimer: Timer?
     private let autoScrollTriggerRelay = PublishSubject<Void>()
 
-    init(apiClient: ApiClientProtocol = ApiClient.shared) {
-        self.apiClient = apiClient
+    init(useCase: HomeUseCase = HomeUseCaseImpl(
+        repository: EstateRepositoryImpl()
+    )) {
+        self.useCase = useCase
     }
     
     func transform(input: Input) -> Output {
@@ -49,43 +51,31 @@ class HomeViewModel: ViewModelable {
             .do(onNext: { [weak isLoadingRelay] _ in isLoadingRelay?.onNext(true) })
             .flatMapLatest { [weak self] _ -> Observable<Void> in
                 guard let self else { return Observable.error(SHError.commonError(.weakSelfFailure)) }
-                
-                let todayEstatesObservable = self.apiClient
-                    .requestObservable(EstateEndpoint.todayEstates)
-                    .map { (response: BaseEstateResponse) -> [Estate] in
-                        response.data.map { $0.toDomain }
-                    }
+
+                let todayEstatesObservable = self.useCase.fetchTodayEstates()
                     .catch { [weak errorRelay] error -> Observable<[Estate]> in
                         errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
-                
-                let hotEstatesObservable = self.apiClient
-                    .requestObservable(EstateEndpoint.hotEstates)
-                    .map { (response: BaseEstateResponse) -> [Estate] in
-                        response.data.map { $0.toDomain }
-                    }
+
+                let hotEstatesObservable = self.useCase.fetchHotEstates()
                     .catch { [weak errorRelay] error -> Observable<[Estate]> in
                         errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
-                
-                let topicsObservable = self.apiClient
-                    .requestObservable(EstateEndpoint.topics)
-                    .map { (response: EstateTopicResponse) -> [EstateTopic] in
-                        response.data.map { $0.toDomain }
-                    }
+
+                let topicsObservable = self.useCase.fetchTopics()
                     .catch { [weak errorRelay] error -> Observable<[EstateTopic]> in
                         errorRelay?.onNext(SHError.from(error))
                         return Observable.just([])
                     }
-                
+
                 return Observable.combineLatest(
                     todayEstatesObservable,
                     hotEstatesObservable,
                     topicsObservable
                 ) { [weak todayEstatesRelay, weak hotEstatesRelay, weak topicsRelay, weak isLoadingRelay] todayEstates, hotEstates, topics in
-                    
+
                     todayEstatesRelay?.onNext(todayEstates)
                     hotEstatesRelay?.onNext(hotEstates)
                     topicsRelay?.onNext(topics)
