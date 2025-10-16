@@ -27,14 +27,37 @@ final class RegisterRepositoryImpl: RegisterRepository {
     // MARK: - RegisterRepository Implementation
 
     /// - 이메일 회원가입
-    /// - Parameter request: 회원가입 요청 데이터
-    func register(request: RegisterRequest) -> Observable<RegisterResponse> {
+    /// - Parameter registerInfo: 회원가입 정보
+    /// - Returns: 회원가입 결과 (사용자 정보 + 토큰)
+    func register(registerInfo: RegisterInfo) -> Observable<RegisterResult> {
+        let request = RegisterRequest(
+            email: registerInfo.email,
+            password: registerInfo.password,
+            nick: registerInfo.nickname,
+            phoneNum: registerInfo.phoneNumber,
+            introduction: registerInfo.introduction,
+            deviceToken: registerInfo.deviceToken
+        )
+
         return apiClient
             .requestObservable(UserEndpoint.emailRegister(request))
-            .do(onNext: { [weak self] response in
+            .do(onNext: { [weak self] (response: RegisterResponse) in
                 /// - 회원가입 성공 시 토큰 저장
                 self?.keychainManager.save(.accessToken, value: response.accessToken)
                 self?.keychainManager.save(.refreshToken, value: response.refreshToken)
             })
+            .map { (response: RegisterResponse) -> RegisterResult in
+                RegisterResult(
+                    user: User(
+                        userId: response.user_id,
+                        email: response.email,
+                        nickname: response.nick
+                    ),
+                    tokens: AuthTokens(
+                        accessToken: response.accessToken,
+                        refreshToken: response.refreshToken
+                    )
+                )
+            }
     }
 }

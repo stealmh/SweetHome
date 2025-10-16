@@ -18,13 +18,27 @@ final class CommunityRepositoryImpl: CommunityRepository {
     }
 
     /// - 커뮤니티 게시글 목록 조회
-    func fetchPosts(request: CommunityPostsRequest) -> Observable<CommunityPostsResponse> {
-        return apiClient.requestObservable(CommunityEndpoint.posts(parameter: request))
+    func fetchPosts() -> Observable<([CommunityPost], String)> {
+        let request = CommunityPostsRequest(
+            limit: 10,
+            next: ""
+        )
+
+        return apiClient
+            .requestObservable(CommunityEndpoint.posts(parameter: request))
+            .map { (response: CommunityPostsResponse) -> ([CommunityPost], String) in
+                let posts = response.data.map { $0.toDomain }
+                return (posts, response.next_cursor)
+            }
     }
 
     /// - 커뮤니티 게시글 상세 조회
-    func fetchPostDetail(postId: String) -> Observable<CommunityPostsDetailResponse> {
-        return apiClient.requestObservable(CommunityEndpoint.postDetail(id: postId))
+    func fetchPostDetail(postId: String) -> Observable<CommunityPostDetail> {
+        return apiClient
+            .requestObservable(CommunityEndpoint.postDetail(id: postId))
+            .map { (response: CommunityPostsDetailResponse) -> CommunityPostDetail in
+                response.toDomain
+            }
     }
 }
 
