@@ -13,12 +13,12 @@ final class ChatListRepositoryImpl: ChatListRepository {
 
     // MARK: - Dependencies
     private let apiClient: ApiClientProtocol
-    private let localRepository: ChatCoreDataRepository
+    private let localRepository: ChatLocalRepository
 
     // MARK: - Initialization
     init(
         apiClient: ApiClientProtocol = ApiClient.shared,
-        localRepository: ChatCoreDataRepository = ChatCoreDataRepository()
+        localRepository: ChatLocalRepository = ChatCoreDataRepositoryImpl()
     ) {
         self.apiClient = apiClient
         self.localRepository = localRepository

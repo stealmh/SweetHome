@@ -10,8 +10,8 @@ import RxSwift
 
 final class BadgeCountManager {
     static let shared = BadgeCountManager()
-    
-    private let localRepository = ChatCoreDataRepository()
+
+    private let localRepository = ChatCoreDataRepositoryImpl()
     private let disposeBag = DisposeBag()
     
     private init() {}
