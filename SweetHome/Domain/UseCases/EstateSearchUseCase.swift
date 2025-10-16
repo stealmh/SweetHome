@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 매물 검색 관련 비즈니스 로직을 추상화하는 UseCase
-protocol EstateSearchUseCase {
+public protocol EstateSearchUseCase {
     /// - 매물 검색
     /// - Parameter query: 검색어
     func searchEstates(query: String) -> Observable<[Estate]>

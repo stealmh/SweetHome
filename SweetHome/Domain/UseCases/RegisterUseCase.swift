@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 회원가입 관련 비즈니스 로직을 추상화하는 UseCase
-protocol RegisterUseCase {
+public protocol RegisterUseCase {
     /// - 회원가입 데이터 유효성 검사
     /// - Parameters:
     ///   - email: 이메일
@@ -19,6 +19,6 @@ protocol RegisterUseCase {
     func validateRegistrationData(email: String, password: String, nickname: String) -> SHError?
 
     /// - 이메일 회원가입 수행
-    /// - Parameter request: 회원가입 요청 데이터
-    func register(request: RegisterRequest) -> Observable<RegisterResponse>
+    /// - Parameter registerInfo: 회원가입 정보
+    func register(registerInfo: RegisterInfo) -> Observable<RegisterResult>
 }
