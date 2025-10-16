@@ -9,13 +9,13 @@ import Foundation
 import RxSwift
 
 /// - RegisterUseCase의 구현체
-final class RegisterUseCaseImpl: RegisterUseCase {
+public final class RegisterUseCaseImpl: RegisterUseCase {
 
     // MARK: - Dependencies
     private let repository: RegisterRepository
 
     // MARK: - Initialization
-    init(repository: RegisterRepository) {
+    public init(repository: RegisterRepository) {
         self.repository = repository
     }
 
@@ -27,7 +27,7 @@ final class RegisterUseCaseImpl: RegisterUseCase {
     ///   - password: 비밀번호
     ///   - nickname: 닉네임
     /// - Returns: 유효하지 않은 경우 에러 반환
-    func validateRegistrationData(email: String, password: String, nickname: String) -> SHError? {
+    public func validateRegistrationData(email: String, password: String, nickname: String) -> SHError? {
         guard email.isValidEmail else {
             return .clientError(.textfield(.invalidEmailFormat))
         }
@@ -41,8 +41,8 @@ final class RegisterUseCaseImpl: RegisterUseCase {
     }
 
     /// - 이메일 회원가입 수행
-    /// - Parameter request: 회원가입 요청 데이터
-    func register(request: RegisterRequest) -> Observable<RegisterResponse> {
-        return repository.register(request: request)
+    /// - Parameter registerInfo: 회원가입 정보
+    public func register(registerInfo: RegisterInfo) -> Observable<RegisterResult> {
+        return repository.register(registerInfo: registerInfo)
     }
 }

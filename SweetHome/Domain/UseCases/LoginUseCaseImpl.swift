@@ -11,16 +11,16 @@ import AuthenticationServices
 
 /// - LoginUseCase의 구현체
 /// - Repository와 LoginSession을 조합하여 로그인 비즈니스 로직 구현
-class LoginUseCaseImpl: LoginUseCase {
+public class LoginUseCaseImpl: LoginUseCase {
 
     // MARK: - Dependencies
     private let authRepository: AuthRepository
-    private let loginSession: LoginSessionProtocol
+    private let loginSession: LoginSessionRepository
 
     // MARK: - Initialization
-    init(
-        authRepository: AuthRepository = AuthRepositoryImpl(),
-        loginSession: LoginSessionProtocol = LoginSession()
+    public init(
+        authRepository: AuthRepository,
+        loginSession: LoginSessionRepository
     ) {
         self.authRepository = authRepository
         self.loginSession = loginSession
@@ -28,65 +28,65 @@ class LoginUseCaseImpl: LoginUseCase {
 
     // MARK: - Email Authentication
 
-    func loginWithEmail(email: String, password: String) -> Observable<Void> {
+    public func loginWithEmail(email: String, password: String) -> Observable<Void> {
         // 유효성 검사
         if let validationError = validateLoginData(email: email, password: password) {
             return Observable.error(validationError)
         }
 
         let deviceToken = KeyChainManager.shared.read(.fcmToken)
-        let requestModel = EmailLoginRequest(
+        let requestModel = EmailLoginInfo(
             email: email,
             password: password,
             deviceToken: deviceToken
         )
 
-        return authRepository.loginWithEmail(request: requestModel)
+        return authRepository.loginWithEmail(loginInfo: requestModel)
             .map { _ in () }
     }
 
     // MARK: - Social Authentication
 
-    func loginWithKakao() -> Observable<Void> {
+    public func loginWithKakao() -> Observable<Void> {
         return loginSession.performKakaoLogin()
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
                 guard let self = self else { return Observable.empty() }
 
                 let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
-                let requestModel = KakaoLoginRequest(
+                let requestModel = KakaoLoginInfo(
                     oauthToken: socialLoginResponse.idToken,
                     deviceToken: deviceToken
                 )
 
-                return self.authRepository.loginWithKakao(request: requestModel)
+                return self.authRepository.loginWithKakao(loginInfo: requestModel)
                     .map { _ in () }
             }
     }
 
-    func loginWithApple(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<Void> {
+    public func loginWithApple(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<Void> {
         return loginSession.performAppleLogin(presentationContext: presentationContext)
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
                 guard let self = self else { return Observable.empty() }
 
                 let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
-                let requestModel = AppleLoginRequest(
+                let requestModel = AppleLoginInfo(
                     idToken: socialLoginResponse.idToken,
+                    nickname: socialLoginResponse.name ?? "",
                     deviceToken: deviceToken,
-                    nick: socialLoginResponse.name ?? ""
                 )
 
-                return self.authRepository.loginWithApple(request: requestModel)
+                return self.authRepository.loginWithApple(loginInfo: requestModel)
                     .map { _ in () }
             }
     }
 
-    func getAppleLoginError() -> Observable<SHError> {
+    public func getAppleLoginError() -> Observable<SHError> {
         return loginSession.getAppleLoginError()
     }
 
     // MARK: - Validation
 
-    func validateLoginData(email: String, password: String) -> SHError? {
+    public func validateLoginData(email: String, password: String) -> SHError? {
         /// 🚨 Case [1]. 잘못된 이메일 형식
         guard email.isValidEmail else { return .clientError(.textfield(.invalidEmailFormat)) }
         /// 🚨 Case [2]. 잘못된 비밀번호 형식

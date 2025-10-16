@@ -9,13 +9,13 @@ import Foundation
 import RxSwift
 
 /// - EstateMapUseCase의 구현체
-final class EstateMapUseCaseImpl: EstateMapUseCase {
+public final class EstateMapUseCaseImpl: EstateMapUseCase {
 
     // MARK: - Dependencies
     private let repository: EstateMapRepository
 
     // MARK: - Initialization
-    init(repository: EstateMapRepository) {
+    public init(repository: EstateMapRepository) {
         self.repository = repository
     }
 
@@ -27,12 +27,12 @@ final class EstateMapUseCaseImpl: EstateMapUseCase {
     ///   - latitude: 위도
     ///   - longitude: 경도
     ///   - maxDistance: 최대 거리 (미터)
-    func fetchEstatesByLocation(
+    public func fetchEstatesByLocation(
         category: String,
         latitude: String,
         longitude: String,
         maxDistance: Int
-    ) -> Observable<[EstateGeoLocationDataResponse]> {
+    ) -> Observable<[Estate]> {
         return repository.fetchEstatesByLocation(
             category: category,
             latitude: latitude,
@@ -47,12 +47,12 @@ final class EstateMapUseCaseImpl: EstateMapUseCase {
     ///   - areaFilter: 면적 필터 (평, 최소-최대)
     ///   - monthlyPriceFilter: 월세 필터 (만원, 최소-최대)
     ///   - depositFilter: 보증금 필터 (만원, 최소-최대)
-    func filterEstates(
-        _ estates: [EstateGeoLocationDataResponse],
+    public func filterEstates(
+        _ estates: [Estate],
         areaFilter: (Float, Float)?,
         monthlyPriceFilter: (Float, Float)?,
         depositFilter: (Float, Float)?
-    ) -> [EstateGeoLocationDataResponse] {
+    ) -> [Estate] {
         guard hasActiveFilters(areaFilter: areaFilter, monthlyPriceFilter: monthlyPriceFilter, depositFilter: depositFilter) else {
             return estates
         }
@@ -76,21 +76,20 @@ final class EstateMapUseCaseImpl: EstateMapUseCase {
     }
 
     /// - 면적 필터 통과 여부
-    private func passesAreaFilter(_ estate: EstateGeoLocationDataResponse, filter: (Float, Float)?) -> Bool {
+    private func passesAreaFilter(_ estate: Estate, filter: (Float, Float)?) -> Bool {
         guard let areaFilter = filter else { return true }
 
-        let estateArea = Float(estate.area)
-        let estateAreaPyeong = estateArea * 0.3025  // m² to 평 conversion
+        let estateAreaPyeong = estate.area * 0.3025  // m² to 평 conversion
 
         return estateAreaPyeong >= areaFilter.0 && estateAreaPyeong <= areaFilter.1
     }
 
     /// - 월세 필터 통과 여부
-    private func passesMonthlyPriceFilter(_ estate: EstateGeoLocationDataResponse, filter: (Float, Float)?) -> Bool {
+    private func passesMonthlyPriceFilter(_ estate: Estate, filter: (Float, Float)?) -> Bool {
         guard let priceFilter = filter else { return true }
 
         // 서버에서 1원 단위로 전송되므로 만원 단위로 변환
-        let monthlyPriceManWon = Float(estate.monthly_rent) / 10000
+        let monthlyPriceManWon = Float(estate.monthlyRent) / 10000
 
         // 최대값(200만원)을 선택했을 때는 그보다 큰 값도 포함
         if priceFilter.1 >= 200 {
@@ -101,7 +100,7 @@ final class EstateMapUseCaseImpl: EstateMapUseCase {
     }
 
     /// - 보증금 필터 통과 여부
-    private func passesDepositFilter(_ estate: EstateGeoLocationDataResponse, filter: (Float, Float)?) -> Bool {
+    private func passesDepositFilter(_ estate: Estate, filter: (Float, Float)?) -> Bool {
         guard let depositFilter = filter else { return true }
 
         // 서버에서 1원 단위로 전송되므로 만원 단위로 변환

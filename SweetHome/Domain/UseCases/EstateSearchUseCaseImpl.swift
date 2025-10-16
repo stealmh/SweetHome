@@ -9,13 +9,13 @@ import Foundation
 import RxSwift
 
 /// - EstateSearchUseCase의 구현체
-final class EstateSearchUseCaseImpl: EstateSearchUseCase {
+public final class EstateSearchUseCaseImpl: EstateSearchUseCase {
 
     // MARK: - Dependencies
     private let repository: EstateSearchRepository
 
     // MARK: - Initialization
-    init(repository: EstateSearchRepository) {
+    public init(repository: EstateSearchRepository) {
         self.repository = repository
     }
 
@@ -23,7 +23,7 @@ final class EstateSearchUseCaseImpl: EstateSearchUseCase {
 
     /// - 매물 검색
     /// - Parameter query: 검색어
-    func searchEstates(query: String) -> Observable<[Estate]> {
+    public func searchEstates(query: String) -> Observable<[Estate]> {
         return repository.searchEstates(query: query)
     }
 }
