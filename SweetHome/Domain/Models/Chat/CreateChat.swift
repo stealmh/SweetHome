@@ -7,6 +7,10 @@
 
 import Foundation
 
-struct CreateChat: Encodable {
-    let opponent_id: String
+public struct CreateChat: Encodable {
+    public let opponent_id: String
+
+    public init(opponent_id: String) {
+        self.opponent_id = opponent_id
+    }
 }
