@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 채팅 상세 관련 데이터 접근을 추상화하는 Repository
-protocol ChatDetailRepository {
+public protocol ChatDetailRepository {
     /// - 채팅 메시지 목록 조회 (서버)
     /// - Parameters:
     ///   - roomId: 채팅방 ID
@@ -42,6 +42,6 @@ protocol ChatDetailRepository {
     /// - 파일 업로드
     /// - Parameters:
     ///   - roomId: 채팅방 ID
-    ///   - files: 업로드할 파일 데이터
-    func uploadFiles(roomId: String, files: [MultipartFormData]) -> Observable<[String]>
+    ///   - files: 업로드할 파일 정보 배열
+    func uploadFiles(roomId: String, files: [FileUpload]) -> Observable<[String]>
 }

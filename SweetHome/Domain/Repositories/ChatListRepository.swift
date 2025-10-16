@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 채팅방 목록 관련 데이터 접근을 추상화하는 Repository
-protocol ChatListRepository {
+public protocol ChatListRepository {
     /// - 채팅방 목록 조회 (서버)
     func fetchChatRooms() -> Observable<[ChatRoom]>
 

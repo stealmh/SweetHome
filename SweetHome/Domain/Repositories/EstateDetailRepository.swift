@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 매물 상세 관련 데이터 접근을 추상화하는 Repository
-protocol EstateDetailRepository {
+public protocol EstateDetailRepository {
     /// - 매물 상세정보 조회
     /// - Parameter estateID: 매물 ID
     func fetchEstateDetail(estateID: String) -> Observable<DetailEstate>
@@ -24,10 +24,14 @@ protocol EstateDetailRepository {
     func fetchSimilarEstates() -> Observable<[Estate]>
 
     /// - 주문 생성
-    /// - Parameter request: 주문 요청 데이터
-    func createOrder(request: OrderRequest) -> Observable<OrderResponse>
+    /// - Parameters:
+    ///   - estateId: 매물 ID
+    ///   - totalPrice: 총 가격
+    /// - Returns: 주문 정보
+    func createOrder(estateId: String, totalPrice: Int) -> Observable<Order>
 
     /// - 결제 검증
-    /// - Parameter request: 결제 검증 요청 데이터
-    func validatePayment(request: PaymentValidationRequest) -> Observable<PaymentValidationResponse>
+    /// - Parameter impUid: 아임포트 결제 고유 ID
+    /// - Returns: 결제 검증 결과
+    func validatePayment(impUid: String) -> Observable<PaymentValidation>
 }

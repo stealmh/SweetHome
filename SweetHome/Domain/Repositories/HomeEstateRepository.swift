@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 홈 화면의 매물 관련 데이터 접근을 추상화하는 Repository
-protocol HomeEstateRepository {
+public protocol HomeEstateRepository {
     /// - 오늘의 매물 목록 조회
     func fetchTodayEstates() -> Observable<[Estate]>
 
