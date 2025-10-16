@@ -34,7 +34,7 @@ class EstateMapManager: NSObject {
     private let maxCacheSize = 50 // 최대 캐시 이미지 수
     
     /// - 전체 매물 데이터 저장
-    private var allEstates: [EstateGeoLocationDataResponse] = []
+    private var allEstates: [Estate] = []
     var isAllEstatesLoaded = false
     
     // MARK: - Initialization
@@ -48,7 +48,7 @@ class EstateMapManager: NSObject {
     // MARK: - Public Methods
     
     /// - 전체 매물 데이터 로드
-    public func loadAllEstates(_ estates: [EstateGeoLocationDataResponse]) {
+    public func loadAllEstates(_ estates: [Estate]) {
         allEstates = estates
         isAllEstatesLoaded = true
         
@@ -75,7 +75,7 @@ class EstateMapManager: NSObject {
     }
     
     /// - 현재 화면에 보이는 영역의 매물 필터링
-    private func filterEstatesInCurrentViewport(mapView: KakaoMap) -> [EstateGeoLocationDataResponse] {
+    private func filterEstatesInCurrentViewport(mapView: KakaoMap) -> [Estate] {
         let viewRect = mapView.viewRect
         
         // 화면 네 모서리 좌표 계산
@@ -93,10 +93,10 @@ class EstateMapManager: NSObject {
         let maxLon = max(topLeft.wgsCoord.longitude, bottomRight.wgsCoord.longitude) + lonRange
         
         return allEstates.filter { estate in
-            estate.geolocation.latitude >= minLat &&
-            estate.geolocation.latitude <= maxLat &&
-            estate.geolocation.longitude >= minLon &&
-            estate.geolocation.longitude <= maxLon
+            estate.geolocation.lat >= minLat &&
+            estate.geolocation.lat <= maxLat &&
+            estate.geolocation.lon >= minLon &&
+            estate.geolocation.lon <= maxLon
         }
     }
     
@@ -182,7 +182,7 @@ class EstateMapManager: NSObject {
     private var isUpdatingMarkers: Bool = false  // 마커 업데이트 진행 중 플래그
     
     //MARK: - 클러스터링 데이터 구조
-    private var clusterData: [String: [EstateGeoLocationDataResponse]] = [:] // 위치별 매물 그룹
+    private var clusterData: [String: [Estate]] = [:] // 위치별 매물 그룹
     private var clusterMarkers: [String: LodPoi] = [:] // 클러스터 마커들
 }
 
@@ -431,7 +431,7 @@ private extension EstateMapManager {
     }
     
     /// - 매물 데이터로 마커 업데이트 (최적화된 버전)
-    private func updateEstateMarkersInternal(with estates: [EstateGeoLocationDataResponse]) {
+    private func updateEstateMarkersInternal(with estates: [Estate]) {
         // 매물 개수 제한 (성능 및 안정성을 위해)
         let maxEstates = getMaxEstatesForZoomLevel(currentZoomLevel)
         let limitedEstates = Array(estates.prefix(maxEstates))
@@ -463,7 +463,7 @@ private extension EstateMapManager {
     }
     
     /// - 최적화된 마커 업데이트 처리
-    private func processMarkerUpdateOptimized(with estates: [EstateGeoLocationDataResponse]) {
+    private func processMarkerUpdateOptimized(with estates: [Estate]) {
         
         // 기존 마커 완전 정리
         clearAllEstateMarkersSync()
@@ -480,9 +480,9 @@ private extension EstateMapManager {
     }
     
     /// - 매물 데이터 변경 여부 확인
-    private func areEstatesSame(newEstates: [EstateGeoLocationDataResponse]) -> Bool {
+    private func areEstatesSame(newEstates: [Estate]) -> Bool {
         let currentIds = Set(currentEstateMarkers.keys)
-        let newIds = Set(newEstates.map { "estate_\($0.estate_id)" })
+        let newIds = Set(newEstates.map { "estate_\($0.id)" })
         return currentIds == newIds && currentIds.count == newEstates.count
     }
     
@@ -921,7 +921,7 @@ private extension EstateMapManager {
     }
     
     /// - 최적화된 마커 생성 (커스텀 뷰 사용)
-    private func createEstateMarkersOptimized(from estates: [EstateGeoLocationDataResponse]) {
+    private func createEstateMarkersOptimized(from estates: [Estate]) {
         guard let lodLayer = estateLodLayer, let labelManager = labelManager else {
             return
         }
@@ -958,8 +958,12 @@ private extension EstateMapManager {
             option.transformType = .decal
             
             poiOptions.append(option)
-            positions.append(MapPoint(longitude: estate.geolocation.longitude, 
-                                    latitude: estate.geolocation.latitude))
+            positions.append(
+                MapPoint(
+                    longitude: estate.geolocation.lon,
+                    latitude: estate.geolocation.lat
+                )
+            )
         }
         
         // 한 번에 모든 마커 추가
@@ -1035,8 +1039,8 @@ private extension EstateMapManager {
     }
     
     /// - 최적화된 매물 스타일 생성 (줌 레벨별 스케일 적용)
-    private func createOptimizedEstateStyle(for estate: EstateGeoLocationDataResponse, index: Int) -> String {
-        let styleID = "optimized_estate_\(index)_\(estate.estate_id)_zoom\(currentZoomLevel)"
+    private func createOptimizedEstateStyle(for estate: Estate, index: Int) -> String {
+        let styleID = "optimized_estate_\(index)_\(estate.id)_zoom\(currentZoomLevel)"
         
         guard let labelManager = labelManager else { return "estate_default" }
         
@@ -1093,7 +1097,7 @@ private extension EstateMapManager {
                 let estateIndex = index - clusteringResult.clusters.count
                 if estateIndex < clusteringResult.individualMarkers.count {
                     let estate = clusteringResult.individualMarkers[estateIndex]
-                    let estateId = "estate_\(estate.estate_id)"
+                    let estateId = "estate_\(estate.id)"
                     currentEstateMarkers[estateId] = poi
                     poi.addPoiTappedEventHandler(target: self, handler: EstateMapManager.onEstateMarkerTapped)
                 }
@@ -1102,8 +1106,8 @@ private extension EstateMapManager {
     }
     
     /// - 동적 마커 스타일 생성 (각 매물마다 고유한 썸네일과 가격 표시)
-    func createDynamicMarkerStyle(for estate: EstateGeoLocationDataResponse, priceText: String, index: Int) -> String {
-        let styleID = "estate_dynamic_\(index)_\(estate.estate_id)"
+    func createDynamicMarkerStyle(for estate: Estate, priceText: String, index: Int) -> String {
+        let styleID = "estate_dynamic_\(index)_\(estate.id)"
         
         // 해당 스타일이 이미 존재하면 재사용
         guard let labelManager = labelManager else { return "estate_custom_default" }
@@ -1185,7 +1189,7 @@ private extension EstateMapManager {
     }
     
     /// - 대중적인 클러스터링 수행 (줌 레벨 적응형)
-    func performClustering(estates: [EstateGeoLocationDataResponse]) -> ClusteringResult {
+    func performClustering(estates: [Estate]) -> ClusteringResult {
         guard !estates.isEmpty else {
             return ClusteringResult(individualMarkers: [], clusters: [])
         }
@@ -1210,7 +1214,7 @@ private extension EstateMapManager {
     }
     
     /// - 최적화된 클러스터링 (성능 우선)
-    private func performClusteringOptimized(estates: [EstateGeoLocationDataResponse]) -> ClusteringResult {
+    private func performClusteringOptimized(estates: [Estate]) -> ClusteringResult {
         guard !estates.isEmpty else {
             return ClusteringResult(individualMarkers: [], clusters: [])
         }
@@ -1265,13 +1269,13 @@ private extension EstateMapManager {
     }
     
     /// - 간단한 Grid 클러스터링 (성능 최적화)
-    private func performSimpleGridClustering(estates: [EstateGeoLocationDataResponse], gridSize: Double) -> ClusteringResult {
-        var gridMap: [String: [EstateGeoLocationDataResponse]] = [:]
+    private func performSimpleGridClustering(estates: [Estate], gridSize: Double) -> ClusteringResult {
+        var gridMap: [String: [Estate]] = [:]
         
         // 빠른 그룹핑
         for estate in estates {
-            let gridX = Int(estate.geolocation.longitude / gridSize)
-            let gridY = Int(estate.geolocation.latitude / gridSize)
+            let gridX = Int(estate.geolocation.lon / gridSize)
+            let gridY = Int(estate.geolocation.lat / gridSize)
             let gridKey = "\(gridX)_\(gridY)"
             
             if gridMap[gridKey] == nil {
@@ -1281,13 +1285,13 @@ private extension EstateMapManager {
         }
         
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         
         // 빠른 클러스터 생성
         for (_, gridEstates) in gridMap {
             if gridEstates.count >= 2 {
-                let centerLat = gridEstates.map { $0.geolocation.latitude }.reduce(0, +) / Double(gridEstates.count)
-                let centerLon = gridEstates.map { $0.geolocation.longitude }.reduce(0, +) / Double(gridEstates.count)
+                let centerLat = gridEstates.map { $0.geolocation.lat }.reduce(0, +) / Double(gridEstates.count)
+                let centerLon = gridEstates.map { $0.geolocation.lon }.reduce(0, +) / Double(gridEstates.count)
                 
                 clusters.append(EstateCluster(
                     estates: gridEstates,
@@ -1302,15 +1306,15 @@ private extension EstateMapManager {
     }
     
     /// - 간단한 Distance 클러스터링 (성능 최적화)
-    private func performSimpleDistanceClustering(estates: [EstateGeoLocationDataResponse], distance: Double) -> ClusteringResult {
+    private func performSimpleDistanceClustering(estates: [Estate], distance: Double) -> ClusteringResult {
         var visited: Set<Int> = []
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         
         for (index, estate) in estates.enumerated() {
             if visited.contains(index) { continue }
             
-            var cluster: [EstateGeoLocationDataResponse] = [estate]
+            var cluster: [Estate] = [estate]
             visited.insert(index)
             
             // 간단한 근접 탐색 (첫 번째 단계만)
@@ -1318,10 +1322,10 @@ private extension EstateMapManager {
                 if visited.contains(neighborIndex) { continue }
                 
                 let dist = calculateSimpleDistance(
-                    lat1: estate.geolocation.latitude,
-                    lon1: estate.geolocation.longitude,
-                    lat2: neighborEstate.geolocation.latitude,
-                    lon2: neighborEstate.geolocation.longitude
+                    lat1: estate.geolocation.lat,
+                    lon1: estate.geolocation.lon,
+                    lat2: neighborEstate.geolocation.lat,
+                    lon2: neighborEstate.geolocation.lon
                 )
                 
                 if dist <= distance {
@@ -1332,8 +1336,8 @@ private extension EstateMapManager {
             
             // 클러스터 생성
             if cluster.count >= 2 {
-                let centerLat = cluster.map { $0.geolocation.latitude }.reduce(0, +) / Double(cluster.count)
-                let centerLon = cluster.map { $0.geolocation.longitude }.reduce(0, +) / Double(cluster.count)
+                let centerLat = cluster.map { $0.geolocation.lat }.reduce(0, +) / Double(cluster.count)
+                let centerLon = cluster.map { $0.geolocation.lon }.reduce(0, +) / Double(cluster.count)
                 
                 clusters.append(EstateCluster(
                     estates: cluster,
@@ -1356,13 +1360,13 @@ private extension EstateMapManager {
     }
     
     /// - 강력한 Grid 클러스터링 (낮은 줌 레벨용)
-    private func performAggressiveGridClustering(estates: [EstateGeoLocationDataResponse], gridSize: Double) -> ClusteringResult {
-        var gridMap: [String: [EstateGeoLocationDataResponse]] = [:]
+    private func performAggressiveGridClustering(estates: [Estate], gridSize: Double) -> ClusteringResult {
+        var gridMap: [String: [Estate]] = [:]
         
         // 모든 매물을 그리드에 할당
         for estate in estates {
-            let gridX = Int(estate.geolocation.longitude / gridSize)
-            let gridY = Int(estate.geolocation.latitude / gridSize)
+            let gridX = Int(estate.geolocation.lon / gridSize)
+            let gridY = Int(estate.geolocation.lat / gridSize)
             let gridKey = "\(gridX)_\(gridY)"
             
             if gridMap[gridKey] == nil {
@@ -1372,13 +1376,13 @@ private extension EstateMapManager {
         }
         
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         
         // 강력한 클러스터링: 1개 매물도 클러스터로 만들기 (낮은 줌에서는)
         for (_, gridEstates) in gridMap {
             if gridEstates.count >= 1 { // 1개부터 클러스터링
-                let centerLat = gridEstates.map { $0.geolocation.latitude }.reduce(0, +) / Double(gridEstates.count)
-                let centerLon = gridEstates.map { $0.geolocation.longitude }.reduce(0, +) / Double(gridEstates.count)
+                let centerLat = gridEstates.map { $0.geolocation.lat }.reduce(0, +) / Double(gridEstates.count)
+                let centerLon = gridEstates.map { $0.geolocation.lon }.reduce(0, +) / Double(gridEstates.count)
                 
                 clusters.append(EstateCluster(
                     estates: gridEstates,
@@ -1390,7 +1394,7 @@ private extension EstateMapManager {
     }
     
     /// - 화면 기반 클러스터링 (겹침 방지 최적화)
-    private func performScreenBasedClustering(estates: [EstateGeoLocationDataResponse]) -> ClusteringResult {
+    private func performScreenBasedClustering(estates: [Estate]) -> ClusteringResult {
         guard !estates.isEmpty else {
             return ClusteringResult(individualMarkers: [], clusters: [])
         }
@@ -1400,15 +1404,15 @@ private extension EstateMapManager {
     }
     
     /// - 균형잡힌 Distance 클러스터링 (중간 줌 레벨용)
-    private func performBalancedDistanceClustering(estates: [EstateGeoLocationDataResponse], distance: Double) -> ClusteringResult {
+    private func performBalancedDistanceClustering(estates: [Estate], distance: Double) -> ClusteringResult {
         var visited: Set<Int> = []
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         
         for (index, estate) in estates.enumerated() {
             if visited.contains(index) { continue }
             
-            var cluster: [EstateGeoLocationDataResponse] = [estate]
+            var cluster: [Estate] = [estate]
             visited.insert(index)
             
             // 근처 매물 찾기
@@ -1417,10 +1421,10 @@ private extension EstateMapManager {
                 if visited.contains(neighborIndex) { continue }
                 
                 let dist = calculateSimpleDistance(
-                    lat1: estate.geolocation.latitude,
-                    lon1: estate.geolocation.longitude,
-                    lat2: neighborEstate.geolocation.latitude,
-                    lon2: neighborEstate.geolocation.longitude
+                    lat1: estate.geolocation.lat,
+                    lon1: estate.geolocation.lon,
+                    lat2: neighborEstate.geolocation.lat,
+                    lon2: neighborEstate.geolocation.lon
                 )
                 
                 if dist <= distance {
@@ -1432,8 +1436,8 @@ private extension EstateMapManager {
             
             // 2개 이상이면 클러스터, 1개면 개별 마커
             if cluster.count >= 2 {
-                let centerLat = cluster.map { $0.geolocation.latitude }.reduce(0, +) / Double(cluster.count)
-                let centerLon = cluster.map { $0.geolocation.longitude }.reduce(0, +) / Double(cluster.count)
+                let centerLat = cluster.map { $0.geolocation.lat }.reduce(0, +) / Double(cluster.count)
+                let centerLon = cluster.map { $0.geolocation.lon }.reduce(0, +) / Double(cluster.count)
                 
                 clusters.append(EstateCluster(
                     estates: cluster,
@@ -1447,14 +1451,14 @@ private extension EstateMapManager {
     }
     
     /// - Grid 기반 클러스터링 (광역 뷰용 - Google Maps 스타일)
-    func performGridClustering(estates: [EstateGeoLocationDataResponse], gridSize: Double) -> ClusteringResult {
+    func performGridClustering(estates: [Estate], gridSize: Double) -> ClusteringResult {
         
-        var gridMap: [String: [EstateGeoLocationDataResponse]] = [:]
+        var gridMap: [String: [Estate]] = [:]
         
         // 각 매물을 그리드 셀에 할당
         for (index, estate) in estates.enumerated() {
-            let gridX = Int(estate.geolocation.longitude / gridSize)
-            let gridY = Int(estate.geolocation.latitude / gridSize)
+            let gridX = Int(estate.geolocation.lon / gridSize)
+            let gridY = Int(estate.geolocation.lat / gridSize)
             let gridKey = "\(gridX)_\(gridY)"
             
             if gridMap[gridKey] == nil {
@@ -1464,14 +1468,14 @@ private extension EstateMapManager {
         }
         
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         
         // 그리드 셀별로 클러스터 생성
         for (gridKey, gridEstates) in gridMap {
             
             if gridEstates.count >= 2 {
-                let centerLat = gridEstates.map { $0.geolocation.latitude }.reduce(0, +) / Double(gridEstates.count)
-                let centerLon = gridEstates.map { $0.geolocation.longitude }.reduce(0, +) / Double(gridEstates.count)
+                let centerLat = gridEstates.map { $0.geolocation.lat }.reduce(0, +) / Double(gridEstates.count)
+                let centerLon = gridEstates.map { $0.geolocation.lon }.reduce(0, +) / Double(gridEstates.count)
                 
                 let cluster = EstateCluster(
                     estates: gridEstates,
@@ -1487,17 +1491,17 @@ private extension EstateMapManager {
     }
     
     /// - Distance 기반 클러스터링 (DBSCAN 비슷한 알고리즘)
-    func performDistanceClustering(estates: [EstateGeoLocationDataResponse], distance: Double) -> ClusteringResult {
+    func performDistanceClustering(estates: [Estate], distance: Double) -> ClusteringResult {
         
         var visited: Set<Int> = []
         var clusters: [EstateCluster] = []
-        var individualMarkers: [EstateGeoLocationDataResponse] = []
+        var individualMarkers: [Estate] = []
         var clusterCount = 0
         
         for (index, estate) in estates.enumerated() {
             if visited.contains(index) { continue }
             
-            var cluster: [EstateGeoLocationDataResponse] = []
+            var cluster: [Estate] = []
             var toVisit: [Int] = [index]
             var neighborsFound = 0
             
@@ -1514,10 +1518,10 @@ private extension EstateMapManager {
                     if visited.contains(neighborIndex) { continue }
                     
                     let dist = calculateHaversineDistance(
-                        lat1: currentEstate.geolocation.latitude,
-                        lon1: currentEstate.geolocation.longitude,
-                        lat2: neighborEstate.geolocation.latitude,
-                        lon2: neighborEstate.geolocation.longitude
+                        lat1: currentEstate.geolocation.lat,
+                        lon1: currentEstate.geolocation.lon,
+                        lat2: neighborEstate.geolocation.lat,
+                        lon2: neighborEstate.geolocation.lon
                     )
                     
                     if dist <= distance {
@@ -1530,8 +1534,8 @@ private extension EstateMapManager {
             // 클러스터 생성 여부 결정
             if cluster.count >= 2 {
                 clusterCount += 1
-                let centerLat = cluster.map { $0.geolocation.latitude }.reduce(0, +) / Double(cluster.count)
-                let centerLon = cluster.map { $0.geolocation.longitude }.reduce(0, +) / Double(cluster.count)
+                let centerLat = cluster.map { $0.geolocation.lat }.reduce(0, +) / Double(cluster.count)
+                let centerLon = cluster.map { $0.geolocation.lon }.reduce(0, +) / Double(cluster.count)
                 
                 let estateCluster = EstateCluster(
                     estates: cluster,
@@ -1676,7 +1680,7 @@ private extension EstateMapManager {
         }
         
         // 모든 매물 합치기
-        var allEstates: [EstateGeoLocationDataResponse] = []
+        var allEstates: [Estate] = []
         for cluster in clusters {
             allEstates.append(contentsOf: cluster.estates)
         }
@@ -1864,7 +1868,7 @@ private extension EstateMapManager {
     }
     
     /// - 매물 타입에 따른 마커 스타일 결정 (커스텀 UIView 우선 사용)
-    func determineMarkerStyle(for estate: EstateGeoLocationDataResponse) -> String {
+    func determineMarkerStyle(for estate: Estate) -> String {
         // 인기 매물 조건 (예: 조회수가 높거나 특별한 조건)
         if estate.title.contains("인기") || estate.title.contains("HOT") {
             return "estate_custom_hot"
@@ -1885,13 +1889,11 @@ private extension EstateMapManager {
     
     
     /// - 특정 매물 마커 업데이트
-    func updateEstateMarker(estateId: String, estate: EstateGeoLocationDataResponse) {
-        guard let poi = currentEstateMarkers["estate_\(estateId)"] else {
-            return
-        }
+    func updateEstateMarker(estateId: String, estate: Estate) {
+        guard currentEstateMarkers["estate_\(estateId)"] != nil else { return }
         
         // 가격 텍스트 업데이트
-        let newPriceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
+        _ = estate.monthlyRent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthlyRent.formattedPrice)" : estate.deposit.formattedPrice
         
         // POI 텍스트 업데이트 로직 (필요시 구현)
     }
@@ -1959,7 +1961,7 @@ enum ClusteringStrategy {
 
 // MARK: - 클러스터링 데이터 구조
 struct EstateCluster {
-    let estates: [EstateGeoLocationDataResponse]
+    let estates: [Estate]
     let centerPosition: MapPoint
     
     var count: Int {
@@ -1973,7 +1975,7 @@ struct EstateCluster {
 }
 
 struct ClusteringResult {
-    let individualMarkers: [EstateGeoLocationDataResponse]
+    let individualMarkers: [Estate]
     let clusters: [EstateCluster]
     
     var totalMarkerCount: Int {
@@ -1996,7 +1998,7 @@ protocol EstateMapManagerDelegate: AnyObject {
     func estateMarkerTapped(estateId: String)
     
     /// - 마커 클러스터가 탭되었을 때 호출
-    func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [EstateGeoLocationDataResponse])
+    func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [Estate])
     
     /// - 개별 마커 표시 상태가 변경되었을 때 호출
     func individualMarkersDisplayStateChanged(isDisplaying: Bool)

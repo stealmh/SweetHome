@@ -10,7 +10,7 @@ import RxSwift
 import RxCocoa
 
 protocol EstateMapBottomCollectionManagerDelegate: AnyObject {
-    func didSelectEstate(_ estate: EstateGeoLocationDataResponse)
+    func didSelectEstate(_ estate: Estate)
 }
 
 class EstateMapBottomCollectionManager: NSObject {
@@ -19,11 +19,11 @@ class EstateMapBottomCollectionManager: NSObject {
     weak var delegate: EstateMapBottomCollectionManagerDelegate?
     
     private var collectionView: UICollectionView!
-    private var dataSource: UICollectionViewDiffableDataSource<Section, EstateGeoLocationDataResponse>!
+    private var dataSource: UICollectionViewDiffableDataSource<Section, Estate>!
     
     private let disposeBag = DisposeBag()
     private var currentEstateType: BannerEstateType = .oneRoom
-    private var estates: [EstateGeoLocationDataResponse] = []
+    private var estates: [Estate] = []
     
     // MARK: - Section
     enum Section: Int, CaseIterable {
@@ -86,7 +86,7 @@ class EstateMapBottomCollectionManager: NSObject {
     }
     
     private func setupDataSource() {
-        dataSource = UICollectionViewDiffableDataSource<Section, EstateGeoLocationDataResponse>(
+        dataSource = UICollectionViewDiffableDataSource<Section, Estate>(
             collectionView: collectionView
         ) { [weak self] collectionView, indexPath, estate in
             guard let self = self else { return UICollectionViewCell() }
@@ -102,11 +102,11 @@ class EstateMapBottomCollectionManager: NSObject {
     }
     
     // MARK: - Public Methods
-    func updateEstates(_ estates: [EstateGeoLocationDataResponse], estateType: BannerEstateType) {
+    func updateEstates(_ estates: [Estate], estateType: BannerEstateType) {
         self.estates = estates
         self.currentEstateType = estateType
         
-        var snapshot = NSDiffableDataSourceSnapshot<Section, EstateGeoLocationDataResponse>()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Estate>()
         snapshot.appendSections([.main])
         snapshot.appendItems(estates, toSection: .main)
         

@@ -74,8 +74,8 @@ class CustomEstateMarkerView: UIView {
     }
     
     // MARK: - Configuration Methods
-    func configure(with estate: EstateGeoLocationDataResponse) {
-        let priceText = estate.monthly_rent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthly_rent.formattedPrice)" : estate.deposit.formattedPrice
+    func configure(with estate: Estate) {
+        let priceText = estate.monthlyRent > 0 ? "\(estate.deposit.formattedPrice)/\(estate.monthlyRent.formattedPrice)" : estate.deposit.formattedPrice
         priceLabel.text = priceText
         
         // 썸네일 이미지 로드 (기본 이미지로 fallback)

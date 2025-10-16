@@ -78,11 +78,11 @@ class RegisterViewModel: ViewModelable {
                 
                 print("🔥 withLatestFrom 실행됨: email=\(email), password=\(password), nickname=\(nickname)")
                 
-                let requestModel = RegisterRequest(
+                let requestModel = RegisterInfo(
                     email: email,
                     password: password,
-                    nick: nickname,
-                    phoneNum: phone,
+                    nickname: nickname,
+                    phoneNumber: phone,
                     introduction: introduction,
                     deviceToken: nil
                 )
@@ -97,7 +97,7 @@ class RegisterViewModel: ViewModelable {
                 print("모든 유효성 검사 통과, 회원가입 진행")
                 isLoadingRelay.onNext(true)
 
-                return self.useCase.register(request: requestModel)
+                return self.useCase.register(registerInfo: requestModel)
                     .do(
                         onNext: { response in
                             print("✅ 회원가입 성공")

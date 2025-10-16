@@ -110,7 +110,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
     /// - Similar Cell Actions
     private let similarCellTappedSubject = PublishSubject<Estate>()
     /// - Iamport Response
-    private let iamportResponseSubject = PublishSubject<PaymentIamportResponse>()
+    private let iamportResponseSubject = PublishSubject<PaymentResult>()
     
     
     init(_ id: String) {
@@ -253,7 +253,7 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
         /// - 예약하기 버튼 눌렀을 때
         output.reservationButtonTappedResult
             .drive(onNext: { [weak self] response, estateName in
-                self?.handleReservationButtonTapped(orderResponse: response, estateName: estateName)
+                self?.handleReservationButtonTapped(order: response, estateName: estateName)
             })
             .disposed(by: disposeBag)
         
@@ -311,14 +311,14 @@ class EstateDetailViewController: BaseViewController, UICollectionViewDelegate, 
 extension EstateDetailViewController {
     
     /// 예약하기 버튼 탭 처리
-    private func handleReservationButtonTapped(orderResponse: OrderResponse, estateName: String) {
-        showPaymentWebView(for: orderResponse, estateName: estateName)
+    private func handleReservationButtonTapped(order: Order, estateName: String) {
+        showPaymentWebView(for: order, estateName: estateName)
     }
     
     /// 결제 WebView 표시
-    private func showPaymentWebView(for orderResponse: OrderResponse, estateName: String) {
+    private func showPaymentWebView(for order: Order, estateName: String) {
         wkWebView.isHidden = false
-        let payment = createPaymentData(with: orderResponse, estateName)
+        let payment = createPaymentData(with: order, estateName)
         
         Iamport.shared.paymentWebView(
             webViewMode: wkWebView,
@@ -331,21 +331,21 @@ extension EstateDetailViewController {
     
     /// Iamport 응답 처리
     private func processIamportResponse(_ response: IamportResponse?) {
-        let paymentResponse = PaymentIamportResponse(
-            success: response?.success,
-            imp_uid: response?.imp_uid,
-            merchant_uid: response?.merchant_uid,
-            error_msg: response?.error_msg,
-            error_code: response?.error_code
+        let paymentResponse = PaymentResult(
+            success: response?.success ?? false,
+            impUid: response?.imp_uid,
+            merchantUid: response?.merchant_uid,
+            errorMessage: response?.error_msg,
+            errorCode: response?.error_code
         )
         iamportResponseSubject.onNext(paymentResponse)
     }
     
     /// 결제 성공 처리
-    private func handlePaymentSuccess(_ paymentResult: PaymentValidationResponse) {
+    private func handlePaymentSuccess(_ paymentResult: PaymentValidation) {
         hidePaymentWebView()
         bottomView.configureReservationStatus(true)
-        print("✅ 결제 검증 완료: \(paymentResult.payment_id)")
+        print("✅ 결제 검증 완료: \(paymentResult.paymentId)")
         // TODO: 결제 완료 UI 처리 (예: 성공 알림, 화면 전환 등)
     }
     
@@ -361,12 +361,12 @@ extension EstateDetailViewController {
     }
     
     /// 결제 데이터 생성
-    private func createPaymentData(with orderResponse: OrderResponse, _ estateName: String) -> IamportPayment {
+    private func createPaymentData(with order: Order, _ estateName: String) -> IamportPayment {
         let userCode = "imp14511373"
         return IamportPayment(
             pg: PG.html5_inicis.makePgRawName(pgId: "INIpayTest"),
-            merchant_uid: orderResponse.order_code,
-            amount: "\(orderResponse.total_price)"
+            merchant_uid: order.orderCode,
+            amount: "\(order.totalPrice)"
         ).then {
             $0.pay_method = PayMethod.card.rawValue
             $0.name = estateName

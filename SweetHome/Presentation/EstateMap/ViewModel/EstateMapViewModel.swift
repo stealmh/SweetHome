@@ -16,7 +16,7 @@ class EstateMapViewModel: ViewModelable {
     struct Input {
         let mapPositionChanged: Observable<(latitude: Double, longitude: Double, maxDistance: Int)>
         let estateTypeChanged: Observable<BannerEstateType>
-        let estateSelected: Observable<EstateGeoLocationDataResponse>
+        let estateSelected: Observable<Estate>
         let floatButtonTapped: Observable<Void>
         let filterChanged: Observable<(area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?)>
         let loadAllEstates: Observable<Void> // 전체 데이터 로드 트리거
@@ -24,11 +24,11 @@ class EstateMapViewModel: ViewModelable {
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
         let isLoading: Driver<Bool>
-        let estates: Driver<[EstateGeoLocationDataResponse]>
-        let selectedEstate: Driver<EstateGeoLocationDataResponse>
+        let estates: Driver<[Estate]>
+        let selectedEstate: Driver<Estate>
         let currentLocation: Driver<(latitude: Double, longitude: Double)>
         let error: Driver<SHError>
-        let allEstatesLoaded: Driver<[EstateGeoLocationDataResponse]> // 전체 데이터 로드 완료
+        let allEstatesLoaded: Driver<[Estate]> // 전체 데이터 로드 완료
     }
     
     // MARK: - Properties
@@ -36,7 +36,7 @@ class EstateMapViewModel: ViewModelable {
     private let locationService: LocationServiceProtocol
     private var currentEstateType: BannerEstateType = .oneRoom
     private var currentFilterValues: (area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?) = (nil, nil, nil)
-    private var allEstates: [EstateGeoLocationDataResponse] = []
+    private var allEstates: [Estate] = []
 
     // MARK: - Initialization
     init(
@@ -64,11 +64,11 @@ class EstateMapViewModel: ViewModelable {
     
     func transform(input: Input) -> Output {
         let isLoadingRelay = BehaviorSubject<Bool>(value: false)
-        let estatesRelay = BehaviorSubject<[EstateGeoLocationDataResponse]>(value: [])
-        let selectedEstateRelay = PublishSubject<EstateGeoLocationDataResponse>()
+        let estatesRelay = BehaviorSubject<[Estate]>(value: [])
+        let selectedEstateRelay = PublishSubject<Estate>()
         let currentLocationRelay = PublishSubject<(latitude: Double, longitude: Double)>()
         let errorRelay = PublishSubject<SHError>()
-        let allEstatesLoadedRelay = PublishSubject<[EstateGeoLocationDataResponse]>()
+        let allEstatesLoadedRelay = PublishSubject<[Estate]>()
         
         input.estateTypeChanged
             .subscribe(onNext: { [weak self] estateType in
@@ -79,11 +79,11 @@ class EstateMapViewModel: ViewModelable {
         // 전체 매물 데이터 로드 (한반도 전체 범위로 maxDistance 설정)
         input.loadAllEstates
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
-            .flatMapLatest { [weak self] _ -> Observable<[EstateGeoLocationDataResponse]> in
+            .flatMapLatest { [weak self] _ -> Observable<[Estate]> in
                 guard let self else {
                     return Observable.error(SHError.commonError(.weakSelfFailure))
                 }
-                
+
                 // 한반도 중심 좌표 (대한민국 중심부)
                 let koreaCenter = (latitude: 36.5, longitude: 127.5)
                 let maxDistance = 500000 // 500km (한반도 전체 커버)
@@ -114,7 +114,7 @@ class EstateMapViewModel: ViewModelable {
         
         input.mapPositionChanged
             .do(onNext: { _ in isLoadingRelay.onNext(true) })
-            .flatMapLatest { [weak self] (latitude, longitude, maxDistance) -> Observable<[EstateGeoLocationDataResponse]> in
+            .flatMapLatest { [weak self] (latitude, longitude, maxDistance) -> Observable<[Estate]> in
                 guard let self else {
                     return Observable.error(SHError.commonError(.weakSelfFailure))
                 }
@@ -125,7 +125,7 @@ class EstateMapViewModel: ViewModelable {
                     longitude: String(longitude),
                     maxDistance: maxDistance
                 )
-                .catch { error -> Observable<[EstateGeoLocationDataResponse]> in
+                .catch { error -> Observable<[Estate]> in
                     let estateError = SHError.estateError(.geoLocationFailed)
                     errorRelay.onNext(estateError)
                     return Observable.just([])
@@ -188,7 +188,7 @@ class EstateMapViewModel: ViewModelable {
         currentEstateType = type
     }
     
-    private func applyFiltersAndUpdateEstates(estatesRelay: BehaviorSubject<[EstateGeoLocationDataResponse]>) {
+    private func applyFiltersAndUpdateEstates(estatesRelay: BehaviorSubject<[Estate]>) {
         let filteredEstates = useCase.filterEstates(
             allEstates,
             areaFilter: currentFilterValues.area,

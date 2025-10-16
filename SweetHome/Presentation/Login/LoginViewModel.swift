@@ -36,7 +36,10 @@ class LoginViewModel: ViewModelable {
     private let loginUseCase: LoginUseCase
 
     init(
-        loginUseCase: LoginUseCase = LoginUseCaseImpl()
+        loginUseCase: LoginUseCase = LoginUseCaseImpl(
+            authRepository: AuthRepositoryImpl(),
+            loginSession: LoginSession()
+        )
     ) {
         self.loginUseCase = loginUseCase
     }
