@@ -30,7 +30,7 @@ class EstateMapViewController: BaseViewController {
     /// - RxSwift
     private let mapPositionChangedRelay = PublishSubject<(latitude: Double, longitude: Double, maxDistance: Int)>()
     private let estateTypeChangedRelay = PublishSubject<BannerEstateType>()
-    private let estateSelectedRelay = PublishSubject<EstateGeoLocationDataResponse>()
+    private let estateSelectedRelay = PublishSubject<Estate>()
     private let floatButtonTappedRelay = PublishSubject<Void>()
     private let filterChangedRelay = PublishSubject<(area: (Float, Float)?, priceMonth: (Float, Float)?, price: (Float, Float)?)>()
     
@@ -200,7 +200,7 @@ class EstateMapViewController: BaseViewController {
         
         output.selectedEstate
             .drive(onNext: { [weak self] estate in
-                let detailVC = EstateDetailViewController(estate.estate_id)
+                let detailVC = EstateDetailViewController(estate.id)
                 self?.navigationController?.pushViewController(detailVC, animated: true)
 
             })
@@ -362,7 +362,7 @@ extension EstateMapViewController: EstateMapManagerDelegate {
         navigationController?.pushViewController(detailVC, animated: true)
     }
     
-    func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [EstateGeoLocationDataResponse]) {
+    func markerClusterTapped(markerCount: Int, centerPosition: MapPoint, estates: [Estate]) {
         
         // 클러스터 탭 시 해당 매물들로 컬렉션뷰 표시
         guard let estateType = self.estateType else { return }
@@ -402,7 +402,7 @@ extension EstateMapViewController: EstateMapFilterManagerDelegate {
 // MARK: - EstateMapBottomCollectionManagerDelegate
 extension EstateMapViewController: EstateMapBottomCollectionManagerDelegate {
     
-    func didSelectEstate(_ estate: EstateGeoLocationDataResponse) {
+    func didSelectEstate(_ estate: Estate) {
         estateSelectedRelay.onNext(estate)
     }
 }

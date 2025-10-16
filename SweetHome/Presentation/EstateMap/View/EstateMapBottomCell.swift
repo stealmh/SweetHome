@@ -106,12 +106,12 @@ class EstateMapBottomCell: UICollectionViewCell {
         }
     }
     
-    func configure(type: BannerEstateType, _ item: EstateGeoLocationDataResponse) {
+    func configure(type: BannerEstateType, _ item: Estate) {
         estateThumbnailView.setAuthenticatedImage(with: item.thumbnails.first)
         estateCateogryTagView.configure(text: item.category, backgroundColor: SHColor.Brand.brightWood, textColor: .white)
         estateNameLabel.text = item.title
         // 개별 가격 포맷팅 후 조합
-        let priceText = item.monthly_rent > 0 ? "\(item.deposit.formattedPrice)/\(item.monthly_rent.formattedPrice)" : item.deposit.formattedPrice
+        let priceText = item.monthlyRent > 0 ? "\(item.deposit.formattedPrice)/\(item.monthlyRent.formattedPrice)" : item.deposit.formattedPrice
         estatePriceInfoLabel.text = "\(type.rawValue) \(priceText)"
         
         estateAreaFloorLabel.text = "\(item.area)m² • \(item.floors)층"

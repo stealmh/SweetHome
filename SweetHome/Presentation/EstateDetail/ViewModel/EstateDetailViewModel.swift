@@ -20,14 +20,14 @@ class EstateDetailViewModel: ViewModelable {
         let brokerCallButtonTapped: Observable<Void>
         let brokerChatButtonTapped: Observable<Void>
         let similarCellTapped: Observable<Estate>
-        let iamportResponse: Observable<PaymentIamportResponse>
+        let iamportResponse: Observable<PaymentResult>
     }
     
     struct Output: ViewModelLoadable, ViewModelErrorable {
         let isLoading: Driver<Bool>
         let estateDetail: Driver<DetailEstate?>
         let backButtonTappedResult: Driver<Void>
-        let reservationButtonTappedResult: Driver<(OrderResponse, estateName: String)>
+        let reservationButtonTappedResult: Driver<(Order, estateName: String)>
         let brokerCallButtonTappedResult: Driver<Void>
         let brokerChatButtonTappedResult: Driver<Void>
         let similarCellTappedResult: Driver<Estate>
@@ -37,7 +37,7 @@ class EstateDetailViewModel: ViewModelable {
         /// - 유사한 매물 목록
         let similarEstates: Driver<[Estate]>
         /// - 결제 검증 결과
-        let paymentResult: Driver<PaymentValidationResponse?>
+        let paymentResult: Driver<PaymentValidation?>
         let paymentError: Driver<SHError?>
     }
     
@@ -166,11 +166,11 @@ class EstateDetailViewModel: ViewModelable {
     private func handleReservationButtonTapped(
         _ reservationButtonTapped: Observable<Void>,
         errorRelay: PublishSubject<SHError>
-    ) -> Driver<(OrderResponse, estateName: String)> {
+    ) -> Driver<(Order, estateName: String)> {
         return reservationButtonTapped
             .withLatestFrom(estateDetailRelay) { _, detail in detail }
             .compactMap { $0 }
-            .flatMapLatest { [weak self] estate -> Observable<(OrderResponse, estateName: String)> in
+            .flatMapLatest { [weak self] estate -> Observable<(Order, estateName: String)> in
                 guard let self else {
                     errorRelay.onNext(SHError.commonError(.weakSelfFailure))
                     return Observable.empty()
@@ -185,14 +185,14 @@ class EstateDetailViewModel: ViewModelable {
     private func createOrder(
         for estate: DetailEstate,
         errorRelay: PublishSubject<SHError>
-    ) -> Observable<(OrderResponse, estateName: String)> {
+    ) -> Observable<(Order, estateName: String)> {
         return useCase.createReservation(estate: estate)
-            .catch { error -> Observable<(OrderResponse, estateName: String)> in
+            .catch { error -> Observable<(Order, estateName: String)> in
                 errorRelay.onNext(SHError.from(error))
                 return Observable.empty()
             }
             .do(onNext: { response, estateName in
-                print("✅ 주문 생성 성공: \(response.order_id), 매물명: \(estateName)")
+                print("✅ 주문 생성 성공: \(response.orderId), 매물명: \(estateName)")
             })
     }
     
@@ -234,15 +234,15 @@ class EstateDetailViewModel: ViewModelable {
     
     /// 결제 검증 처리
     private func handlePaymentValidation(
-        _ iamportResponse: Observable<PaymentIamportResponse>,
+        _ iamportResponse: Observable<PaymentResult>,
         errorRelay: PublishSubject<SHError>
-    ) -> (success: PublishSubject<PaymentValidationResponse?>, error: PublishSubject<SHError?>) {
-        
-        let successRelay = PublishSubject<PaymentValidationResponse?>()
+    ) -> (success: PublishSubject<PaymentValidation?>, error: PublishSubject<SHError?>) {
+
+        let successRelay = PublishSubject<PaymentValidation?>()
         let errorSubject = PublishSubject<SHError?>()
         
         iamportResponse
-            .flatMapLatest { [weak self] response -> Observable<PaymentValidationResponse> in
+            .flatMapLatest { [weak self] response -> Observable<PaymentValidation> in
                 guard let self else {
                     errorSubject.onNext(SHError.commonError(.weakSelfFailure))
                     return Observable.empty()
@@ -260,11 +260,12 @@ class EstateDetailViewModel: ViewModelable {
     
     /// - 결제 결과 검증 및 API 호출
     private func validatePaymentResult(
-        _ iamportResponse: PaymentIamportResponse,
+        _ iamportResponse: PaymentResult,
         errorRelay: PublishSubject<SHError?>
-    ) -> Observable<PaymentValidationResponse> {
-        return useCase.validatePayment(iamportResponse: iamportResponse)
-            .catch { error -> Observable<PaymentValidationResponse> in
+    ) -> Observable<PaymentValidation> {
+        guard let impUid = iamportResponse.impUid else { return Observable.empty() }
+        return useCase.validatePayment(impUid: impUid)
+            .catch { error -> Observable<PaymentValidation> in
                 errorRelay.onNext(SHError.from(error))
                 return Observable.empty()
             }
