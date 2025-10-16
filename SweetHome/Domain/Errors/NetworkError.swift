@@ -7,7 +7,7 @@
 
 import AuthenticationServices
 
-enum NetworkError {
+public enum NetworkError {
     /// - 네트워크 연결이 실패했을 때
     case connectionFailed(String)
     /// - 서버에서 에러를 반환했을 때
@@ -24,7 +24,7 @@ enum NetworkError {
     case apple(ASAuthorizationError.Code)
 }
 
-extension NetworkError {
+public extension NetworkError {
     var message: String {
         switch self {
         case .connectionFailed(let message):

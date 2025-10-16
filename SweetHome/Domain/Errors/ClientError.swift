@@ -5,11 +5,11 @@
 //  Created by 김민호 on 8/1/25.
 //
 
-enum ClientError {
+public enum ClientError {
     case textfield(TextFieldCase)
 }
 
-extension ClientError {
+public extension ClientError {
     var displayType: ErrorDisplayType {
         switch self {
         case .textfield(let error):

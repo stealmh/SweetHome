@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum CoreDataError {
+public enum CoreDataError {
     /// - 데이터 저장이 실패했을 때
     case saveFailed(String)
     /// - 데이터 조회가 실패했을 때
@@ -22,7 +22,7 @@ enum CoreDataError {
     case migrationFailed
 }
 
-extension CoreDataError {
+public extension CoreDataError {
     var message: String {
         switch self {
         case .saveFailed(let entity):

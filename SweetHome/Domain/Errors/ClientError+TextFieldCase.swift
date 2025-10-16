@@ -5,7 +5,7 @@
 //  Created by 김민호 on 8/4/25.
 //
 
-enum TextFieldCase {
+public enum TextFieldCase {
     /// - 이메일 형식이 올바르지 않을 때
     case invalidEmailFormat
     /// - 비밀번호가 보안 요구사항을 충족하지 않을 때
@@ -18,7 +18,7 @@ enum TextFieldCase {
     case emptyNickname
 }
 
-extension TextFieldCase {
+public extension TextFieldCase {
     var message: String {
         switch self {
         case .invalidEmailFormat:

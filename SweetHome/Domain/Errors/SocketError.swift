@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum SocketError {
+public enum SocketError {
     /// - 소켓 서버 연결이 실패했을 때
     case connectionFailed
     /// - 소켓 인증이 실패했을 때
@@ -22,7 +22,7 @@ enum SocketError {
     case serverUnavailable
 }
 
-extension SocketError {
+public extension SocketError {
     var message: String {
         switch self {
         case .connectionFailed:
