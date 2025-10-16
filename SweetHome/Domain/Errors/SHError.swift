@@ -7,13 +7,13 @@
 
 import Foundation
 
-enum ErrorDisplayType {
+public enum ErrorDisplayType {
     case toast
     case componentText
     case none
 }
 
-enum SHError: Error {
+public enum SHError: Error {
     case commonError(CommonError)
     /// - 클라이언트에서 발생한 에러
     case clientError(ClientError)
@@ -94,14 +94,14 @@ enum SHError: Error {
 }
 
 /// - VoiceRecordingError: 음성 녹음 관련 에러
-enum VoiceRecordingError: Error, LocalizedError {
+public enum VoiceRecordingError: Error, LocalizedError {
     case permissionDenied        /// - 마이크 권한 거부
     case recordingFailed         /// - 녹음 실패
     case playbackFailed          /// - 재생 실패
     case fileNotFound            /// - 녹음 파일을 찾을 수 없음
     case invalidFormat           /// - 지원하지 않는 오디오 포맷
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .permissionDenied:
             return "마이크 사용 권한이 필요합니다."
@@ -117,7 +117,7 @@ enum VoiceRecordingError: Error, LocalizedError {
     }
 }
 
-extension SHError {
+public extension SHError {
     /// - Error to SHError
     static func from(_ error: Error) -> SHError {
         if let shError = error as? SHError { return shError }

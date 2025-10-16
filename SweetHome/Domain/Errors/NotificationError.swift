@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum NotificationError {
+public enum NotificationError {
     /// - 알림 권한이 거부되었을 때
     case permissionDenied
     /// - 푸시 알림 등록이 실패했을 때
@@ -22,7 +22,7 @@ enum NotificationError {
     case badgeUpdateFailed
 }
 
-extension NotificationError {
+public extension NotificationError {
     var message: String {
         switch self {
         case .permissionDenied:

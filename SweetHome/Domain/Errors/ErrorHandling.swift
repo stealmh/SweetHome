@@ -9,7 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 
-struct ErrorAlertHelper {
+public struct ErrorAlertHelper {
     static func showAlert(for error: SHError, on viewController: UIViewController) {
         guard error.displayType == .toast else { return }
         
@@ -36,7 +36,7 @@ struct ErrorAlertHelper {
 
 /// 이메일 검증 전용 에러 처리 함수
 /// 서버 메시지를 우선 사용하고, 네트워크 에러는 그대로 전달
-func handleEmailValidationError(_ error: Error) -> Observable<SHError?> {
+public func handleEmailValidationError(_ error: Error) -> Observable<SHError?> {
     if let shError = error as? SHError { return Observable.just(shError) }
 
     let shError = SHError.from(error)

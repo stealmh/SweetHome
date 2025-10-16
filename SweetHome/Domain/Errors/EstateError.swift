@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum EstateError {
+public enum EstateError {
     /// - 검색 조건에 맞는 매물이 없을 때
     case noEstatesFound
     /// - 위치 정보가 유효하지 않을 때
@@ -22,7 +22,7 @@ enum EstateError {
     case estateDetailNotFound(String)
 }
 
-extension EstateError {
+public extension EstateError {
     var message: String {
         switch self {
         case .noEstatesFound:

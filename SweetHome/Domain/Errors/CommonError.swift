@@ -5,14 +5,14 @@
 //  Created by 김민호 on 8/1/25.
 //
 
-enum CommonError {
+public enum CommonError {
     /// - 키체인에서 키를 찾을 수 없을 때
     case keyNotFound
     /// - weak self 참조가 해제되었을 때
     case weakSelfFailure
 }
 
-extension CommonError {
+public extension CommonError {
     var message: String {
         switch self {
         case .keyNotFound:
