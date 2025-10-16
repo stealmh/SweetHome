@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 채팅방 목록 관련 비즈니스 로직을 추상화하는 UseCase
-protocol ChatListUseCase {
+public protocol ChatListUseCase {
     /// - 채팅방 목록 조회 및 로컬 데이터와 병합
     func fetchChatRoomsWithLocalData() -> Observable<[ChatRoom]>
 

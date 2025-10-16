@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 지도 기반 매물 관련 비즈니스 로직을 추상화하는 UseCase
-protocol EstateMapUseCase {
+public protocol EstateMapUseCase {
     /// - 위치 기반 매물 목록 조회
     /// - Parameters:
     ///   - category: 매물 카테고리
@@ -21,7 +21,7 @@ protocol EstateMapUseCase {
         latitude: String,
         longitude: String,
         maxDistance: Int
-    ) -> Observable<[EstateGeoLocationDataResponse]>
+    ) -> Observable<[Estate]>
 
     /// - 매물 필터링 적용
     /// - Parameters:
@@ -30,9 +30,9 @@ protocol EstateMapUseCase {
     ///   - monthlyPriceFilter: 월세 필터 (만원, 최소-최대)
     ///   - depositFilter: 보증금 필터 (만원, 최소-최대)
     func filterEstates(
-        _ estates: [EstateGeoLocationDataResponse],
+        _ estates: [Estate],
         areaFilter: (Float, Float)?,
         monthlyPriceFilter: (Float, Float)?,
         depositFilter: (Float, Float)?
-    ) -> [EstateGeoLocationDataResponse]
+    ) -> [Estate]
 }

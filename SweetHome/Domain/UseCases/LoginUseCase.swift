@@ -10,7 +10,7 @@ import RxSwift
 import AuthenticationServices
 
 /// - 로그인 관련 비즈니스 로직을 추상화하는 UseCase
-protocol LoginUseCase {
+public protocol LoginUseCase {
 
     // MARK: - Email Authentication
 

@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 
 /// - 홈 화면 관련 비즈니스 로직을 추상화하는 UseCase
-protocol HomeUseCase {
+public protocol HomeUseCase {
     /// - 오늘의 매물 목록 조회
     func fetchTodayEstates() -> Observable<[Estate]>
 

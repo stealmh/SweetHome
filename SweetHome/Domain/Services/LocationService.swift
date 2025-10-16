@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 import RxSwift
 
-protocol LocationServiceProtocol {
+public protocol LocationServiceProtocol {
     /// 현재 위치를 가져오는 메서드
     func getCurrentLocation() -> Observable<(latitude: Double, longitude: Double)>
     
@@ -20,7 +20,7 @@ protocol LocationServiceProtocol {
     var authorizationStatus: CLAuthorizationStatus { get }
 }
 
-class LocationService: NSObject, LocationServiceProtocol {
+public class LocationService: NSObject, LocationServiceProtocol {
     
     // MARK: - Properties
     private let locationManager = CLLocationManager()
@@ -31,7 +31,7 @@ class LocationService: NSObject, LocationServiceProtocol {
     private let authorizationSubject = PublishSubject<CLAuthorizationStatus>()
     
     // MARK: - Computed Properties
-    var authorizationStatus: CLAuthorizationStatus {
+    public var authorizationStatus: CLAuthorizationStatus {
         return locationManager.authorizationStatus
     }
     
@@ -49,7 +49,7 @@ class LocationService: NSObject, LocationServiceProtocol {
     }
     
     // MARK: - Public Methods
-    func getCurrentLocation() -> Observable<(latitude: Double, longitude: Double)> {
+    public func getCurrentLocation() -> Observable<(latitude: Double, longitude: Double)> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
                 observer.onError(SHError.locationError(.serviceUnavailable))
@@ -121,7 +121,7 @@ class LocationService: NSObject, LocationServiceProtocol {
         }
     }
     
-    func requestLocationPermission() -> Observable<CLAuthorizationStatus> {
+    public func requestLocationPermission() -> Observable<CLAuthorizationStatus> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
                 observer.onError(SHError.locationError(.serviceUnavailable))
@@ -159,7 +159,7 @@ class LocationService: NSObject, LocationServiceProtocol {
 // MARK: - CLLocationManagerDelegate
 extension LocationService: CLLocationManagerDelegate {
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
         print("📍 Current location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
@@ -170,25 +170,25 @@ extension LocationService: CLLocationManagerDelegate {
         ))
     }
     
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("❌ Location manager failed with error: \(error)")
         locationSubject.onError(SHError.locationError(.locationFailed(error)))
     }
     
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         print("📍 Location authorization changed: \(status.rawValue)")
         authorizationSubject.onNext(status)
     }
 }
 
 // MARK: - LocationError
-enum LocationError: Error, LocalizedError {
+public enum LocationError: Error, LocalizedError {
     case permissionDenied
     case locationFailed(Error)
     case serviceUnavailable
     case unknown
     
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .permissionDenied:
             return "위치 접근 권한이 거부되었습니다."
