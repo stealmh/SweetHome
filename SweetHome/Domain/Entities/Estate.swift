@@ -8,27 +8,27 @@
 import Foundation
 
 // MARK: - Domain Models (Entity)
-struct Estate: Hashable {
-    let id: String
-    let category: String
-    let title: String
-    let introduction: String
-    let thumbnails: [String]
-    let deposit: Int
-    let monthlyRent: Int
-    let builtYear: String
-    let area: Float
-    let floors: Int
-    let geolocation: Geolocation
-    let distance: Double?
-    let likeCount: Int
-    let isSafeEstate: Bool
-    let isRecommended: Bool
-    let createdAt: Date
-    let updatedAt: Date
+public struct Estate: Hashable {
+    public let id: String
+    public let category: String
+    public let title: String
+    public let introduction: String
+    public let thumbnails: [String]
+    public let deposit: Int
+    public let monthlyRent: Int
+    public let builtYear: String
+    public let area: Float
+    public let floors: Int
+    public let geolocation: Geolocation
+    public let distance: Double?
+    public let likeCount: Int
+    public let isSafeEstate: Bool
+    public let isRecommended: Bool
+    public let createdAt: Date
+    public let updatedAt: Date
 }
 
-extension Estate {
+public extension Estate {
     /// 월세 표시용 문자열
     var rentDisplayText: String {
         if self.monthlyRent == 0 {
@@ -39,7 +39,7 @@ extension Estate {
     }
 }
 
-extension Estate {
+public extension Estate {
     static let topEstateMock: [Estate] = [
         Estate(
             id: "6822b4cd3013b77fe7469e1f",
@@ -410,7 +410,7 @@ extension Estate {
 }
 
 
-struct Geolocation: Hashable {
+public struct Geolocation: Hashable {
     let lon: Double
     let lat: Double
 }
