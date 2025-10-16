@@ -9,20 +9,20 @@ import Foundation
 import RxSwift
 
 /// - ChatListUseCase의 구현체
-final class ChatListUseCaseImpl: ChatListUseCase {
+public final class ChatListUseCaseImpl: ChatListUseCase {
 
     // MARK: - Dependencies
     private let repository: ChatListRepository
 
     // MARK: - Initialization
-    init(repository: ChatListRepository) {
+    public init(repository: ChatListRepository) {
         self.repository = repository
     }
 
     // MARK: - ChatListUseCase Implementation
 
     /// - 채팅방 목록 조회 및 로컬 데이터와 병합
-    func fetchChatRoomsWithLocalData() -> Observable<[ChatRoom]> {
+    public func fetchChatRoomsWithLocalData() -> Observable<[ChatRoom]> {
         return repository.fetchChatRooms()
             .flatMap { [weak self] serverChatRooms -> Observable<[ChatRoom]> in
                 guard let self = self else { return .just(serverChatRooms) }
@@ -41,7 +41,7 @@ final class ChatListUseCaseImpl: ChatListUseCase {
     /// - Parameters:
     ///   - serverChatRooms: 서버에서 받은 채팅방 목록
     ///   - localChatRooms: 로컬 채팅방 목록
-    func mergeChatRoomsWithLocalData(
+    public func mergeChatRoomsWithLocalData(
         serverChatRooms: [ChatRoom],
         localChatRooms: [ChatRoom]
     ) -> Observable<[ChatRoom]> {

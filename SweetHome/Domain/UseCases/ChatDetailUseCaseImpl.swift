@@ -9,14 +9,14 @@ import Foundation
 import RxSwift
 
 /// - ChatDetailUseCase의 구현체
-final class ChatDetailUseCaseImpl: ChatDetailUseCase {
+public final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     // MARK: - Dependencies
     private let repository: ChatDetailRepository
     private let disposeBag = DisposeBag()
 
     // MARK: - Initialization
-    init(repository: ChatDetailRepository) {
+    public init(repository: ChatDetailRepository) {
         self.repository = repository
     }
 
@@ -24,7 +24,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     /// - 채팅 메시지 로드 (로컬 우선 + 증분 동기화)
     /// - Parameter roomId: 채팅방 ID
-    func loadMessagesWithIncrementalSync(roomId: String) -> Observable<[LastChat]> {
+    public func loadMessagesWithIncrementalSync(roomId: String) -> Observable<[LastChat]> {
         return repository.fetchLocalChatMessages(for: roomId)
             .do(onNext: { [weak self] _ in
                 // 백그라운드에서 증분 동기화 항상 수행
@@ -36,7 +36,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     /// - 증분 동기화 수행
     /// - Parameter roomId: 채팅방 ID
-    func performIncrementalSync(roomId: String) -> Observable<Void> {
+    public func performIncrementalSync(roomId: String) -> Observable<Void> {
         return repository.getLastMessageDate(for: roomId)
             .flatMap { [weak self] lastMessageDate -> Observable<Void> in
                 guard let self = self else { return .empty() }
@@ -68,7 +68,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
     ///   - roomId: 채팅방 ID
     ///   - content: 메시지 내용
     ///   - files: 첨부 파일 URL 목록
-    func sendMessage(roomId: String, content: String, files: [String]?) -> Observable<LastChat> {
+    public func sendMessage(roomId: String, content: String, files: [String]?) -> Observable<LastChat> {
         return repository.sendMessage(roomId: roomId, content: content, files: files)
     }
 
@@ -76,13 +76,13 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
     /// - Parameters:
     ///   - roomId: 채팅방 ID
     ///   - fileTypes: 파일 타입 목록
-    func uploadFilesAndSendMessage(roomId: String, fileTypes: [ChatDetailViewModel.FileType]) -> Observable<Void> {
+    public func uploadFilesAndSendMessage(roomId: String, fileTypes: [FileType]) -> Observable<Void> {
         guard !fileTypes.isEmpty else { return .just(()) }
 
-        let multipartData = prepareMultipartData(from: fileTypes)
+        let fileUploads = prepareFileUploads(from: fileTypes)
         let messageContent = fileTypes.first?.messageContent ?? "파일"
 
-        return repository.uploadFiles(roomId: roomId, files: multipartData)
+        return repository.uploadFiles(roomId: roomId, files: fileUploads)
             .flatMap { [weak self] uploadedFiles -> Observable<Void> in
                 guard let self = self else { return .empty() }
                 return self.repository.sendMessage(roomId: roomId, content: messageContent, files: uploadedFiles)
@@ -92,7 +92,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     /// - 새 소켓 메시지 처리
     /// - Parameter message: 소켓으로 받은 메시지
-    func handleNewSocketMessage(_ message: LastChat) -> Observable<[LastChat]> {
+    public func handleNewSocketMessage(_ message: LastChat) -> Observable<[LastChat]> {
         return repository.saveChatMessage(message)
             .flatMap { [weak self] _ -> Observable<[LastChat]> in
                 guard let self = self else { return .empty() }
@@ -102,7 +102,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     /// - 다른 사용자 이름 추출
     /// - Parameter messages: 메시지 목록
-    func extractOtherUserName(from messages: [LastChat]) -> String? {
+    public func extractOtherUserName(from messages: [LastChat]) -> String? {
         let currentUserId = KeyChainManager.shared.read(.userID) ?? ""
         let otherUserMessage = messages.first { $0.sender.userId != currentUserId }
         return otherUserMessage?.sender.nickname
@@ -110,8 +110,8 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
 
     // MARK: - Private Methods
 
-    /// - MultipartFormData 준비
-    private func prepareMultipartData(from fileTypes: [ChatDetailViewModel.FileType]) -> [MultipartFormData] {
+    /// - FileUpload 도메인 모델 준비
+    private func prepareFileUploads(from fileTypes: [FileType]) -> [FileUpload] {
         return fileTypes.enumerated().map { index, fileType in
             var fileName = fileType.fileName
 
@@ -122,7 +122,7 @@ final class ChatDetailUseCaseImpl: ChatDetailUseCase {
                 fileName = "\(userId)_\(timestamp)_\(index).jpg"
             }
 
-            return MultipartFormData(
+            return FileUpload(
                 data: fileType.data,
                 name: "files",
                 fileName: fileName,
