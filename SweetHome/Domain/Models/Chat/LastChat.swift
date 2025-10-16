@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct LastChat: Hashable {
-    let chatId: String
-    let roomId: String
-    let content: String
+public struct LastChat: Hashable {
+    public let chatId: String
+    public let roomId: String
+    public let content: String
 
-    var displayLabel: String {
+    public var displayLabel: String {
         if content == "사진" && !attachedFiles.isEmpty {
             return "사진"
         }
@@ -21,13 +21,23 @@ struct LastChat: Hashable {
         }
         return content
     }
-    let createdAt: Date
-    let updatedAt: Date
-    let sender: ChatSender
-    let attachedFiles: [String]
+    public let createdAt: Date
+    public let updatedAt: Date
+    public let sender: ChatSender
+    public let attachedFiles: [String]
+
+    public init(chatId: String, roomId: String, content: String, createdAt: Date, updatedAt: Date, sender: ChatSender, attachedFiles: [String]) {
+        self.chatId = chatId
+        self.roomId = roomId
+        self.content = content
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.sender = sender
+        self.attachedFiles = attachedFiles
+    }
 
     /// - 메시지 타입 구분
-    var chatMessageType: ChatMessageType {
+    public var chatMessageType: ChatMessageType {
         if content == "사진" && !attachedFiles.isEmpty {
             return .image
         }
@@ -39,7 +49,7 @@ struct LastChat: Hashable {
 }
 
 /// - 채팅 메시지 타입 열거형
-enum ChatMessageType {
+public enum ChatMessageType {
     case text
     case image
     case voice

@@ -7,7 +7,12 @@
 
 import Foundation
 
-struct SendChat: Encodable {
-    let content: String
-    let files: [String]?
+public struct SendChat: Encodable {
+    public let content: String
+    public let files: [String]?
+
+    public init(content: String, files: [String]?) {
+        self.content = content
+        self.files = files
+    }
 }

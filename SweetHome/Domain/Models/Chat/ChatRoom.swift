@@ -7,15 +7,26 @@
 
 import Foundation
 
-struct ChatRoom: Hashable {
-    let roomId: String
-    let createdAt: Date
-    let updatedAt: Date
-    let participants: [Participant]
-    let lastChat: LastChat?
-    let lastPushMessage: String?
-    let lastPushMessageDate: Date?
-    let unreadCount: Int
+public struct ChatRoom: Hashable {
+    public let roomId: String
+    public let createdAt: Date
+    public let updatedAt: Date
+    public let participants: [Participant]
+    public let lastChat: LastChat?
+    public let lastPushMessage: String?
+    public let lastPushMessageDate: Date?
+    public let unreadCount: Int
+
+    public init(roomId: String, createdAt: Date, updatedAt: Date, participants: [Participant], lastChat: LastChat?, lastPushMessage: String?, lastPushMessageDate: Date?, unreadCount: Int) {
+        self.roomId = roomId
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.participants = participants
+        self.lastChat = lastChat
+        self.lastPushMessage = lastPushMessage
+        self.lastPushMessageDate = lastPushMessageDate
+        self.unreadCount = unreadCount
+    }
 }
 
 extension ChatRoomResponse {

@@ -7,11 +7,18 @@
 
 import Foundation
 
-struct Participant: Hashable {
-    let userId: String
-    let nickname: String
-    let introduction: String?
-    let profileImageURL: String?
+public struct Participant: Hashable {
+    public let userId: String
+    public let nickname: String
+    public let introduction: String?
+    public let profileImageURL: String?
+
+    public init(userId: String, nickname: String, introduction: String?, profileImageURL: String?) {
+        self.userId = userId
+        self.nickname = nickname
+        self.introduction = introduction
+        self.profileImageURL = profileImageURL
+    }
 }
 
 // MARK: - Domain 변환 Extensions
