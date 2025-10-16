@@ -8,23 +8,20 @@
 import Foundation
 
 // MARK: - Community Domain Models
-struct CommunityPost: Hashable {
-    let id: String
-    let category: String
-    let title: String
-    let content: String
-    let geolocation: Geolocation
-    let creator: Creator
-    let files: [String]
-    let isLike: Bool
-    let likeCount: Int
-    let createdAt: Date
-    let updatedAt: Date
+public struct CommunityPost: Hashable {
+    public let id: String
+    public let category: String
+    public let title: String
+    public let content: String
+    public let geolocation: Geolocation
+    public let creator: Creator
+    public let files: [String]
+    public let isLike: Bool
+    public let likeCount: Int
+    public let createdAt: Date
+    public let updatedAt: Date
 
-    /// - UUID for Hashable conformance and DiffableDataSource
-    let uniqueID: String
-
-    init(id: String, category: String, title: String, content: String, geolocation: Geolocation, creator: Creator, files: [String], isLike: Bool, likeCount: Int, createdAt: Date, updatedAt: Date) {
+    public init(id: String, category: String, title: String, content: String, geolocation: Geolocation, creator: Creator, files: [String], isLike: Bool, likeCount: Int, createdAt: Date, updatedAt: Date) {
         self.id = id
         self.category = category
         self.title = title
@@ -36,28 +33,24 @@ struct CommunityPost: Hashable {
         self.likeCount = likeCount
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.uniqueID = UUID().uuidString
     }
 }
 
-struct CommunityPostDetail: Hashable {
-    let id: String
-    let category: String
-    let title: String
-    let content: String
-    let geolocation: Geolocation
-    let creator: Creator
-    let files: [String]
-    let isLike: Bool
-    let likeCount: Int
-    let comments: [CommunityComment]
-    let createdAt: Date
-    let updatedAt: Date
+public struct CommunityPostDetail: Hashable {
+    public let id: String
+    public let category: String
+    public let title: String
+    public let content: String
+    public let geolocation: Geolocation
+    public let creator: Creator
+    public let files: [String]
+    public let isLike: Bool
+    public let likeCount: Int
+    public let comments: [CommunityComment]
+    public let createdAt: Date
+    public let updatedAt: Date
 
-    /// - UUID for Hashable conformance and DiffableDataSource
-    let uniqueID: String
-
-    init(id: String, category: String, title: String, content: String, geolocation: Geolocation, creator: Creator, files: [String], isLike: Bool, likeCount: Int, comments: [CommunityComment], createdAt: Date, updatedAt: Date) {
+    public init(id: String, category: String, title: String, content: String, geolocation: Geolocation, creator: Creator, files: [String], isLike: Bool, likeCount: Int, comments: [CommunityComment], createdAt: Date, updatedAt: Date) {
         self.id = id
         self.category = category
         self.title = title
@@ -70,32 +63,27 @@ struct CommunityPostDetail: Hashable {
         self.comments = comments
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.uniqueID = UUID().uuidString
     }
 }
 
-struct CommunityComment: Hashable {
-    let commentId: String
-    let content: String
-    let creator: Creator
-    let createdAt: Date
-    let updatedAt: Date
+public struct CommunityComment: Hashable {
+    public let commentId: String
+    public let content: String
+    public let creator: Creator
+    public let createdAt: Date
+    public let updatedAt: Date
 
-    /// - UUID for Hashable conformance and DiffableDataSource
-    let uniqueID: String
-
-    init(commentId: String, content: String, creator: Creator, createdAt: Date, updatedAt: Date) {
+    public init(commentId: String, content: String, creator: Creator, createdAt: Date, updatedAt: Date) {
         self.commentId = commentId
         self.content = content
         self.creator = creator
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.uniqueID = UUID().uuidString
     }
 }
 
 // MARK: - Extensions
-extension CommunityPost {
+public extension CommunityPost {
     /// - 시간 표시용 문자열
     var timeAgoText: String {
         let now = Date()
@@ -135,7 +123,7 @@ extension CommunityPost {
     }
 }
 
-extension CommunityComment {
+public extension CommunityComment {
     /// - 시간 표시용 문자열
     var timeAgoText: String {
         let now = Date()
@@ -156,7 +144,7 @@ extension CommunityComment {
     }
 }
 
-extension Date {
+public extension Date {
     /// - 시간 표시용 문자열
     var timeAgoText: String {
         let now = Date()

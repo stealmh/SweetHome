@@ -5,16 +5,16 @@
 //  Created by 김민호 on 8/4/25.
 //
 
-struct EstateTopic: Hashable {
-    let title: String
-    let content: String
+public struct EstateTopic: Hashable {
+    public let title: String
+    public let content: String
     // format: "25.4.4"
-    let date: String
-    let link: String?
+    public let date: String
+    public let link: String?
 }
 
 // MARK: - Mock Data
-extension EstateTopic {
+public extension EstateTopic {
     static let mockData: [EstateTopic] = [
         EstateTopic(
             title: "부동산 시장 동향",

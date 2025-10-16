@@ -8,62 +8,62 @@
 import Foundation
 
 // MARK: - Detailed Estate Domain Models
-struct DetailEstate: Hashable {
-    let id: String
-    let category: String
-    let title: String
-    let introduction: String
-    let reservationPrice: Int
-    let thumbnails: [String]
-    let description: String
-    let deposit: Int
-    let monthlyRent: Int
-    let builtYear: String
-    let maintenanceFee: Int
-    let area: Float
-    let parkingCount: Int
-    let floors: Int
-    let options: EstateOptions
-    let geolocation: Geolocation
-    let creator: Creator
-    let isLiked: Bool
-    let isReserved: Bool
-    let likeCount: Int
-    let isSafeEstate: Bool
-    let isRecommended: Bool
-    let comments: [Comment]
-    let createdAt: Date
-    let updatedAt: Date
+public struct DetailEstate: Hashable {
+    public let id: String
+    public let category: String
+    public let title: String
+    public let introduction: String
+    public let reservationPrice: Int
+    public let thumbnails: [String]
+    public let description: String
+    public let deposit: Int
+    public let monthlyRent: Int
+    public let builtYear: String
+    public let maintenanceFee: Int
+    public let area: Float
+    public let parkingCount: Int
+    public let floors: Int
+    public let options: EstateOptions
+    public let geolocation: Geolocation
+    public let creator: Creator
+    public let isLiked: Bool
+    public let isReserved: Bool
+    public let likeCount: Int
+    public let isSafeEstate: Bool
+    public let isRecommended: Bool
+    public let comments: [Comment]
+    public let createdAt: Date
+    public let updatedAt: Date
 }
 
-struct EstateOptions: Hashable {
-    let refrigerator: Bool
-    let washer: Bool
-    let airConditioner: Bool
-    let closet: Bool
-    let shoeRack: Bool
-    let microwave: Bool
-    let sink: Bool
-    let tv: Bool
+public struct EstateOptions: Hashable {
+    public let refrigerator: Bool
+    public let washer: Bool
+    public let airConditioner: Bool
+    public let closet: Bool
+    public let shoeRack: Bool
+    public let microwave: Bool
+    public let sink: Bool
+    public let tv: Bool
 }
 
-struct Creator: Hashable {
-    let userId: String
-    let nick: String
-    let introduction: String?
-    let profileImage: String?
+public struct Creator: Hashable {
+    public let userId: String
+    public let nick: String
+    public let introduction: String?
+    public let profileImage: String?
 }
 
-struct Comment: Hashable {
-    let commentId: String
-    let content: String
-    let createdAt: Date
-    let creator: Creator
-    let replies: [Comment]
+public struct Comment: Hashable {
+    public let commentId: String
+    public let content: String
+    public let createdAt: Date
+    public let creator: Creator
+    public let replies: [Comment]
 }
 
 // MARK: - Convenience Extensions
-extension DetailEstate {
+public extension DetailEstate {
     /// 기본 Estate로 변환 (리스트에서 사용)
     var toBaseEstate: Estate {
         return Estate(
