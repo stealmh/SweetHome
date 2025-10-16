@@ -1,5 +1,5 @@
 //
-//  ChatSocketRepository.swift
+//  ChatSocketRepositoryImpl.swift
 //  SweetHome
 //
 //  Created by 김민호 on 8/18/25.
@@ -9,7 +9,8 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-class ChatSocketRepository {
+/// - WebSocket을 사용하는 Chat Repository 구현체
+final class ChatSocketRepositoryImpl {
     
     // MARK: - Properties
     private let socketManager = ChatSocketManager.shared
@@ -56,7 +57,7 @@ class ChatSocketRepository {
 }
 
 // MARK: - Public Observables
-extension ChatSocketRepository {
+extension ChatSocketRepositoryImpl {
     var connectionStatus: Observable<SocketConnectionStatus> {
         return socketManager.connectionStatus
     }
