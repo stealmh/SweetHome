@@ -79,10 +79,20 @@ final class ChatDetailRepositoryImpl: ChatDetailRepository {
     /// - 파일 업로드
     /// - Parameters:
     ///   - roomId: 채팅방 ID
-    ///   - files: 업로드할 파일 데이터
-    func uploadFiles(roomId: String, files: [MultipartFormData]) -> Observable<[String]> {
+    ///   - files: 업로드할 파일 정보 배열
+    func uploadFiles(roomId: String, files: [FileUpload]) -> Observable<[String]> {
+        /// - FileUpload를 MultipartFormData로 변환
+        let multipartFiles = files.map { file in
+            MultipartFormData(
+                data: file.data,
+                name: file.name,
+                fileName: file.fileName,
+                mimeType: file.mimeType
+            )
+        }
+
         return apiClient
-            .uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: files))
+            .uploadObservable(ChatEndpoint.chatFiles(room_id: roomId, files: multipartFiles))
             .map { (response: ChatUploadResponse) -> [String] in
                 response.files
             }

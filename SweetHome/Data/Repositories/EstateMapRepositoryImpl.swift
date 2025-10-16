@@ -32,7 +32,7 @@ final class EstateMapRepositoryImpl: EstateMapRepository {
         latitude: String,
         longitude: String,
         maxDistance: Int
-    ) -> Observable<[EstateGeoLocationDataResponse]> {
+    ) -> Observable<[Estate]> {
         let request = EstateGeoLocationRequest(
             category: category,
             longitude: longitude,
@@ -42,8 +42,8 @@ final class EstateMapRepositoryImpl: EstateMapRepository {
 
         return apiClient
             .requestObservable(EstateEndpoint.geoLocation(parameter: request))
-            .map { (response: EstateGeoLocationResponse) -> [EstateGeoLocationDataResponse] in
-                response.data
+            .map { (response: EstateGeoLocationResponse) -> [Estate] in
+                response.data.map { $0.toDomain }
             }
     }
 }

@@ -16,20 +16,14 @@ import KakaoSDKUser
 import KakaoSDKAuth
 import KakaoSDKCommon
 
-protocol LoginSessionProtocol {
-    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse>
-    func getAppleLoginError() -> Observable<SHError>
-    func performKakaoLogin() -> Observable<SocialLoginResponse>
-}
-
-class LoginSession: NSObject, LoginSessionProtocol {
+class LoginSession: NSObject, LoginSessionRepository {
     
     // MARK: - Private Properties
-    private let appleLogin = PublishSubject<SocialLoginResponse>()
+    private let appleLogin = PublishSubject<SocialLoginInfo>()
     private let appleLoginError = PublishSubject<SHError>()
     private weak var currentPresentationContext: ASAuthorizationControllerPresentationContextProviding?
     
-    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginResponse> {
+    func performAppleLogin(presentationContext: ASAuthorizationControllerPresentationContextProviding) -> Observable<SocialLoginInfo> {
         self.currentPresentationContext = presentationContext
         
         let appleIDProvider = ASAuthorizationAppleIDProvider()
@@ -48,19 +42,19 @@ class LoginSession: NSObject, LoginSessionProtocol {
         return appleLoginError.asObservable()
     }
     
-    func performKakaoLogin() -> Observable<SocialLoginResponse> {
-        let loginObservable: Observable<SocialLoginResponse>
+    func performKakaoLogin() -> Observable<SocialLoginInfo> {
+        let loginObservable: Observable<SocialLoginInfo>
         
         if UserApi.isKakaoTalkLoginAvailable() {
             loginObservable = UserApi.shared.rx.loginWithKakaoTalk()
-                .map { SocialLoginResponse(name: nil, idToken: $0.accessToken) }.asObservable()
+                .map { SocialLoginInfo(name: nil, idToken: $0.accessToken) }.asObservable()
         } else {
             loginObservable = UserApi.shared.rx.loginWithKakaoAccount()
-                .map { SocialLoginResponse(name: nil, idToken: $0.accessToken) }.asObservable()
+                .map { SocialLoginInfo(name: nil, idToken: $0.accessToken) }.asObservable()
         }
         
         return loginObservable
-            .catch { error -> Observable<SocialLoginResponse> in
+            .catch { error -> Observable<SocialLoginInfo> in
                 // 사용자 취소는 에러로 처리하지 않고 빈 스트림 반환
                 if let sdkError = error as? SdkError, case .ClientFailed = sdkError {
                     return Observable.empty()
@@ -93,7 +87,7 @@ private extension LoginSession {
               let idTokenString = String(data: idToken, encoding: .utf8) else { return }
         
         let fullName = (name.familyName ?? "") + (name.givenName ?? "")
-        let appleResult = SocialLoginResponse(
+        let appleResult = SocialLoginInfo(
             name: fullName,
             idToken: idTokenString
         )

@@ -27,42 +27,108 @@ class AuthRepositoryImpl: AuthRepository {
 
     // MARK: - Email Authentication
 
-    func loginWithEmail(request: EmailLoginRequest) -> Observable<LoginResponse> {
+    func loginWithEmail(loginInfo: EmailLoginInfo) -> Observable<LoginResult> {
+        let request = EmailLoginRequest(email: loginInfo.email, password: loginInfo.password, deviceToken: loginInfo.deviceToken)
         return apiClient.requestObservable(UserEndpoint.emailLogin(request))
-            .do(onNext: { [weak self] response in
+            .do(onNext: { [weak self] (response: LoginResponse) in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
                 self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
+            .map { response in
+                return LoginResult(
+                    user: User(
+                        userId: response.user_id,
+                        email: response.email,
+                        nickname: response.nick,
+                        profileImage: response.profileImage
+                    ),
+                    tokens: AuthTokens(
+                        accessToken: response.accessToken,
+                        refreshToken: response.refreshToken
+                    )
+                )
+            }
     }
 
-    func registerWithEmail(request: RegisterRequest) -> Observable<RegisterResponse> {
+    func registerWithEmail(registerInfo: RegisterInfo) -> Observable<RegisterResult> {
+        let request = RegisterRequest(
+            email: registerInfo.email,
+            password: registerInfo.password,
+            nick: registerInfo.nickname,
+            phoneNum: registerInfo.phoneNumber,
+            introduction: registerInfo.introduction,
+            deviceToken: registerInfo.deviceToken
+        )
         return apiClient.requestObservable(UserEndpoint.emailRegister(request))
+            .map { (response: RegisterResponse) in
+                return RegisterResult(
+                    user: User(
+                        userId: response.user_id,
+                        email: response.email,
+                        nickname: response.nick
+                    ),
+                    tokens: AuthTokens(
+                        accessToken: response.accessToken,
+                        refreshToken: response.refreshToken
+                    )
+                )
+            }
     }
 
     // MARK: - Social Authentication
 
-    func loginWithKakao(request: KakaoLoginRequest) -> Observable<LoginResponse> {
+    func loginWithKakao(loginInfo: KakaoLoginInfo) -> Observable<LoginResult> {
+        let request = KakaoLoginRequest(oauthToken: loginInfo.oauthToken, deviceToken: loginInfo.deviceToken)
         return apiClient.requestObservable(UserEndpoint.kakaoLogin(request))
-            .do(onNext: { [weak self] response in
+            .do(onNext: { [weak self] (response: LoginResponse) in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
                 self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
+            .map { response in
+                return LoginResult(
+                    user: User(
+                        userId: response.user_id,
+                        email: response.email,
+                        nickname: response.nick,
+                        profileImage: response.profileImage
+                    ),
+                    tokens: AuthTokens(
+                        accessToken: response.accessToken,
+                        refreshToken: response.refreshToken
+                    )
+                )
+            }
     }
 
-    func loginWithApple(request: AppleLoginRequest) -> Observable<LoginResponse> {
+    func loginWithApple(loginInfo: AppleLoginInfo) -> Observable<LoginResult> {
+        let request = AppleLoginRequest(idToken: loginInfo.idToken, deviceToken: loginInfo.deviceToken, nick: loginInfo.nickname)
         return apiClient.requestObservable(UserEndpoint.appleLogin(request))
-            .do(onNext: { [weak self] response in
+            .do(onNext: { [weak self] (response: LoginResponse) in
                 self?.saveTokens(accessToken: response.accessToken, refreshToken: response.refreshToken)
                 self?.saveUserID(response.user_id)
                 self?.saveLoginState(isLoggedIn: true)
             })
+            .map { response in
+                return LoginResult(
+                    user: User(
+                        userId: response.user_id,
+                        email: response.email,
+                        nickname: response.nick,
+                        profileImage: response.profileImage
+                    ),
+                    tokens: AuthTokens(
+                        accessToken: response.accessToken,
+                        refreshToken: response.refreshToken
+                    )
+                )
+            }
     }
 
     // MARK: - Token Management
 
-    func refreshToken() -> Observable<ReIssueResponse> {
+    func refreshToken() -> Observable<AuthTokens> {
         guard let refreshToken = keychainManager.read(.refreshToken) else {
             return Observable.error(SHError.networkError(.refreshTokenExpired))
         }
@@ -72,6 +138,12 @@ class AuthRepositoryImpl: AuthRepository {
                 self?.keychainManager.save(.accessToken, value: response.accessToken)
                 self?.keychainManager.save(.refreshToken, value: response.refreshToken)
             })
+            .map { response in
+                return AuthTokens(
+                    accessToken: response.accessToken,
+                    refreshToken: response.refreshToken
+                )
+            }
     }
 
     // MARK: - Local Storage
