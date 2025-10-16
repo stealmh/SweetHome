@@ -9,8 +9,9 @@ import Foundation
 import RxSwift
 
 /// - 회원가입 관련 데이터 접근을 추상화하는 Repository
-protocol RegisterRepository {
+public protocol RegisterRepository {
     /// - 이메일 회원가입
-    /// - Parameter request: 회원가입 요청 데이터
-    func register(request: RegisterRequest) -> Observable<RegisterResponse>
+    /// - Parameter registerInfo: 회원가입 정보
+    /// - Returns: 회원가입 결과 (사용자 정보 + 토큰)
+    func register(registerInfo: RegisterInfo) -> Observable<RegisterResult>
 }

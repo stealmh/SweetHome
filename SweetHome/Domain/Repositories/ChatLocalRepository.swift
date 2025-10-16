@@ -8,7 +8,7 @@
 import Foundation
 import RxSwift
 
-protocol ChatLocalRepository {
+public protocol ChatLocalRepository {
     // MARK: - Chat Rooms
     func saveChatRoom(_ chatRoom: ChatRoom) -> Observable<Void>
     func fetchChatRooms() -> Observable<[ChatRoom]>
