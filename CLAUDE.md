@@ -7,6 +7,89 @@ SweetHome - iOS 부동산 앱 (Swift/UIKit)
 - Clean Architecture (Application, Core, Data, Domain, Presentation)
 - MVVM Pattern with RxSwift
 - Dependency Injection with DIContainer
+- **Tuist 기반 모듈화** (Auth 모듈 분리 완료)
+
+## Tuist 프로젝트 관리
+
+### Tuist 개요
+- **목적**: Auth 모듈을 독립적인 프레임워크로 분리하여 모듈화
+- **현재 상태**: Auth 모듈 분리 완료 (점진적 마이그레이션 진행 중)
+- **생성된 프로젝트**: `SweetHome.xcworkspace` (Tuist 생성)
+
+### Tuist 명령어
+
+```bash
+# Tuist 의존성 설치 (플러그인)
+tuist install
+
+# 프로젝트 생성 (Workspace + Auth 모듈)
+tuist generate
+
+# Auth 모듈만 생성
+tuist generate Auth
+
+# Xcode에서 열기
+tuist generate
+open SweetHome.xcworkspace
+```
+
+### Auth 모듈 구조
+
+Auth 모듈은 **4개의 타겟**으로 구성됩니다:
+
+```
+Projects/Auth/
+├── AuthInterface       # Public API (Protocol & Entity)
+│   └── Sources/
+│       ├── UseCases/
+│       ├── Repositories/
+│       └── Entities/
+│
+├── Auth               # Implementation (구현체)
+│   └── Sources/
+│       ├── Domain/UseCases/
+│       ├── Data/
+│       │   ├── Repositories/
+│       │   ├── DataSources/Remote/
+│       │   └── Models/
+│       └── Core/
+│           ├── Protocols/
+│           ├── TokenManager/
+│           └── DI/
+│
+├── AuthTesting        # Mocks & Fixtures
+│   └── Sources/
+│       ├── Mocks/
+│       └── Fixtures/
+│
+└── AuthTests          # Unit Tests
+    └── Tests/
+        ├── Domain/
+        ├── Data/
+        └── Core/
+```
+
+### Auth 모듈 의존성
+
+```swift
+// SweetHome 앱에서 Auth 사용
+import AuthInterface  // Public API만 import
+
+// DI Container에서 주입
+let authContainer = AuthDIContainer(
+    apiClient: ApiClient.shared,
+    keychainManager: KeyChainManager.shared
+)
+let authUseCase = authContainer.makeAuthUseCase()
+```
+
+### 향후 모듈화 계획
+
+1. ✅ **Auth** - 인증 로직 (완료)
+2. ⏳ **Community** - 커뮤니티 기능 (예정)
+3. ⏳ **Property** - 매물 관리 (예정)
+4. ⏳ **Core/Network** - 네트워크 레이어 공통화 (예정)
+5. ⏳ **Core/Storage** - 저장소 레이어 공통화 (예정)
 
 ## Build & Development Commands
 
