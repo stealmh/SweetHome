@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum OrderEndpoint: TargetType {
     case order(body: OrderRequest)

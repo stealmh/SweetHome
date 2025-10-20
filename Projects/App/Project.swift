@@ -38,16 +38,18 @@ let project = Project(
                     pattern: "Resources/**",
                     excluding: ["Resources/Info.plist"]
                 ),
-                "Sources/Data/CoreData/SweetHomeData.xcdatamodeld",
-                "Sources/Application/Config/xcconfig.xcconfig"
+                "Sources/Data/CoreData/SweetHomeData.xcdatamodeld"
             ],
             entitlements: "Resources/SweetHome.entitlements",
             dependencies: [
                 // MARK: - Internal Modules
+                // Core 모듈
+                .project(target: "CoreNetwork", path: "../CoreNetwork"),
+
                 // Auth 모듈 의존
                 .project(target: "Auth", path: "../Auth"),
                 .project(target: "AuthInterface", path: "../Auth"),
-                
+
                 // MARK: - External Dependencies
                 // Reactive Programming
                     .package(product: "RxSwift"),

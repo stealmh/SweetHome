@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum CommunityEndpoint: TargetType {
     /// - 게시물 조회

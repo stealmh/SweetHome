@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum EstateEndpoint: TargetType {
     case todayEstates

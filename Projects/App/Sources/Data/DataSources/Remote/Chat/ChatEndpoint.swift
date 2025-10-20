@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum ChatEndpoint: TargetType {
     /// - 생성(조회)
@@ -17,7 +18,7 @@ enum ChatEndpoint: TargetType {
     case sendMessage(room_id: String, model: SendChat)
     /// - 채팅내역 목록 조회
     case messageRead(room_id: String, next: String?)
-    case chatFiles(room_id: String, files: [MultipartFormData])
+    case chatFiles(room_id: String, files: [CoreNetwork.MultipartFormData])
 }
 
 extension ChatEndpoint {

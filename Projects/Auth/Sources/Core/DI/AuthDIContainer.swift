@@ -8,6 +8,7 @@
 import Foundation
 import RxSwift
 import AuthInterface
+import CoreNetwork
 
 /// - Auth 모듈의 DI 컨테이너
 /// - 외부에서 주입받은 의존성을 기반으로 Auth 모듈의 객체들을 생성

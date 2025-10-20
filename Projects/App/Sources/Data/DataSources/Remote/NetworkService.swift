@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 protocol NetworkServiceProtocol {
     func request<T: Decodable>(_ target: TargetType) async throws -> T
