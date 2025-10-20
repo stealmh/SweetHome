@@ -34,7 +34,10 @@ let project = Project(
             infoPlist: .file(path: "Resources/Info.plist"),
             sources: ["Sources/**"],
             resources: [
-                "Resources/**",
+                .glob(
+                    pattern: "Resources/**",
+                    excluding: ["Resources/Info.plist"]
+                ),
                 "Sources/Data/CoreData/SweetHomeData.xcdatamodeld",
                 "Sources/Application/Config/xcconfig.xcconfig"
             ],
