@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import CoreNetwork
 
 /// - ChatDetailRepository의 구현체
 final class ChatDetailRepositoryImpl: ChatDetailRepository {

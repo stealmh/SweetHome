@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum PaymentEndpoint: TargetType {
     case validation(body: PaymentValidationRequest)

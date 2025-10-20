@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreNetwork
 
 enum AuthEndpoint: TargetType {
     /// - 토큰 리프래시
