@@ -95,8 +95,22 @@ iOSInjectionProject/
 # Xcode configuration files
 *.xcconfig
 
+### Projects ###
+*.xcodeproj
+*.xcworkspace
+
+### Tuist derived files ###
+graph.dot
+Derived/
+
+### Tuist managed dependencies ###
+Tuist/.build
+
+### Package.resolved ###
+*.resolved
+
 # Swift Package Manager
-Package.resolved
+.resolved
 *.xcschememanagement.plist
 
 # Firebase configuration
