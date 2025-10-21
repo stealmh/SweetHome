@@ -7,12 +7,11 @@
 
 import UIKit
 import CoreData
-import RxKakaoSDKAuth
-import RxKakaoSDKCommon
 import UserNotifications
 import KakaoMapsSDK
 import FirebaseCore
 import FirebaseMessaging
+import AuthInterface
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -26,7 +25,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         Task {
             _ = await NotificationManager.shared.requestNotificationPermission()
         }
-        configureKakaoSDK()
+        configureKakaoMapsSDK()
+        KakaoSDKConfigurator.configure()
         FirebaseApp.configure()
         return true
     }
@@ -58,14 +58,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) {
         print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
-    
+
     func application(
         _ application: UIApplication,
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
         print("백그라운드 푸시 알림 수신: \(userInfo)")
-        
+
         if let roomId = userInfo["room_id"] as? String {
             NotificationManager.shared.handleBackgroundChatNotification(userInfo)
             completionHandler(.newData)
@@ -73,13 +73,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             completionHandler(.noData)
         }
     }
-    
+
     // MARK: - SDK 설정
-    private func configureKakaoSDK() {
+
+    /// - Kakao Maps SDK 초기화
+    private func configureKakaoMapsSDK() {
         guard let appKey = Bundle.main.object(forInfoDictionaryKey: "NATIVE_APP_KEY") as? String else {
             fatalError("NATIVE_APP_KEY not found in Info.plist")
         }
-        RxKakaoSDK.initSDK(appKey: appKey)
         SDKInitializer.InitSDK(appKey: appKey)
     }
 }
