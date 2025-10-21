@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreStorage
 
 final class AuthTokenManager {
     static let shared = AuthTokenManager()

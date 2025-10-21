@@ -6,6 +6,7 @@
 //
 
 import FirebaseMessaging
+import CoreStorage
 
 final class FCMTokenManager: NSObject {
     static let shared = FCMTokenManager()

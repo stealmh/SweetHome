@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import CoreStorage
 
 /// - RegisterRepository의 구현체
 final class RegisterRepositoryImpl: RegisterRepository {

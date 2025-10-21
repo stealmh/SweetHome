@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreStorage
 
 final class MockKeychainManager: KeyChainManagerProtocol {
     private var storage: [KeyChainKey: String] = [:]

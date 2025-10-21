@@ -7,6 +7,7 @@
 
 import UIKit
 import SnapKit
+import CoreStorage
 
 class SplashViewController: BaseViewController {
     private let appNameLabel: UILabel = {
