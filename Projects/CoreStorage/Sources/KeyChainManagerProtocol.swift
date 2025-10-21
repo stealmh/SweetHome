@@ -1,20 +1,14 @@
 //
-//  StorageProtocols.swift
-//  Auth
+//  KeyChainManagerProtocol.swift
+//  CoreStorage
 //
-//  Created by 김민호 on 10/20/25.
+//  Created by Claude on 10/21/25.
 //
 
 import Foundation
 
-/// - KeyChain Key 정의
-public enum KeyChainKey: String {
-    case accessToken = "accessToken"
-    case refreshToken = "refreshToken"
-    case userID = "userID"
-}
-
 /// - KeyChain Manager Protocol
+/// - KeyChain 저장소 접근을 추상화
 public protocol KeyChainManagerProtocol: Sendable {
     func read(_ key: KeyChainKey) -> String?
     func save(_ key: KeyChainKey, value: String)

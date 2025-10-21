@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreStorage
 
 public enum FileType {
     case photo(Data)

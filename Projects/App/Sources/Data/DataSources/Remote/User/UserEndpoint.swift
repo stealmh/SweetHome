@@ -8,6 +8,7 @@
 import Foundation
 import Alamofire
 import CoreNetwork
+import CoreStorage
 
 enum UserEndpoint: TargetType {
     /// - 이메일 유효성 체크

@@ -8,6 +8,7 @@
 import Foundation
 import RxSwift
 import RxCocoa
+import CoreStorage
 
 class ChatDetailViewModel: ViewModelable {
     let disposeBag = DisposeBag()

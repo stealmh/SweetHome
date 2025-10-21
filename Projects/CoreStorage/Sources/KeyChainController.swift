@@ -1,23 +1,30 @@
 //
 //  KeyChainController.swift
-//  SweetHome
+//  CoreStorage
 //
 //  Created by 김민호 on 7/24/25.
 //
 
 import Foundation
 
-protocol KeyChainControllerProtocol: Sendable {
+/// - KeyChain Controller Protocol
+public protocol KeyChainControllerProtocol: Sendable {
     func create(_ data: Data?, key: KeyChainKey)
     func read(_ key: KeyChainKey) -> Data?
     func update(_ data: Data?, key: KeyChainKey)
     func delete(_ key: KeyChainKey)
 }
 
-struct KeyChainController: KeyChainControllerProtocol {
-    let service: String = "SweetHome"
+/// - KeyChain Controller 구현체
+/// - iOS KeyChain API를 직접 호출
+public struct KeyChainController: KeyChainControllerProtocol {
+    public let service: String
 
-    func create(_ data: Data?, key: KeyChainKey) {
+    public init(service: String = "SweetHome") {
+        self.service = service
+    }
+
+    public func create(_ data: Data?, key: KeyChainKey) {
         guard let data = data else { return }
 
         let query: NSDictionary = [
@@ -32,7 +39,7 @@ struct KeyChainController: KeyChainControllerProtocol {
     }
 
     // MARK: Read Item
-    func read(_ key: KeyChainKey) -> Data? {
+    public func read(_ key: KeyChainKey) -> Data? {
         let query: NSDictionary = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,
@@ -49,7 +56,7 @@ struct KeyChainController: KeyChainControllerProtocol {
     }
 
     // MARK: Update Item
-    func update(_ data: Data?, key: KeyChainKey) {
+    public func update(_ data: Data?, key: KeyChainKey) {
         guard let data else { return }
 
         let query: NSDictionary = [
@@ -64,7 +71,7 @@ struct KeyChainController: KeyChainControllerProtocol {
     }
 
     // MARK: Delete Item
-    func delete(_ key: KeyChainKey) {
+    public func delete(_ key: KeyChainKey) {
         let query: NSDictionary = [
             kSecClass: kSecClassGenericPassword,
             kSecAttrService: service,

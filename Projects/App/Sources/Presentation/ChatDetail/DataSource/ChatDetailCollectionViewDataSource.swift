@@ -7,6 +7,7 @@
 
 import UIKit
 import AVFoundation
+import CoreStorage
 
 protocol ChatDetailDataSourceDelegate: AnyObject {
     func didTapVoicePlayButton(voiceData: VoiceMessageData, relativePath: String?)

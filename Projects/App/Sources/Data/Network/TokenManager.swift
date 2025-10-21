@@ -7,6 +7,7 @@
 
 import Foundation
 import Alamofire
+import CoreStorage
 
 /// - 토큰 갱신과 관련된 상태 관리
 actor TokenManager {

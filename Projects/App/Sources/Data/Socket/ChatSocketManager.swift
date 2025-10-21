@@ -10,6 +10,7 @@ import RxSwift
 import RxCocoa
 import SocketIO
 import Alamofire
+import CoreStorage
 
 class ChatSocketManager {
     static let shared = ChatSocketManager()

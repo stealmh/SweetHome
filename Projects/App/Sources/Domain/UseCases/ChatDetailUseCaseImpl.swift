@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import CoreStorage
 
 /// - ChatDetailUseCase의 구현체
 public final class ChatDetailUseCaseImpl: ChatDetailUseCase {

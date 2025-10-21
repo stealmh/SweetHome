@@ -45,6 +45,7 @@ let project = Project(
                 // MARK: - Internal Modules
                 // Core 모듈
                 .project(target: "CoreNetwork", path: "../CoreNetwork"),
+                .project(target: "CoreStorage", path: "../CoreStorage"),
 
                 // Auth 모듈 의존
                 .project(target: "Auth", path: "../Auth"),

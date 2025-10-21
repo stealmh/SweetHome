@@ -7,6 +7,7 @@
 
 import UIKit
 import SnapKit
+import CoreStorage
 
 class ChatRoomCell: UICollectionViewCell {
     private let profileImageView: UIImageView = {
