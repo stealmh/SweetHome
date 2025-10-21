@@ -28,27 +28,11 @@ public final class AuthDIContainer {
         self.keychainManager = keychainManager
     }
 
-    // MARK: - Factory Methods
-
-    /// - AuthUseCase 생성
-    public func makeAuthUseCase() -> AuthUseCase {
-        let repository = makeAuthRepository()
-        return AuthUseCaseImpl(repository: repository)
-    }
-
-    /// - AuthRepository 생성 (private)
-    private func makeAuthRepository() -> AuthRepository {
+    /// - AuthRepository 생성 (public - 필요시)
+    public func makeAuthRepository() -> AuthRepository {
         return AuthRepositoryImpl(
             apiClient: apiClient,
             keychainManager: keychainManager
         )
     }
-
-    /// - AuthRepository 생성 (public - 필요시)
-//    public func makeAuthRepository() -> AuthRepository {
-//        return AuthRepositoryImpl(
-//            apiClient: apiClient,
-//            keychainManager: keychainManager
-//        )
-//    }
 }

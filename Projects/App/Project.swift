@@ -48,7 +48,6 @@ let project = Project(
                 .project(target: "CoreStorage", path: "../CoreStorage"),
 
                 // Auth 모듈 의존
-                .project(target: "Auth", path: "../Auth"),
                 .project(target: "AuthInterface", path: "../Auth"),
 
                 // MARK: - External Dependencies
