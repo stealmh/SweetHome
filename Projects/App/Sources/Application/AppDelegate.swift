@@ -11,7 +11,7 @@ import UserNotifications
 import KakaoMapsSDK
 import FirebaseCore
 import FirebaseMessaging
-import AuthInterface
+import Auth
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
