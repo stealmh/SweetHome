@@ -8,6 +8,7 @@
 import Foundation
 import RxSwift
 import Alamofire
+import Auth
 
 class EmailValidator {
     private let apiClient: ApiClient

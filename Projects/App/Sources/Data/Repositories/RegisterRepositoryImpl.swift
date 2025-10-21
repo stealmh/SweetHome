@@ -8,6 +8,8 @@
 import Foundation
 import RxSwift
 import CoreStorage
+import AuthInterface
+import Auth
 
 /// - RegisterRepository의 구현체
 final class RegisterRepositoryImpl: RegisterRepository {
@@ -31,7 +33,7 @@ final class RegisterRepositoryImpl: RegisterRepository {
     /// - Parameter registerInfo: 회원가입 정보
     /// - Returns: 회원가입 결과 (사용자 정보 + 토큰)
     func register(registerInfo: RegisterInfo) -> Observable<RegisterResult> {
-        let request = RegisterRequest(
+        let request = Auth.RegisterRequest(
             email: registerInfo.email,
             password: registerInfo.password,
             nick: registerInfo.nickname,
@@ -41,13 +43,13 @@ final class RegisterRepositoryImpl: RegisterRepository {
         )
 
         return apiClient
-            .requestObservable(UserEndpoint.emailRegister(request))
-            .do(onNext: { [weak self] (response: RegisterResponse) in
+            .requestObservable(Auth.UserEndpoint.emailRegister(request))
+            .do(onNext: { [weak self] (response: Auth.RegisterResponse) in
                 /// - 회원가입 성공 시 토큰 저장
                 self?.keychainManager.save(.accessToken, value: response.accessToken)
                 self?.keychainManager.save(.refreshToken, value: response.refreshToken)
             })
-            .map { (response: RegisterResponse) -> RegisterResult in
+            .map { (response: Auth.RegisterResponse) -> RegisterResult in
                 RegisterResult(
                     user: User(
                         userId: response.user_id,

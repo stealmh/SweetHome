@@ -9,6 +9,8 @@ import Foundation
 import RxSwift
 import AuthenticationServices
 import CoreStorage
+import AuthInterface
+import Auth
 
 /// - LoginUseCase의 구현체
 /// - Repository와 LoginSession을 조합하여 로그인 비즈니스 로직 구현
@@ -83,6 +85,24 @@ public class LoginUseCaseImpl: LoginUseCase {
 
     public func getAppleLoginError() -> Observable<SHError> {
         return loginSession.getAppleLoginError()
+            .map { error -> SHError in
+                if let authError = error as? ASAuthorizationError {
+                    switch authError.code {
+                    case .canceled:
+                        return .networkError(.apple(.canceled))
+                    case .failed:
+                        return .networkError(.apple(.failed))
+                    case .invalidResponse:
+                        return .networkError(.apple(.invalidResponse))
+                    case .notHandled:
+                        return .networkError(.apple(.notHandled))
+                    default:
+                        return .networkError(.apple(.unknown))
+                    }
+                } else {
+                    return .networkError(.apple(.unknown))
+                }
+            }
     }
 
     // MARK: - Validation

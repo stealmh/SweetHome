@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import AuthInterface
 
 /// - 회원가입 관련 비즈니스 로직을 추상화하는 UseCase
 public protocol RegisterUseCase {
