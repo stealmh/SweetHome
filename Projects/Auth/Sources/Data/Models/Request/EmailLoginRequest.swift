@@ -7,8 +7,8 @@
 
 import Foundation
 
-struct EmailLoginRequest: Encodable {
-    let email: String
-    let password: String
-    let deviceToken: String?
+public struct EmailLoginRequest: Encodable {
+    public let email: String
+    public let password: String
+    public let deviceToken: String?
 }

@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import AuthInterface
 
 /// - 회원가입 관련 데이터 접근을 추상화하는 Repository
 public protocol RegisterRepository {

@@ -10,31 +10,31 @@ import Alamofire
 import CoreNetwork
 import CoreStorage
 
-enum AuthEndpoint: TargetType {
+public enum AuthEndpoint: TargetType {
     /// - 토큰 리프래시
     case refresh(refreshToken: String, keychainManager: KeyChainManagerProtocol)
 }
 
 extension AuthEndpoint {
-    var baseURL: String {
+    public var baseURL: String {
         return Bundle.main.object(forInfoDictionaryKey: "BASE_URL") as? String ?? ""
     }
 
-    var path: String {
+    public var path: String {
         switch self {
         case .refresh:
             return "/v1/auth/refresh"
         }
     }
 
-    var method: HTTPMethod {
+    public var method: HTTPMethod {
         switch self {
         case .refresh:
             return .get
         }
     }
 
-    var headers: HTTPHeaders? {
+    public var headers: HTTPHeaders? {
         switch self {
         case let .refresh(refreshToken, keychainManager):
             guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
@@ -48,7 +48,7 @@ extension AuthEndpoint {
         }
     }
 
-    var task: HTTPTask {
+    public var task: HTTPTask {
         switch self {
         case .refresh:
             return .requestPlain

@@ -8,9 +8,12 @@
 import Foundation
 import Alamofire
 import CoreNetwork
+import CoreStorage
 import AuthInterface
 
-enum UserEndpoint: TargetType {
+public enum UserEndpoint: TargetType {
+    /// - 이메일 유효성 체크
+    case emailValidation(EmailValidationRequest)
     /// - 회원가입
     case emailRegister(RegisterRequest)
     /// - 로그인
@@ -19,15 +22,19 @@ enum UserEndpoint: TargetType {
     case kakaoLogin(KakaoLoginRequest)
     /// - 애플 로그인
     case appleLogin(AppleLoginRequest)
+    /// - 푸시 토큰 업데이트
+    case deviceToken(DeviceTokenRequest)
 }
 
 extension UserEndpoint {
-    var baseURL: String {
+    public var baseURL: String {
         return Bundle.main.object(forInfoDictionaryKey: "BASE_URL") as? String ?? ""
     }
 
-    var path: String {
+    public var path: String {
         switch self {
+        case .emailValidation:
+            return "/v1/users/validation/email"
         case .emailRegister:
             return "/v1/users/join"
         case .emailLogin:
@@ -36,18 +43,24 @@ extension UserEndpoint {
             return "/v1/users/login/kakao"
         case .appleLogin:
             return "/v1/users/login/apple"
+        case .deviceToken:
+            return "/v1/users/deviceToken"
         }
     }
 
-    var method: HTTPMethod {
+    public var method: HTTPMethod {
         switch self {
-        case .emailRegister, .emailLogin, .kakaoLogin, .appleLogin:
+        case .emailValidation, .emailRegister, .emailLogin, .kakaoLogin, .appleLogin:
             return .post
+        case .deviceToken:
+            return .put
         }
     }
 
-    var task: HTTPTask {
+    public var task: HTTPTask {
         switch self {
+        case let .emailValidation(model):
+            return .requestJSONEncodable(model)
         case let .emailRegister(model):
             return .requestJSONEncodable(model)
         case let .emailLogin(model):
@@ -56,11 +69,23 @@ extension UserEndpoint {
             return .requestJSONEncodable(model)
         case let .appleLogin(model):
             return .requestJSONEncodable(model)
+        case let .deviceToken(model):
+            return .requestJSONEncodable(model)
         }
     }
 
-    var headers: HTTPHeaders? {
+    public var headers: HTTPHeaders? {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "SESAC_KEY") as? String else { return nil }
-        return HTTPHeaders(["SeSACKey": key])
+
+        switch self {
+        case .deviceToken:
+            let accessToken = KeyChainManager.shared.read(.accessToken) ?? ""
+            return HTTPHeaders([
+                "Authorization": accessToken,
+                "SeSACKey": key
+            ])
+        default:
+            return HTTPHeaders(["SeSACKey": key])
+        }
     }
 }

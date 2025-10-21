@@ -9,8 +9,10 @@ import Foundation
 import AuthenticationServices
 import RxSwift
 import RxCocoa
+import CoreStorage
 
 import AuthInterface
+import Auth
 
 class LoginViewModel: ViewModelable {
     let disposeBag = DisposeBag()
@@ -39,7 +41,10 @@ class LoginViewModel: ViewModelable {
 
     init(
         loginUseCase: LoginUseCase = LoginUseCaseImpl(
-            authRepository: AuthRepositoryImpl(),
+            authRepository: AuthRepositoryImpl(
+                apiClient: ApiClient.shared,
+                keychainManager: KeyChainManager.shared
+            ),
             loginSession: LoginSession()
         )
     ) {

@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import AuthInterface
 
 /// - RegisterUseCase의 구현체
 public final class RegisterUseCaseImpl: RegisterUseCase {

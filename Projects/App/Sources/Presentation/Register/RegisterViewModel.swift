@@ -9,6 +9,8 @@ import Foundation
 import RxSwift
 import RxCocoa
 
+import AuthInterface
+
 class RegisterViewModel: ViewModelable {
     let disposeBag = DisposeBag()
     

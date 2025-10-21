@@ -100,3 +100,6 @@ extension ApiClient {
 
 // MARK: - ApiClientProtocol Conformance
 extension ApiClient: ApiClientProtocol {}
+
+// MARK: - CoreNetwork.ApiClientProtocol Conformance
+extension ApiClient: CoreNetwork.ApiClientProtocol {}
