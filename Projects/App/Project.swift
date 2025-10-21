@@ -49,6 +49,7 @@ let project = Project(
 
                 // Auth 모듈 의존
                 .project(target: "AuthInterface", path: "../Auth"),
+                .project(target: "Auth", path: "../Auth"),
 
                 // MARK: - External Dependencies
                 // Reactive Programming
