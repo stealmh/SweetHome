@@ -7,6 +7,7 @@
 
 import Foundation
 import AuthenticationServices
+import AuthInterface
 import RxSwift
 import RxCocoa
 
