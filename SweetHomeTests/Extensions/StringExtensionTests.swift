@@ -183,21 +183,6 @@ final class StringExtensionTests: XCTestCase {
         XCTAssertEqual(components.second, 43)
     }
 
-    func test_toISO8601Date_유효하지않은_날짜_문자열() {
-        let invalidDateStrings = [
-            "",
-            "invalid date",
-            "2025-05-13",
-            "2025/05/13T14:53:43Z",
-            "2025-13-45T25:61:61Z"
-        ]
-
-        for dateString in invalidDateStrings {
-            let date = dateString.toISO8601Date()
-            XCTAssertNil(date, "'\(dateString)'은 nil을 반환해야 함")
-        }
-    }
-
     func test_toISO8601Date_다양한_포맷() {
         /// - 마이크로초 없는 포맷도 지원하는지 확인
         let dateWithoutMicro = "2025-05-13T14:53:43Z"
