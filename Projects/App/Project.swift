@@ -105,7 +105,8 @@ let project = Project(
                 // MARK: - External Dependencies for Testing
                 .package(product: "RxSwift"),
                 .package(product: "RxCocoa"),
-                .package(product: "RxTest")
+                .package(product: "RxTest"),
+                .package(product: "Alamofire")
             ]
         )
     ]
