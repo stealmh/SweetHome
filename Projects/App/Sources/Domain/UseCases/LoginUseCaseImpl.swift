@@ -37,11 +37,10 @@ public class LoginUseCaseImpl: LoginUseCase {
             return Observable.error(validationError)
         }
 
-        let deviceToken = KeyChainManager.shared.read(.fcmToken)
         let requestModel = EmailLoginInfo(
             email: email,
             password: password,
-            deviceToken: deviceToken
+            deviceToken: nil
         )
 
         return authRepository.loginWithEmail(loginInfo: requestModel)
@@ -55,10 +54,9 @@ public class LoginUseCaseImpl: LoginUseCase {
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
                 guard let self = self else { return Observable.empty() }
 
-                let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
                 let requestModel = KakaoLoginInfo(
                     oauthToken: socialLoginResponse.idToken,
-                    deviceToken: deviceToken
+                    deviceToken: nil
                 )
 
                 return self.authRepository.loginWithKakao(loginInfo: requestModel)
@@ -71,11 +69,10 @@ public class LoginUseCaseImpl: LoginUseCase {
             .flatMap { [weak self] socialLoginResponse -> Observable<Void> in
                 guard let self = self else { return Observable.empty() }
 
-                let deviceToken = KeyChainManager.shared.read(.fcmToken) ?? ""
                 let requestModel = AppleLoginInfo(
                     idToken: socialLoginResponse.idToken,
                     nickname: socialLoginResponse.name ?? "",
-                    deviceToken: deviceToken,
+                    deviceToken: nil,
                 )
 
                 return self.authRepository.loginWithApple(loginInfo: requestModel)

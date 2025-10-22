@@ -29,10 +29,10 @@ public final class AuthDIContainer {
     }
 
     /// - AuthRepository 생성 (public - 필요시)
-    public func makeAuthRepository() -> AuthRepository {
-        return AuthRepositoryImpl(
-            apiClient: apiClient,
-            keychainManager: keychainManager
-        )
-    }
+//    public func makeAuthRepository() -> AuthRepository {
+//        return AuthRepositoryImpl(
+//            apiClient: apiClient,
+//            keychainManager: keychainManager
+//        )
+//    }
 }

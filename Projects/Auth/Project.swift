@@ -45,10 +45,6 @@ let project = Project(
                 // Interface 의존
                 .target(name: "AuthInterface"),
 
-                // Core 모듈 의존
-                .project(target: "CoreNetwork", path: "../CoreNetwork"),
-                .project(target: "CoreStorage", path: "../CoreStorage"),
-
                 // External 의존성
                 .package(product: "RxSwift"),
                 .package(product: "RxCocoa"),

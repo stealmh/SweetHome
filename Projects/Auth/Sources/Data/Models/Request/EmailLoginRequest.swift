@@ -11,4 +11,10 @@ public struct EmailLoginRequest: Encodable {
     public let email: String
     public let password: String
     public let deviceToken: String?
+    
+    public init(email: String, password: String, deviceToken: String?) {
+        self.email = email
+        self.password = password
+        self.deviceToken = deviceToken
+    }
 }
