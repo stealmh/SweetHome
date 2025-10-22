@@ -3,6 +3,7 @@
 
 import XCTest
 import Alamofire
+import Auth
 @testable import SweetHome
 
 final class TokenConcurrencyTests: XCTestCase {

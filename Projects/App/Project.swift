@@ -86,6 +86,27 @@ let project = Project(
                     .release(name: "Release", xcconfig: .relativeToRoot("Config/key.xcconfig"))
                 ]
             )
+        ),
+        .target(
+            name: "SweetHomeTests",
+            destinations: [.iPhone],
+            product: .unitTests,
+            bundleId: "com.sweethome.app.tests",
+            deploymentTargets: .iOS("16.0"),
+            infoPlist: .default,
+            sources: ["../../SweetHomeTests/**"],
+            dependencies: [
+                .target(name: "SweetHome"),
+                // MARK: - Internal Modules for Testing
+                .project(target: "CoreNetwork", path: "../CoreNetwork"),
+                .project(target: "CoreStorage", path: "../CoreStorage"),
+                .project(target: "AuthInterface", path: "../Auth"),
+                .project(target: "Auth", path: "../Auth"),
+                // MARK: - External Dependencies for Testing
+                .package(product: "RxSwift"),
+                .package(product: "RxCocoa"),
+                .package(product: "RxTest")
+            ]
         )
     ]
 )

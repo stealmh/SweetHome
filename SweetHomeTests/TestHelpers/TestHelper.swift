@@ -6,6 +6,7 @@ import XCTest
 import RxSwift
 import RxTest
 import RxCocoa
+import CoreNetwork
 @testable import SweetHome
 
 /// - 모든 테스트의 기본이 되는 베이스 클래스
@@ -31,7 +32,7 @@ class BaseTestCase: XCTestCase {
 /// - MockNetworkService와 TestApiClient가 사전 구성됨
 class ViewModelTestCase: BaseTestCase {
     var mockNetworkService: MockNetworkService!
-    var apiClient: ApiClientProtocol!
+    var apiClient: SweetHome.ApiClientProtocol!
 
     override func setUp() {
         super.setUp()
@@ -46,7 +47,7 @@ class ViewModelTestCase: BaseTestCase {
     }
 }
 
-class TestApiClient: ApiClientProtocol {
+class TestApiClient: SweetHome.ApiClientProtocol {
     private let network: NetworkServiceProtocol
     private let scheduler: TestScheduler
 

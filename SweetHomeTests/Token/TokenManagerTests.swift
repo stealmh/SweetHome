@@ -3,6 +3,8 @@
 
 import XCTest
 import Alamofire
+import CoreStorage
+import Auth
 @testable import SweetHome
 
 final class TokenManagerTests: XCTestCase {

@@ -4,6 +4,7 @@
 
 import Foundation
 import RxSwift
+import CoreNetwork
 @testable import SweetHome
 
 final class MockNetworkService {
